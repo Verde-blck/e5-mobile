@@ -32,6 +32,20 @@ export const mockOperator: AuthUser = {
   scope: { allSites: true, sites: [] },
 }
 
+// Can see the helmet settings and the site Wi-Fi but not change them (the backend's
+// UNIT_SETTING without UNIT_SETTING_MANAGE). Sign in as RO-001.
+export const mockViewer: AuthUser = {
+  id: 'user-6',
+  username: 'RO-001',
+  name: 'Settings Viewer',
+  role: 'Viewer',
+  superAdmin: false,
+  permissions: ['devices:read', 'map:read', 'alarms:read', 'unitSettings:read', 'wifi:read'],
+  deviceIds: [],
+  twoFactorEnabled: false,
+  scope: { allSites: true, sites: [] },
+}
+
 // Sign in as NEW-001 to get a user flagged mustChangePassword. The mobile app
 // doesn't act on the flag yet (the web dashboard blocks on a change-password
 // screen; that arrives with the users/roles batch).
@@ -63,6 +77,12 @@ export function setMockTwoFactor(username: string, on: boolean): void {
 
 export function mockUserFor(username: string): AuthUser {
   const id = username.trim().toUpperCase()
-  const base = id.startsWith('OP') ? mockOperator : id.startsWith('NEW') ? mockNewStarter : mockAdmin
+  const base = id.startsWith('OP')
+    ? mockOperator
+    : id.startsWith('RO')
+      ? mockViewer
+      : id.startsWith('NEW')
+        ? mockNewStarter
+        : mockAdmin
   return { ...base, username: id || base.username, twoFactorEnabled: mockTwoFactorOn(id) }
 }

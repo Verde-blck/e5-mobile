@@ -31,3 +31,12 @@ export function missingPermission(error: unknown): string | undefined {
   const permission = bodyOf(error)?.permission
   return typeof permission === 'string' ? permission : undefined
 }
+
+/** The backend's own error code and message, e.g. {"error":"no_sim","message":"The helmet has not reported a SIM card."}. */
+export function serverError(error: unknown): { code?: string; message?: string } {
+  const body = bodyOf(error)
+  return {
+    code: typeof body?.error === 'string' ? body.error : undefined,
+    message: typeof body?.message === 'string' ? body.message : undefined,
+  }
+}

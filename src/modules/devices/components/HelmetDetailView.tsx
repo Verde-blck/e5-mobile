@@ -20,6 +20,8 @@ import {
   simLabel,
 } from '@/modules/devices/lib/location'
 import { openInMaps } from '@/modules/devices/lib/maps'
+import { ConnectionSection } from '@/modules/settings/components/ConnectionSection'
+import { HelmetSettingsSection } from '@/modules/settings/components/HelmetSettingsSection'
 import { lastSeenLabel } from '@/modules/devices/lib/presence'
 
 const yesNo = (v: boolean | undefined) => (v === undefined ? '—' : v ? 'Yes' : 'No')
@@ -150,6 +152,8 @@ export function HelmetDetailView({ id, embedded = false }: { id: string; embedde
           </>
         ) : null}
 
+        <ConnectionSection device={device} />
+
         <SectionTitle>Gas readings</SectionTitle>
         <Card className="py-1">
           {gas.length === 0 ? (
@@ -176,6 +180,9 @@ export function HelmetDetailView({ id, embedded = false }: { id: string; embedde
             </>
           )}
         </Card>
+
+        <View className="mt-5" />
+        <HelmetSettingsSection id={device.id} />
         </Container>
       </ScrollView>
     </Screen>

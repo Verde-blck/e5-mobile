@@ -16,7 +16,7 @@ npx expo start              # press a / i, or scan with Expo Go
 
 Set `EXPO_PUBLIC_USE_MOCKS=true` to run on sample data with no backend.
 Mock sign-ins: `ADM-001` (super admin), `OP-014` (read-only: no Dashboard, can't
-resolve alarms), `MFA-001` (two-step; code `123456`). Any password works. In
+resolve alarms), `RO-001` (can view settings, not change them), `MFA-001` (two-step; code `123456`). Any password works. In
 sample-data mode the **More** tab has buttons that fire a fake SOS, fall or
 helmet-removed alarm through the same path a real one takes.
 
@@ -85,6 +85,26 @@ never reported a position isn't drawn; the map says how many are missing.
   phones get the full map with a card over it.
 - **Not built yet.** Fences (drawing and managing them) and track playback. Both need endpoints
   and types from the web app.
+
+## Site Wi-Fi and helmet settings
+
+Built from Cypher's 16 Oct backend update.
+
+- **Site Wi-Fi** (More > Site Wi-Fi). The network every helmet is told to join; each helmet gets it in its
+  start-up settings. The password is never returned by the backend, so editing with an empty password
+  keeps the current one. Saving with no password on a network that has none asks first (an open network).
+- **Connection** (on a helmet). Switch one helmet between Wi-Fi and mobile data. Both directions are
+  confirmed, because a helmet switched to a SIM with no data stays offline until it can reach Wi-Fi again.
+  If the backend reports no SIM (409 `no_sim`) a second, stronger confirmation is needed to force it.
+- **Video recording** (on a helmet). Splitting on or off, and clip length (10, 20 or 30 minutes; the
+  backend accepts any whole minute from 1 to 60). Settings reach the helmet straight away but apply when
+  it restarts, and the backend's "apply" only makes it reconnect, so there is deliberately no apply button.
+  Once settings are saved for a helmet its spoken alarm prompts follow them (on by default).
+- **Permissions.** Viewing needs `UNIT_SETTING`, changing needs `UNIT_SETTING_MANAGE`. The backend hasn't
+  said which permission the two network-switch endpoints need; the app assumes the same as changing the
+  Wi-Fi, and shows "Your role isn't allowed to do that" if it turns out to be different.
+- **Not built.** The rest of a helmet's Unit Setting (upload method, picture quality, temperatures,
+  hat-off and no-movement times, alarm sounds). The backend sends them, but their field names aren't documented.
 
 ## How alarms work
 

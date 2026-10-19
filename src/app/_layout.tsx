@@ -109,6 +109,10 @@ export default function RootLayout() {
               options={{ headerShown: true, title: 'Alarm', ...HEADER }}
             />
             <Stack.Screen
+              name="wifi"
+              options={{ headerShown: true, title: 'Site Wi-Fi', ...HEADER }}
+            />
+            <Stack.Screen
               name="security"
               options={{ headerShown: true, title: 'Account security', ...HEADER }}
             />

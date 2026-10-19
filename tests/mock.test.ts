@@ -8,6 +8,7 @@ import { simulateAlarm, subscribeMockStream } from '@/modules/alarms/api/alarms.
 import { videoStatus } from '@/modules/alarms/footage'
 import { criticalActive } from '@/modules/alarms/lib/alert-policy'
 import { tokenStore } from '@/shared/lib/token'
+import * as settings from '@/modules/settings/api/settings.api'
 import { createRunner } from './harness'
 
 const { t, report } = createRunner()
@@ -82,6 +83,32 @@ async function main() {
     assert.equal(videoStatus(fall, Date.now()), 'uploading')
     const button = await fetchAlarmDetail('1004'); assert.equal(videoStatus(button, Date.now()), 'none')
     await assert.rejects(fetchAlarmDetail('999999'), (e: unknown) => auth.statusOf(e) === 404)
+  })
+
+  // ---------- settings and network, sample data ----------
+  await t('sample site Wi-Fi: starts set; keeps its password when edited without one; can be removed', async () => {
+    assert.deepEqual(await settings.fetchSiteWifi(), { ssid: 'E5ENERGY', passwordSet: true })
+    assert.deepEqual(await settings.saveSiteWifi({ ssid: 'E5-SITE-2' }), { ssid: 'E5-SITE-2', passwordSet: true })
+    await settings.removeSiteWifi(); assert.equal(await settings.fetchSiteWifi(), null)
+    assert.deepEqual(await settings.saveSiteWifi({ ssid: 'OPEN-NET' }), { ssid: 'OPEN-NET', passwordSet: false }, 'no password given and none before = an open network')
+  })
+  await t('sample helmet settings: defaults, then a saved change sticks; a silent helmet is saved but not delivered', async () => {
+    const id = '866652022956404'
+    assert.deepEqual(await settings.fetchUnitSettings(id), { videoSplitting: true, videoSplitMinutes: 10 })
+    const live = await settings.saveUnitSettings(id, { videoSplitMinutes: 20 })
+    assert.equal(live.delivered, true); assert.equal(live.appliesAfterRestart, true)
+    assert.deepEqual(await settings.fetchUnitSettings(id), { videoSplitting: true, videoSplitMinutes: 20 })
+    assert.equal((await settings.saveUnitSettings('866652022959544', { videoSplitting: false })).delivered, false, 'offline for two days')
+  })
+  await t('sample network switch: no SIM is refused until forced, and the fleet then shows the new link', async () => {
+    const noSim = '866652022957881'   // reports no SIM, on Wi-Fi
+    const refused = await settings.switchToMobileData(noSim, false).catch((e) => e)
+    assert.equal(settings.isNoSim(refused), true)
+    assert.equal((await settings.switchToMobileData(noSim, true)).delivered, true)
+    const after = (await fetchDevices()).find((d) => d.id === noSim)!
+    assert.equal(after.telemetry.networkType, '4g'); assert.equal(after.connectivity, 'sim')
+    await settings.switchToWifi(noSim); assert.equal((await fetchDevices()).find((d) => d.id === noSim)!.telemetry.networkType, 'wifi')
+    assert.equal((await settings.switchToMobileData('866652022956404', false)).delivered, true, 'a helmet with a SIM needs no force')
   })
 }
 

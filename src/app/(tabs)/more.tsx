@@ -11,6 +11,7 @@ import { Text } from '@/shared/components/Text'
 import type { IconName } from '@/shared/constants/modules'
 import { confirmAction } from '@/shared/lib/confirm'
 import { endSession } from '@/shared/lib/session'
+import { useCan } from '@/shared/lib/permissions'
 import { useAuthStore } from '@/shared/store/authStore'
 import { simulateAlarm } from '@/modules/alarms/api/alarms.mock'
 
@@ -45,6 +46,7 @@ function MenuRow({
 
 export default function MoreScreen() {
   const user = useAuthStore((s) => s.user)
+  const canWifi = useCan('wifi:read')
   const initial = (user?.name ?? '?').trim().charAt(0).toUpperCase()
 
   function signOut() {
@@ -89,6 +91,16 @@ export default function MoreScreen() {
           hint="Two-step verification"
           onPress={() => router.push('/security')}
         />
+        {canWifi ? (
+          <View className="mt-3">
+            <MenuRow
+              icon="wifi"
+              label="Site Wi-Fi"
+              hint="The network every helmet joins"
+              onPress={() => router.push('/wifi')}
+            />
+          </View>
+        ) : null}
 
         <SectionTitle className="mt-6">About</SectionTitle>
         <Card className="py-1">

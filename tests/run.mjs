@@ -17,6 +17,7 @@ const suites = [
   ['stream', {}], // the alarm stream client against a fake streaming server
   ['layout', {}], // screen-size classes and the list/detail pane rules
   ['map', {}], // map data rules, the embedded map page, and events from it
+  ['settings', {}], // site Wi-Fi, helmet settings and network switching against Cypher's documented requests
   ['mock', { EXPO_PUBLIC_USE_MOCKS: 'true' }], // sample-data mode
 ]
 

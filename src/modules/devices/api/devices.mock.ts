@@ -48,9 +48,16 @@ function helmet(
   }
 }
 
+// Which link each helmet is on after being switched, so the sample data follows the controls.
+const networkOverride = new Map<string, 'wifi' | '4g'>()
+
+export function setMockNetwork(id: string, networkType: 'wifi' | '4g'): void {
+  networkOverride.set(id, networkType)
+}
+
 export function getMockFleet(): Device[] {
   const gasAt = Date.now() - 20_000
-  return [
+  const fleet = [
     helmet('866652022956404', 'Test Helmet', 18_000, {
       batteryPercent: 83,
       gas: CLEAN_AIR,
@@ -88,6 +95,12 @@ export function getMockFleet(): Device[] {
     // Never connected, so it has never reported a position either.
     helmet('866652022960011', 'Unboxed Unit', null, { batteryPercent: undefined, lat: undefined, lng: undefined }, true),
   ]
+  return fleet.map((device) => {
+    const networkType = networkOverride.get(device.id)
+    return networkType
+      ? { ...device, connectivity: networkType === 'wifi' ? ('wifi' as const) : ('sim' as const), telemetry: { ...device.telemetry, networkType } }
+      : device
+  })
 }
 
 export function getMockDevice(id: string): Device | undefined {
