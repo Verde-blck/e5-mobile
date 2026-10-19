@@ -1,0 +1,50 @@
+import assert from 'node:assert/strict'
+import { MEDIUM_MIN_DP, TWO_PANE_MIN_DP, detailGoesInPane, isTwoPaneNow, listPaneWidth, sizeClassOf } from '@/shared/lib/layout'
+import { useSelectionStore } from '@/shared/store/selectionStore'
+import { createRunner } from './harness'
+
+const { t, report } = createRunner()
+
+async function main() {
+  await t('breakpoints are the ones in the findings memo: 600 and 840 dp', () => {
+    assert.equal(MEDIUM_MIN_DP, 600); assert.equal(TWO_PANE_MIN_DP, 840)
+    assert.equal(sizeClassOf(599), 'compact'); assert.equal(sizeClassOf(600), 'medium')
+    assert.equal(sizeClassOf(839), 'medium'); assert.equal(sizeClassOf(840), 'expanded')
+  })
+  await t('each real device and orientation lands in the right class', () => {
+    const cases: Array<[string, number, string]> = [
+      ['phone, portrait', 390, 'compact'],
+      ['8" tablet, portrait', 600, 'medium'],
+      ['10" tablet, portrait', 800, 'medium'],
+      ['8" tablet, landscape', 960, 'expanded'],
+      ['10" tablet, landscape', 1280, 'expanded'],
+      ['tablet in split-screen (half of 1280)', 640, 'medium'],
+    ]
+    for (const [name, width, expected] of cases) assert.equal(sizeClassOf(width), expected, name)
+  })
+  await t('list/detail panes: the list column is clamped to 320-420 dp so the detail always has room', () => {
+    assert.equal(listPaneWidth(600), 320); assert.equal(listPaneWidth(960), 346); assert.equal(listPaneWidth(1280), 420); assert.equal(listPaneWidth(2000), 420)
+    for (const w of [840, 960, 1280]) assert.ok(w - listPaneWidth(w) >= 420, `detail pane too narrow at ${w}`)
+  })
+  await t('an item opens in the side pane only on a wide screen AND when the account has that tab', () => {
+    assert.equal(detailGoesInPane(true, true), true)
+    assert.equal(detailGoesInPane(true, false), false, 'a restricted account tapping the SOS banner must not be sent to a tab it cannot use')
+    assert.equal(detailGoesInPane(false, true), false); assert.equal(detailGoesInPane(false, false), false)
+  })
+  await t('code outside components (banner, toast) sees the same breakpoint, from the live window width', () => {
+    ;(globalThis as any).__testWidth = 1280; assert.equal(isTwoPaneNow(), true)
+    ;(globalThis as any).__testWidth = 839; assert.equal(isTwoPaneNow(), false)
+    ;(globalThis as any).__testWidth = 840; assert.equal(isTwoPaneNow(), true)
+    ;(globalThis as any).__testWidth = 390; assert.equal(isTwoPaneNow(), false)
+  })
+  await t('pane selection: nothing is selected by default (auto-selecting would silently silence the top alarm)', () => {
+    const s = useSelectionStore.getState(); assert.equal(s.alarmId, null); assert.equal(s.helmetId, null)
+  })
+  await t('selecting an alarm and a helmet are independent, and clear() resets both', () => {
+    const s = useSelectionStore.getState()
+    s.selectAlarm('77'); assert.equal(useSelectionStore.getState().alarmId, '77'); assert.equal(useSelectionStore.getState().helmetId, null)
+    s.selectHelmet('866652022956404'); assert.equal(useSelectionStore.getState().alarmId, '77')
+    s.clear(); assert.equal(useSelectionStore.getState().alarmId, null); assert.equal(useSelectionStore.getState().helmetId, null)
+  })
+}
+main().then(report)

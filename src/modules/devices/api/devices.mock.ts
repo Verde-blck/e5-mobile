@@ -1,0 +1,107 @@
+import { derivePresence } from '../lib/presence'
+import type { Device, FleetSummary } from '../types'
+
+// Sample fleet for EXPO_PUBLIC_USE_MOCKS=true. Times are relative to "now" so
+// the presence states (online / degraded / offline) are always realistic.
+
+const MIN = 60_000
+const HOUR = 60 * MIN
+
+const CLEAN_AIR = [
+  { gas: 'CH4', value: 0 },
+  { gas: 'O2', value: 20.9 },
+  { gas: 'CO', value: 0 },
+  { gas: 'H2S', value: 0 },
+]
+
+function helmet(
+  id: string,
+  name: string | null,
+  agoMs: number | null,
+  over: Partial<Device['telemetry']> = {},
+  active = true
+): Device {
+  const lastSeenAt = agoMs === null ? 0 : Date.now() - agoMs
+  return {
+    id,
+    name: name ?? `…${id.slice(-5)}`,
+    named: name !== null,
+    active,
+    connectivity: 'sim',
+    lastSeenAt,
+    activeAlarm: null,
+    telemetry: {
+      batteryPercent: 80,
+      lat: 6.4474,
+      lng: 3.4012,
+      isWorn: true,
+      signalStrength: 4,
+      fixType: 'gps',
+      gpsLevel: 1,
+      accuracyMeters: 4.2,
+      simStatus: 1,
+      simDataUsedMb: 0,
+      networkType: '4g',
+      gas: [],
+      ...over,
+    },
+  }
+}
+
+export function getMockFleet(): Device[] {
+  const gasAt = Date.now() - 20_000
+  return [
+    helmet('866652022956404', 'Test Helmet', 18_000, {
+      batteryPercent: 83,
+      gas: CLEAN_AIR,
+      gasAt,
+      signalStrength: 5,
+      accuracyMeters: 2.6,
+      simPhoneNumber: '+234 803 555 0142',
+      simDataUsedMb: 184.5,
+    }),
+    helmet('866652022956412', 'Rig Supervisor', 40_000, {
+      batteryPercent: 64,
+      lat: 6.4531,
+      lng: 3.3958,
+      gas: CLEAN_AIR,
+      gasAt,
+      // Indoors: the position comes from the mobile network, so it's approximate.
+      fixType: 'network',
+      gpsLevel: -1,
+      accuracyMeters: 640,
+      simDataUsedMb: 52.1,
+    }),
+    helmet('866652022957881', null, 55_000, { batteryPercent: 91, signalStrength: 2, fixType: 'wifi', accuracyMeters: 35, networkType: 'wifi', simStatus: 2 }),
+    helmet('866652022958103', 'Welding Bay 2', 3 * MIN, {
+      batteryPercent: 38,
+      isWorn: false,
+      signalStrength: 1,
+      gpsLevel: 0,
+      accuracyMeters: 28,
+    }),
+    helmet('866652022958277', 'Yard Patrol', 9 * MIN, { batteryPercent: 17, isWorn: false }),
+    helmet('866652022959020', null, 3 * HOUR, { batteryPercent: 52, lat: undefined, lng: undefined }),
+    helmet('866652022959544', 'Spare Unit 1', 2 * 24 * HOUR, { batteryPercent: 9 }, false),
+    helmet('866652022960011', 'Unboxed Unit', null, { batteryPercent: undefined }, true),
+  ]
+}
+
+export function getMockDevice(id: string): Device | undefined {
+  return getMockFleet().find((d) => d.id === id)
+}
+
+export function getMockSummary(): FleetSummary {
+  const fleet = getMockFleet()
+  const now = Date.now()
+  const online = fleet.filter((d) => derivePresence(d.lastSeenAt, now) === 'online').length
+  const active = fleet.filter((d) => d.active).length
+  return {
+    total: fleet.length,
+    online,
+    offline: fleet.length - online,
+    active,
+    inactive: fleet.length - active,
+    alarms24h: 3,
+  }
+}
