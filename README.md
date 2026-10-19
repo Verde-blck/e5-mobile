@@ -66,6 +66,26 @@ using split-screen changes it live:
   960 x 600 and 1280 x 800 (landscape) and 600 x 960 and 800 x 1280 (portrait). dp and CSS
   pixels are the same unit there.
 
+## Live Map
+
+Helmets are drawn on a map, coloured by status (green online, amber degraded, grey offline).
+A helmet with an unresolved alarm is ringed (pulsing red if critical), and each unresolved alarm
+that has a position gets a teardrop pin hovering just above it. A position that came from the mobile
+network or Wi-Fi, not GPS, gets a dashed circle showing how far out it could be. A helmet that has
+never reported a position isn't drawn; the map says how many are missing.
+
+- **How it works.** The map is Leaflet, embedded in the app (`leaflet.generated.ts`, so there's no
+  CDN), shown in a WebView on a tablet and in an iframe in the browser preview. It is the same page in
+  both, so checking it in the browser checks what the tablet runs. After changing the Leaflet version
+  run `npm run map:assets`.
+- **Tiles.** The default is OpenStreetMap's public server, which is only meant for light use and
+  isn't suitable for a fleet in daily use. For production set `EXPO_PUBLIC_MAP_TILE_URL` and
+  `EXPO_PUBLIC_MAP_ATTRIBUTION` to a provider E5 has an account with.
+- **Layout.** Landscape tablets get the map with a helmet panel on the right; portrait tablets and
+  phones get the full map with a card over it.
+- **Not built yet.** Fences (drawing and managing them) and track playback. Both need endpoints
+  and types from the web app.
+
 ## How alarms work
 
 - **Stream.** `GET /alarms/stream` (Server-Sent Events) is read with `fetch` while

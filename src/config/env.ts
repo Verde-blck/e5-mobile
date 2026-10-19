@@ -11,6 +11,13 @@ export const env = {
   apiBaseUrl:
     process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://e5energy-production.up.railway.app/api',
   useMocks: process.env.EXPO_PUBLIC_USE_MOCKS === 'true',
+  // The map tiles. The default is OpenStreetMap's public server, fine for development and
+  // light use; its usage policy doesn't suit a fleet in daily use. For production, point this
+  // at a tile provider E5 has an account with (or any {z}/{x}/{y} raster URL).
+  mapTileUrl:
+    process.env.EXPO_PUBLIC_MAP_TILE_URL ?? 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  mapAttribution:
+    process.env.EXPO_PUBLIC_MAP_ATTRIBUTION ?? '© OpenStreetMap contributors',
   /** The backend has no push channel for the dashboard, so lists poll. */
   pollIntervalMs: 10_000,
 } as const

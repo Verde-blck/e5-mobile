@@ -72,18 +72,21 @@ export function getMockFleet(): Device[] {
       accuracyMeters: 640,
       simDataUsedMb: 52.1,
     }),
-    helmet('866652022957881', null, 55_000, { batteryPercent: 91, signalStrength: 2, fixType: 'wifi', accuracyMeters: 35, networkType: 'wifi', simStatus: 2 }),
+    helmet('866652022957881', null, 55_000, { lat: 6.4402, lng: 3.4168, batteryPercent: 91, signalStrength: 2, fixType: 'wifi', accuracyMeters: 35, networkType: 'wifi', simStatus: 2 }),
     helmet('866652022958103', 'Welding Bay 2', 3 * MIN, {
+      lat: 6.462,
+      lng: 3.4105,
       batteryPercent: 38,
       isWorn: false,
       signalStrength: 1,
       gpsLevel: 0,
       accuracyMeters: 28,
     }),
-    helmet('866652022958277', 'Yard Patrol', 9 * MIN, { batteryPercent: 17, isWorn: false }),
+    helmet('866652022958277', 'Yard Patrol', 9 * MIN, { lat: 6.4335, lng: 3.426, batteryPercent: 17, isWorn: false }),
     helmet('866652022959020', null, 3 * HOUR, { batteryPercent: 52, lat: undefined, lng: undefined }),
-    helmet('866652022959544', 'Spare Unit 1', 2 * 24 * HOUR, { batteryPercent: 9 }, false),
-    helmet('866652022960011', 'Unboxed Unit', null, { batteryPercent: undefined }, true),
+    helmet('866652022959544', 'Spare Unit 1', 2 * 24 * HOUR, { lat: 6.458, lng: 3.3801, batteryPercent: 9 }, false),
+    // Never connected, so it has never reported a position either.
+    helmet('866652022960011', 'Unboxed Unit', null, { batteryPercent: undefined, lat: undefined, lng: undefined }, true),
   ]
 }
 

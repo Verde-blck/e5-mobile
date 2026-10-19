@@ -15,6 +15,7 @@ export default function TabsLayout() {
   // mock operator account (OP-014) is how to see the restricted layout.
   const canDashboard = useCan('dashboard:read')
   const canDevices = useCan('devices:read')
+  const canMap = useCan('map:read')
   const canAlarms = useCan('alarms:read')
   const { active } = useAlarms()
   // Wide screens (a tablet in landscape) get a rail down the left edge instead of a bottom bar.
@@ -61,6 +62,16 @@ export default function TabsLayout() {
           href: canDevices ? undefined : null,
           tabBarIcon: ({ color, size }) => (
             <Feather name={iconOf('devices')} size={size} color={color as string} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="map"
+        options={{
+          title: labelOf('map'),
+          href: canMap ? undefined : null,
+          tabBarIcon: ({ color, size }) => (
+            <Feather name={iconOf('map')} size={size} color={color as string} />
           ),
         }}
       />

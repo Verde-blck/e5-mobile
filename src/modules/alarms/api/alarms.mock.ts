@@ -23,8 +23,8 @@ function seed(): ApiAlarm[] {
   return [
     // Active, critical, but past the 30-minute "open SOS" window: in the list,
     // but no banner or siren.
-    { id: 1006, deviceId: YARD, alarmType: '4', latitude: '6.4531', longitude: '3.3958', occurredAt: iso(50 * MIN), resolved: false },
-    { id: 1005, deviceId: WELDING, alarmType: '1', latitude: '6.4480', longitude: '3.4001', occurredAt: iso(12 * MIN), resolved: false },
+    { id: 1006, deviceId: YARD, alarmType: '4', latitude: '6.4335', longitude: '3.4260', occurredAt: iso(50 * MIN), resolved: false },
+    { id: 1005, deviceId: WELDING, alarmType: '1', latitude: '6.4620', longitude: '3.4105', occurredAt: iso(12 * MIN), resolved: false },
     { id: 1004, deviceId: TEST_HELMET, alarmType: 'manual_sos_button', latitude: '6.4474', longitude: '3.4012', occurredAt: iso(3 * HOUR), resolved: true },
     { id: 1003, deviceId: RIG, alarmType: '2', latitude: '6.4601', longitude: '3.3902', occurredAt: iso(1 * DAY), resolved: true },
     { id: 1002, deviceId: UNNAMED, alarmType: '6', latitude: null, longitude: null, occurredAt: iso(2 * DAY), resolved: false },
@@ -55,14 +55,22 @@ export function subscribeMockStream(alarmHandler: Handler, updateHandler: Handle
 
 let nextId = 2000
 
+// Where each sample helmet is, so a simulated alarm appears at its helmet.
+const AT: Record<string, [string, string]> = {
+  [TEST_HELMET]: ['6.4474', '3.4012'],
+  [RIG]: ['6.4531', '3.3958'],
+  [WELDING]: ['6.4620', '3.4105'],
+  [YARD]: ['6.4335', '3.4260'],
+}
+
 /** Raises a new alarm as if a helmet had just sent it. */
 export function simulateAlarm(code: string, deviceId: string = TEST_HELMET): ApiAlarm {
   const alarm: ApiAlarm = {
     id: nextId++,
     deviceId,
     alarmType: code,
-    latitude: '6.4474',
-    longitude: '3.4012',
+    latitude: (AT[deviceId] ?? AT[TEST_HELMET])[0],
+    longitude: (AT[deviceId] ?? AT[TEST_HELMET])[1],
     occurredAt: new Date().toISOString(),
     resolved: false,
   }

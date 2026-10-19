@@ -1,5 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  // The app is light-only (app.json forces it) and uses no `dark:` styles. This setting is
+  // here for one reason: on web, when the dev server delivers the stylesheet after the
+  // JavaScript has run, NativeWind calls colorScheme.set() once at startup, and with the
+  // default ('media') that throws "Cannot manually set color scheme". 'class' allows the call.
   darkMode: 'class',
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
   presets: [require('nativewind/preset')],

@@ -1,6 +1,6 @@
 // `npm test` — logic tests for the pieces that don't need a phone: token
 // storage, the sign-in / 2FA request shapes, 401 handling, API normalising,
-// roles, presence rules, the alarm vocabulary, footage, the alert policy and the tablet layout rules.
+// roles, presence rules, the alarm vocabulary, footage, the alert policy, the tablet layout rules and the map.
 //
 // Each suite is bundled with esbuild (so the app's `@/` imports and the
 // TypeScript just work) with the two native modules stubbed out, then run in
@@ -16,6 +16,7 @@ const suites = [
   ['live', {}], // mocks off: exercises the real request code paths
   ['stream', {}], // the alarm stream client against a fake streaming server
   ['layout', {}], // screen-size classes and the list/detail pane rules
+  ['map', {}], // map data rules, the embedded map page, and events from it
   ['mock', { EXPO_PUBLIC_USE_MOCKS: 'true' }], // sample-data mode
 ]
 
