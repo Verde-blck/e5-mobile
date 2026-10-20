@@ -51,7 +51,7 @@ using split-screen changes it live:
 
 | Width | Typical device | Layout |
 | --- | --- | --- |
-| under 600 dp | a phone | one pane, bottom bar of five (Dashboard, Monitoring, Live Map, Alarms, More); Track, Group call, Admins and Wi-Fi are in More |
+| under 600 dp | a phone | one pane, bottom bar of five (Dashboard, Monitoring, Live Map, Alarms, More); Live wall, Track, Group call, Admins and Wi-Fi are in More |
 | 600-839 dp | 8-10" tablet, portrait | one pane, the side rail with every module, content capped at 720 dp |
 | 840 dp and up | 8-10" tablet, landscape | the side rail; list and detail side by side |
 
@@ -69,9 +69,10 @@ using split-screen changes it live:
 ### Navigation
 
 On a tablet (600 dp and up, in portrait or landscape) the main navigation is a **side rail** down the left edge, like the web's
-sidebar, with every module the account may use, in the web's order: Dashboard, Monitoring, Live Map, Track, Group call, Alarms,
-Admins, Wi-Fi, then More (fences, alerts, account, about). Each account sees only what it can use. A narrow screen has no room
-for nine, so it gets a bottom bar of five and the four extra modules are reached from More, with a way back.
+sidebar, with every module the account may use: Dashboard, Monitoring, Live wall, Live Map, Track, Group call, Alarms, Admins, Wi-Fi,
+then More (fences, alerts, account, about). Each account sees only what it can use. On a short screen (an 8 inch tablet in
+landscape is only about 600 dp tall) the rail's items are squeezed so that all of them, More included, stay on it. A narrow
+screen has no room for ten, so it gets a bottom bar of five and the extra modules are reached from More, with a way back.
 
 ## Live Map
 
@@ -180,6 +181,25 @@ voice back from the tablet (no camera, no camera permission). Who may: watching 
 management, and anyone signed in can join an SOS. A call ends, and the helmet leaves call mode, when you hang up, leave the
 screen, or stay out of the app for more than a few seconds. **Not yet tried on a real helmet**, so a real build keeps it
 hidden until `EXPO_PUBLIC_LIVE_ENABLED=true`: what to try and what can't be known from here are in [docs/CALLS.md](docs/CALLS.md).
+
+## Live wall
+
+The **Live wall** module (needs live view, `live:read`): up to six helmets live side by side, like the web's wall. Choose helmets
+from the list (a deactivated one can't be added, and a seventh is refused with the reason), and each gets its own tile with its own
+connection, so one weak signal never affects the others. Every tile is muted; **enlarge** one to hear it, so only one helmet ever
+talks. **Start all** and **Stop all**; removing a tile only closes this tablet's view and never stops the helmet for everyone.
+Leaving the wall disconnects from every helmet (they cost the helmets' mobile data, about 0.9 GB an hour each), and coming back
+reconnects the same ones; a tablet can't stream from the background, so leaving the app does the same. The web's pop-out window
+for a second screen isn't ported: a tablet has no second window. Like the other live features it is hidden in a real build until
+`EXPO_PUBLIC_LIVE_ENABLED=true` ([docs/CALLS.md](docs/CALLS.md)).
+
+### Finding out why a module is missing
+
+More has a **What's switched on** card: where the data comes from, each switch, this screen's width and navigation, the account
+and (on a tap) the backend permission codes it holds, then each live feature with where to find it and, if it's missing, the first
+thing stopping it: the build's switch, or the account's permission (`SURVEILLANCE` for live view, `SURVEILLANCE_MANAGE` for calls,
+`GROUP_CALL` for group call). Switches are read forgivingly (`true`, `True`, `1`, `yes`, `on`), but they are fixed at bundle time:
+after changing `.env`, restart with `npx expo start --clear`.
 
 ## Fences
 

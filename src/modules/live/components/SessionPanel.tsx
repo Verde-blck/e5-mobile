@@ -22,39 +22,39 @@ export function StatusPill({ status }: { status: SessionStatus }) {
   )
 }
 
-function Waiting({ text }: { text: string }) {
+function Waiting({ text, compact }: { text: string; compact?: boolean }) {
   return (
-    <View accessibilityLiveRegion="polite" className="max-w-xs items-center gap-3">
-      <ActivityIndicator color="#A3E2D7" />
-      <Text className="text-center text-sm leading-5 text-white/80">{text}</Text>
+    <View accessibilityLiveRegion="polite" className="max-w-xs items-center gap-2">
+      <ActivityIndicator color="#A3E2D7" size={compact ? 'small' : 'large'} />
+      <Text className={cn('text-center text-white/80', compact ? 'text-xs leading-4' : 'text-sm leading-5')}>{text}</Text>
     </View>
   )
 }
 
 /** What to say, over the picture, while there isn't one: waiting, offline, or failed, each with the way forward. */
-export function SessionMessage({ state, name, onRetry, onStartAgain }: { state: SessionState; name: string; onRetry: () => void; onStartAgain: () => void }) {
+export function SessionMessage({ state, name, onRetry, onStartAgain, compact }: { state: SessionState; name: string; onRetry: () => void; onStartAgain: () => void; compact?: boolean }) {
   switch (state.status) {
     case 'requesting-media':
-      return <Waiting text="Allow the microphone when the tablet asks." />
+      return <Waiting compact={compact} text="Allow the microphone when the tablet asks." />
     case 'starting':
-      return <Waiting text={`Contacting ${name}…`} />
+      return <Waiting compact={compact} text={`Contacting ${name}…`} />
     case 'connecting':
-      return <Waiting text="Starting the helmet camera. This usually takes 5 to 10 seconds." />
+      return <Waiting compact={compact} text={compact ? 'Starting the camera…' : 'Starting the helmet camera. This usually takes 5 to 10 seconds.'} />
     case 'reconnecting':
-      return <Waiting text="Signal dropped. Trying to get the picture back…" />
+      return <Waiting compact={compact} text={compact ? 'Signal dropped. Reconnecting…' : 'Signal dropped. Trying to get the picture back…'} />
     case 'offline':
       return (
-        <View className="max-w-sm items-center gap-3">
-          <Text className="text-center font-sans-semibold text-base text-white">{name} is offline</Text>
-          <Text className="text-center text-sm leading-5 text-white/70">It didn’t receive the request. Try again once it’s back online.</Text>
-          <Button title="Try again" icon="refresh-cw" onPress={onStartAgain} />
+        <View className="max-w-sm items-center gap-2">
+          <Text className={cn('text-center font-sans-semibold text-white', compact ? 'text-sm' : 'text-base')}>{name} is offline</Text>
+          {compact ? null : <Text className="text-center text-sm leading-5 text-white/70">It didn’t receive the request. Try again once it’s back online.</Text>}
+          <Button title="Try again" icon="refresh-cw" className={compact ? 'h-9' : undefined} onPress={onStartAgain} />
         </View>
       )
     case 'failed':
       return (
-        <View className="max-w-sm items-center gap-3">
-          <Text className="text-center text-sm leading-5 text-white/90">{state.error}</Text>
-          <Button title="Try again" icon="refresh-cw" onPress={onRetry} />
+        <View className="max-w-sm items-center gap-2">
+          <Text numberOfLines={compact ? 3 : undefined} className={cn('text-center text-white/90', compact ? 'text-xs leading-4' : 'text-sm leading-5')}>{state.error}</Text>
+          <Button title="Try again" icon="refresh-cw" className={compact ? 'h-9' : undefined} onPress={onRetry} />
         </View>
       )
     default:

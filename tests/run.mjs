@@ -15,6 +15,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const suites = [
   ['live', {}], // mocks off: exercises the real request code paths
   ['stream', {}], // the alarm stream client against a fake streaming server
+  ['wall', {}], // the live wall: who can be on it, one session per helmet, leaving and returning
+  ['features', {}], // the switches' parser, and why a feature is missing (switch or permission)
   ['layout', {}], // screen-size classes and the list/detail pane rules
   ['map', {}], // map data rules, the embedded map page, and events from it
   ['settings', {}], // site Wi-Fi, helmet settings and network switching against Cypher's documented requests

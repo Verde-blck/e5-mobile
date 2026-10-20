@@ -6,6 +6,7 @@ import { env } from '@/config/env'
 import { Button } from '@/shared/components/Button'
 import { Container } from '@/shared/components/Container'
 import { Card, Row, SectionTitle } from '@/shared/components/Card'
+import { FeatureStatusCard } from '@/shared/components/FeatureStatusCard'
 import { CompanyLogo } from '@/shared/components/Logo'
 import { Screen } from '@/shared/components/Screen'
 import { Text } from '@/shared/components/Text'
@@ -17,6 +18,7 @@ import { useCan } from '@/shared/lib/permissions'
 import { useAuthStore } from '@/shared/store/authStore'
 import { simulateAlarm } from '@/modules/alarms/api/alarms.mock'
 import { broadcastAvailable } from '@/modules/group-call/api/broadcast.api'
+import { liveAvailable } from '@/modules/live/api/live.api'
 import { AlertsCard } from '@/modules/push/components/AlertsCard'
 import { unregisterThisTablet } from '@/modules/push/lib/unregister'
 
@@ -56,6 +58,7 @@ export default function MoreScreen() {
   const inMore = size === 'compact'
   const canWifi = useCan('wifi:read') && inMore
   const canTrack = useCan('trackPlayback:read') && inMore
+  const canWall = useCan('live:read') && liveAvailable() && inMore
   const canFences = useCan('fences:read')
   const canAdmins = useCan('users:read') && inMore
   // Only offered where it can work: a real build keeps it hidden until voice messages are switched on.
@@ -108,6 +111,11 @@ export default function MoreScreen() {
           hint="Two-step verification"
           onPress={() => router.push('/security')}
         />
+        {canWall ? (
+          <View className="mt-3">
+            <MenuRow icon="grid" label="Live wall" hint="Watch several helmets at once" onPress={() => router.navigate('/wall')} />
+          </View>
+        ) : null}
         {canGroupCall ? (
           <View className="mt-3">
             <MenuRow icon="radio" label="Group call" hint="Send a voice message to several helmets" onPress={() => router.navigate('/group-call')} />
@@ -138,6 +146,9 @@ export default function MoreScreen() {
             />
           </View>
         ) : null}
+
+        <SectionTitle className="mt-6">What's switched on</SectionTitle>
+        <FeatureStatusCard />
 
         <SectionTitle className="mt-6">About</SectionTitle>
         <Card className="py-1">

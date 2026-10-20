@@ -32,7 +32,9 @@ sample-data mode the media addresses are fake and answered with a generated test
 
 ## Turning it on, and what to try
 
-1. Build with `EXPO_PUBLIC_LIVE_ENABLED=true` and install on a tablet (`npm run apk`).
+1. Build with `EXPO_PUBLIC_LIVE_ENABLED=true` and install on a tablet. `eas.json` has a `live` profile that does this (and turns on
+   voice-message sending too): `eas build --platform android --profile live`. A local `.env` is not uploaded to EAS, so for an
+   APK the switch has to be in `eas.json`; for `npx expo start` put it in `.env` and restart with `--clear`.
 2. With the test helmet: **Watch live** (does the picture arrive within about 10 seconds? does the sound work?), then a second
    viewer, then close one and check the stream carries on.
 3. **Call helmet**: can you hear it and can it hear you? Hang up and confirm the helmet leaves call mode.
@@ -50,6 +52,18 @@ sample-data mode the media addresses are fake and answered with a generated test
 - **A tablet that is killed or crashes mid-call** can't tell the backend, so the helmet stays in call mode. The web has the
   same gap and covers closing a tab; for the app, ask Cypher to take a helmet out of call mode by itself when the admin's
   media connection drops, as live view already does after about 20 seconds.
+
+## Live wall
+
+The **Live wall** module shows up to six helmets at once, each its own session (so one helmet with no picture never affects the
+others), every tile muted, with enlarge-for-sound. It is the web's wall without the pop-out window. Each streaming helmet uses about
+0.9 GB of its own mobile data an hour, so leaving the wall (another tab) or the app disconnects every helmet, and returning
+reconnects the same ones. It needs live view (`SURVEILLANCE`) and the same switch as everything else here.
+
+## If you can't find any of it
+
+Open More > **What's switched on**. It says, for each feature, whether the build's switch or the account's permission is what's
+hiding it. After changing `.env`, restart with `npx expo start --clear`; the switches are baked in when the app is bundled.
 
 ## Not built: live group call
 

@@ -57,6 +57,25 @@ export function detailGoesInPane(twoPane: boolean, tabAvailable: boolean): boole
   return twoPane && tabAvailable
 }
 
+/**
+ * A rail item is a 58 dp box with a 12 dp gap after it, so each takes 70 dp down the rail by default. The box can't be
+ * squeezed below what holds an icon and its label.
+ */
+const RAIL_GAP_DP = 12
+const RAIL_ITEM_DP = 58 + RAIL_GAP_DP
+const RAIL_ITEM_MIN_DP = 40
+const RAIL_PADDING_DP = 28
+
+/**
+ * The height of each rail item's box so that all of them fit down a screen `height` tall, or undefined when the
+ * default fits. An 8 inch tablet in landscape is only about 600 dp tall, and a rail of nine or ten items at the
+ * default size ran off the bottom, cutting off More (and with it sign-out).
+ */
+export function railItemHeight(height: number, items: number): number | undefined {
+  if (items <= 0 || items * RAIL_ITEM_DP + RAIL_PADDING_DP <= height) return undefined
+  return Math.max(RAIL_ITEM_MIN_DP, Math.floor((height - RAIL_PADDING_DP) / items) - RAIL_GAP_DP)
+}
+
 const TILE_GAP = 12
 const TILE_MIN = 130
 

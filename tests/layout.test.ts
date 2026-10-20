@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { MEDIUM_MIN_DP, TWO_PANE_MIN_DP, detailGoesInPane, isTwoPaneNow, listPaneWidth, navigationPosition, sizeClassOf, tileWidthFor } from '@/shared/lib/layout'
+import { MEDIUM_MIN_DP, TWO_PANE_MIN_DP, detailGoesInPane, isTwoPaneNow, listPaneWidth, navigationPosition, railItemHeight, sizeClassOf, tileWidthFor } from '@/shared/lib/layout'
 import { useSelectionStore } from '@/shared/store/selectionStore'
 import { createRunner } from './harness'
 
@@ -60,6 +60,15 @@ async function main() {
     assert.equal(tileWidthFor(555), 271, 'one dp short: two by two, each tile half the row')
     assert.equal(tileWidthFor(465), 226, 'a 600 dp tablet beside the rail')
     for (const w of [300, 400, 465, 555]) { const tw = tileWidthFor(w)!; assert.ok(2 * tw + 12 <= w && 3 * tw + 24 > w - 1, `${w}: two tiles fill the row, three would not fit`) }
+  })
+  await t('the rail squeezes its items on a short screen so More is never cut off, and leaves them alone when there is room', () => {
+    assert.equal(railItemHeight(800, 10), undefined, 'a 10 inch tablet in landscape: ten at the full 70 dp (58 + 12) fit in 800')
+    assert.equal(railItemHeight(960, 10), undefined, 'portrait')
+    assert.equal(railItemHeight(600, 9), 51, 'an 8 inch tablet in landscape: nine boxes of 51 + 12 gap fill 600 (nine at 70 ran 30 dp off the bottom)')
+    assert.equal(railItemHeight(600, 10), 45, 'ten boxes of 45')
+    for (const items of [4, 6, 9, 10]) for (const h of [560, 600, 700, 800]) { const box = railItemHeight(h, items); if (box !== undefined && box > 40) assert.ok(items * (box + 12) + 28 <= h, `${items} items at ${h} dp`) }
+    assert.equal(railItemHeight(300, 10), 40, 'never squeezed past what holds an icon and its label')
+    assert.equal(railItemHeight(600, 0), undefined)
   })
 }
 main().then(report)

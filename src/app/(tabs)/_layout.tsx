@@ -2,10 +2,11 @@ import { Platform } from 'react-native'
 import { Tabs } from 'expo-router'
 import Feather from '@expo/vector-icons/Feather'
 import { MODULES, type IconName, type ModuleKey } from '@/shared/constants/modules'
-import { navigationPosition, useLayout } from '@/shared/lib/layout'
+import { navigationPosition, railItemHeight, useLayout } from '@/shared/lib/layout'
 import { useCan } from '@/shared/lib/permissions'
 import { useAlarms } from '@/modules/alarms/hooks/useAlarms'
 import { broadcastAvailable } from '@/modules/group-call/api/broadcast.api'
+import { liveAvailable } from '@/modules/live/api/live.api'
 
 /**
  * Hidden from the bar but still a place you can go. (`href: null` would remove the route altogether, so a link to it,
@@ -24,6 +25,7 @@ export default function TabsLayout() {
   const canDevices = useCan('devices:read')
   const canMap = useCan('map:read')
   const canAlarms = useCan('alarms:read')
+  const canWall = useCan('live:read') && liveAvailable()
   const canTrack = useCan('trackPlayback:read')
   const canGroupCall = useCan('groupCall:read') && broadcastAvailable()
   const canAdmins = useCan('users:read')
@@ -31,8 +33,14 @@ export default function TabsLayout() {
   const { active } = useAlarms()
   // A tablet (600 dp and up, in portrait or landscape) gets a rail down the left edge, like the web's sidebar, which
   // has room for every module. A narrow screen gets a bottom bar, which doesn't: the extra modules stay in More.
-  const { size } = useLayout()
+  const { size, height } = useLayout()
   const rail = navigationPosition(size) === 'left'
+  // Squeeze the rail's items on a short screen so that every one (More included) stays on it.
+  const railItems = [canDashboard, canDevices, rail && canWall, canMap, rail && canTrack, rail && canGroupCall, canAlarms, rail && canAdmins, rail && canWifi, true].filter(Boolean).length
+  const itemHeight = rail ? railItemHeight(height, railItems) : undefined
+  // A squeezed item has no room to spare, so its icon gets smaller and its label a little more height (descenders
+  // were being clipped).
+  const iconSize = (size: number) => (itemHeight ? Math.min(size, 20) : size)
 
   return (
     <Tabs
@@ -44,9 +52,11 @@ export default function TabsLayout() {
         // Labels under the icons make a slim rail. Beside them, the navigator reserves a
         // proportional sidebar (~360 dp at 960), which would leave the detail pane too narrow.
         tabBarLabelPosition: rail ? 'below-icon' : undefined,
+        // Squeezed items also give up their inner padding, or the icon and label would no longer fit the box.
+        tabBarItemStyle: itemHeight ? { height: itemHeight, paddingVertical: 0 } : undefined,
         tabBarActiveTintColor: '#0A6659',
         tabBarInactiveTintColor: '#94A3B8',
-        tabBarLabelStyle: { fontFamily: 'Inter_500Medium', fontSize: 11, lineHeight: 14 },
+        tabBarLabelStyle: { fontFamily: 'Inter_500Medium', fontSize: 11, lineHeight: itemHeight ? 16 : 14 },
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopColor: '#E2E8F0',
@@ -65,7 +75,7 @@ export default function TabsLayout() {
           // redirects (RequirePermission), so landing on "/" still works.
           href: canDashboard ? undefined : null,
           tabBarIcon: ({ color, size }) => (
-            <Feather name={iconOf('dashboard')} size={size} color={color as string} />
+            <Feather name={iconOf('dashboard')} size={iconSize(size)} color={color as string} />
           ),
         }}
       />
@@ -75,8 +85,16 @@ export default function TabsLayout() {
           title: 'Monitoring',
           href: canDevices ? undefined : null,
           tabBarIcon: ({ color, size }) => (
-            <Feather name={iconOf('devices')} size={size} color={color as string} />
+            <Feather name={iconOf('devices')} size={iconSize(size)} color={color as string} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="wall"
+        options={{
+          title: 'Live wall',
+          ...unlessShown(rail && canWall),
+          tabBarIcon: ({ color, size }) => <Feather name="grid" size={iconSize(size)} color={color as string} />,
         }}
       />
       <Tabs.Screen
@@ -85,7 +103,7 @@ export default function TabsLayout() {
           title: labelOf('map'),
           href: canMap ? undefined : null,
           tabBarIcon: ({ color, size }) => (
-            <Feather name={iconOf('map')} size={size} color={color as string} />
+            <Feather name={iconOf('map')} size={iconSize(size)} color={color as string} />
           ),
         }}
       />
@@ -95,7 +113,7 @@ export default function TabsLayout() {
           title: 'Track',
           // These four are in the rail where there is one, and in More where there isn't room.
           ...unlessShown(rail && canTrack),
-          tabBarIcon: ({ color, size }) => <Feather name="navigation" size={size} color={color as string} />,
+          tabBarIcon: ({ color, size }) => <Feather name="navigation" size={iconSize(size)} color={color as string} />,
         }}
       />
       <Tabs.Screen
@@ -103,7 +121,7 @@ export default function TabsLayout() {
         options={{
           title: 'Group call',
           ...unlessShown(rail && canGroupCall),
-          tabBarIcon: ({ color, size }) => <Feather name="radio" size={size} color={color as string} />,
+          tabBarIcon: ({ color, size }) => <Feather name="radio" size={iconSize(size)} color={color as string} />,
         }}
       />
       <Tabs.Screen
@@ -115,7 +133,7 @@ export default function TabsLayout() {
           tabBarBadge: active.length > 0 ? active.length : undefined,
           tabBarBadgeStyle: { backgroundColor: '#DC2626', color: '#FFFFFF', fontFamily: 'Inter_600SemiBold' },
           tabBarIcon: ({ color, size }) => (
-            <Feather name={iconOf('alarms')} size={size} color={color as string} />
+            <Feather name={iconOf('alarms')} size={iconSize(size)} color={color as string} />
           ),
         }}
       />
@@ -124,7 +142,7 @@ export default function TabsLayout() {
         options={{
           title: 'Admins',
           ...unlessShown(rail && canAdmins),
-          tabBarIcon: ({ color, size }) => <Feather name="users" size={size} color={color as string} />,
+          tabBarIcon: ({ color, size }) => <Feather name="users" size={iconSize(size)} color={color as string} />,
         }}
       />
       <Tabs.Screen
@@ -132,14 +150,14 @@ export default function TabsLayout() {
         options={{
           title: 'Wi-Fi',
           ...unlessShown(rail && canWifi),
-          tabBarIcon: ({ color, size }) => <Feather name="wifi" size={size} color={color as string} />,
+          tabBarIcon: ({ color, size }) => <Feather name="wifi" size={iconSize(size)} color={color as string} />,
         }}
       />
       <Tabs.Screen
         name="more"
         options={{
           title: 'More',
-          tabBarIcon: ({ color, size }) => <Feather name="menu" size={size} color={color as string} />,
+          tabBarIcon: ({ color, size }) => <Feather name="menu" size={iconSize(size)} color={color as string} />,
         }}
       />
     </Tabs>
