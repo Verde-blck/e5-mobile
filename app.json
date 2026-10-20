@@ -71,18 +71,10 @@
           "icon": "./assets/notification-icon.png",
           "color": "#0A6659",
           "defaultChannel": "alarm",
-          "sounds": [
-            "./assets/sounds/sos.wav"
-          ]
+          "sounds": ["./assets/sounds/sos.wav"]
         }
       ],
-      [
-        "@config-plugins/react-native-webrtc",
-        {
-          "cameraPermission": "The tablet never uses its camera: it only shows the helmet's.",
-          "microphonePermission": "The microphone is used to talk with the person wearing a helmet."
-        }
-      ]
+      "expo-notifications"
     ],
     "primaryColor": "#0A6659"
   }

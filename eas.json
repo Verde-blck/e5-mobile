@@ -22,6 +22,14 @@
       "env": {
         "EXPO_PUBLIC_USE_MOCKS": "false"
       }
+    },
+    "live": {
+      "extends": "preview",
+      "env": {
+        "EXPO_PUBLIC_USE_MOCKS": "false",
+        "EXPO_PUBLIC_LIVE_ENABLED": "true",
+        "EXPO_PUBLIC_BROADCAST_ENABLED": "true"
+      }
     }
   }
 }
