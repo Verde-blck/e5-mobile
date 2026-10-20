@@ -12,9 +12,11 @@ import { Text } from '@/shared/components/Text'
 import type { IconName } from '@/shared/constants/modules'
 import { confirmAction } from '@/shared/lib/confirm'
 import { endSession } from '@/shared/lib/session'
+import { useLayout } from '@/shared/lib/layout'
 import { useCan } from '@/shared/lib/permissions'
 import { useAuthStore } from '@/shared/store/authStore'
 import { simulateAlarm } from '@/modules/alarms/api/alarms.mock'
+import { broadcastAvailable } from '@/modules/group-call/api/broadcast.api'
 import { AlertsCard } from '@/modules/push/components/AlertsCard'
 import { unregisterThisTablet } from '@/modules/push/lib/unregister'
 
@@ -49,10 +51,15 @@ function MenuRow({
 
 export default function MoreScreen() {
   const user = useAuthStore((s) => s.user)
-  const canWifi = useCan('wifi:read')
-  const canTrack = useCan('trackPlayback:read')
+  // On a tablet these are modules in the rail; the bottom bar of a narrow screen has no room, so they are here.
+  const { size } = useLayout()
+  const inMore = size === 'compact'
+  const canWifi = useCan('wifi:read') && inMore
+  const canTrack = useCan('trackPlayback:read') && inMore
   const canFences = useCan('fences:read')
-  const canAdmins = useCan('users:read')
+  const canAdmins = useCan('users:read') && inMore
+  // Only offered where it can work: a real build keeps it hidden until voice messages are switched on.
+  const canGroupCall = useCan('groupCall:read') && broadcastAvailable() && inMore
   const initial = (user?.name ?? '?').trim().charAt(0).toUpperCase()
 
   function signOut() {
@@ -101,14 +108,19 @@ export default function MoreScreen() {
           hint="Two-step verification"
           onPress={() => router.push('/security')}
         />
+        {canGroupCall ? (
+          <View className="mt-3">
+            <MenuRow icon="radio" label="Group call" hint="Send a voice message to several helmets" onPress={() => router.navigate('/group-call')} />
+          </View>
+        ) : null}
         {canAdmins ? (
           <View className="mt-3">
-            <MenuRow icon="users" label="Administrators" hint="Accounts, permissions and groups" onPress={() => router.push('/admins')} />
+            <MenuRow icon="users" label="Administrators" hint="Accounts, permissions and groups" onPress={() => router.navigate('/admins')} />
           </View>
         ) : null}
         {canTrack ? (
           <View className="mt-3">
-            <MenuRow icon="navigation" label="Track playback" hint="Replay where a helmet has been" onPress={() => router.push('/track')} />
+            <MenuRow icon="navigation" label="Track playback" hint="Replay where a helmet has been" onPress={() => router.navigate('/track')} />
           </View>
         ) : null}
         {canFences ? (
@@ -122,7 +134,7 @@ export default function MoreScreen() {
               icon="wifi"
               label="Site Wi-Fi"
               hint="The network every helmet joins"
-              onPress={() => router.push('/wifi')}
+              onPress={() => router.navigate('/wifi')}
             />
           </View>
         ) : null}

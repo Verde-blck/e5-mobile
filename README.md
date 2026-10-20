@@ -51,9 +51,9 @@ using split-screen changes it live:
 
 | Width | Typical device | Layout |
 | --- | --- | --- |
-| under 600 dp | a phone | one pane, bottom tabs |
-| 600-839 dp | 8-10" tablet, portrait | one pane, bottom tabs, content capped at 720 dp |
-| 840 dp and up | 8-10" tablet, landscape | slim side rail; list and detail side by side |
+| under 600 dp | a phone | one pane, bottom bar of five (Dashboard, Monitoring, Live Map, Alarms, More); Track, Group call, Admins and Wi-Fi are in More |
+| 600-839 dp | 8-10" tablet, portrait | one pane, the side rail with every module, content capped at 720 dp |
+| 840 dp and up | 8-10" tablet, landscape | the side rail; list and detail side by side |
 
 - **List and detail.** On a wide screen, Alarms and Monitoring show the list on the left and
   the chosen item on the right. The detail screens (`AlarmDetailView`, `HelmetDetailView`)
@@ -65,6 +65,13 @@ using split-screen changes it live:
 - **Checking it without a tablet.** Run the sample-data web preview and resize the browser to
   960 x 600 and 1280 x 800 (landscape) and 600 x 960 and 800 x 1280 (portrait). dp and CSS
   pixels are the same unit there.
+
+### Navigation
+
+On a tablet (600 dp and up, in portrait or landscape) the main navigation is a **side rail** down the left edge, like the web's
+sidebar, with every module the account may use, in the web's order: Dashboard, Monitoring, Live Map, Track, Group call, Alarms,
+Admins, Wi-Fi, then More (fences, alerts, account, about). Each account sees only what it can use. A narrow screen has no room
+for nine, so it gets a bottom bar of five and the four extra modules are reached from More, with a way back.
 
 ## Live Map
 
@@ -90,7 +97,7 @@ never reported a position isn't drawn; the map says how many are missing.
 
 Built from Cypher's 16 Oct backend update.
 
-- **Site Wi-Fi** (More > Site Wi-Fi). The network every helmet is told to join; each helmet gets it in its
+- **Site Wi-Fi** (the **Wi-Fi** module in the side rail; More > Site Wi-Fi on a narrow screen). The network every helmet is told to join; each helmet gets it in its
   start-up settings. The password is never returned by the backend, so editing with an empty password
   keeps the current one. Saving with no password on a network that has none asks first (an open network).
 - **Connection** (on a helmet). Switch one helmet between Wi-Fi and mobile data. Both directions are
@@ -106,9 +113,26 @@ Built from Cypher's 16 Oct backend update.
 - **Not built.** The rest of a helmet's Unit Setting (upload method, picture quality, temperatures,
   hat-off and no-movement times, alarm sounds). The backend sends them, but their field names aren't documented.
 
+## Group call
+
+The **Group call** module in the side rail (More > Group call on a narrow screen; needs `groupCall:read`). Choose a group and helmets, **record a voice message on the tablet**, listen back,
+and send it to every chosen helmet, with a result per helmet (played, queued for when it reconnects, not sent). Live group
+calls (video) are not in the app. In a real build the screen stays hidden until voice messages are switched on, because the
+upload request is unchecked: what is known, what is guessed and how to switch it on are in [docs/GROUP_CALL.md](docs/GROUP_CALL.md).
+
+## Voice messages with one helmet
+
+On any helmet: **Voice messages** (needs `groupCall:read`). A conversation like the web's: what was sent to the helmet on the
+right, recordings from the wearer on the left, each with a player (one plays at a time). Before a recording is played its link
+is checked, because the links expire after about an hour; a dead one is reported as "no longer available" instead of playing
+silence. The list refreshes every few seconds while it is open. Reading works in a real build. **Sending** (record, listen
+back, send, then "Delivered" or "Queued" for an offline helmet) is off in a real build until
+`EXPO_PUBLIC_BROADCAST_ENABLED=true`, for the same reason as group messages: the web sends MP3 and a tablet can only record
+`.m4a`, which the backend must be willing to convert ([docs/GROUP_CALL.md](docs/GROUP_CALL.md)).
+
 ## Administrators
 
-More > Administrators (needs `ADMINISTRATOR_SETTING`; viewing needs only read). Built from the web's users module, with
+The **Admins** module in the side rail (More > Administrators on a narrow screen; needs `ADMINISTRATOR_SETTING`; viewing needs only read). Built from the web's users module, with
 its permission file copied verbatim so a role shows the same screens on a tablet as in the browser.
 
 - **Accounts:** list with search, add, edit, delete. A password left blank on an edit is never sent, so it can't be wiped.
@@ -148,12 +172,14 @@ alerts says so plainly. Full setup and turn-on steps: [docs/PUSH_SETUP.md](docs/
 - "Send a test alert" works without the backend, to check the siren on a locked tablet.
 - Permissions follow the web: `fences`, `live` and `groups` are capabilities (no tab), as in the web's `modules.ts`.
 
-## Calls with a helmet
+## Live view and calls with a helmet
 
-The app side is built and tested against a simulated engine; real calls wait for the backend's signalling.
-A real build shows no Call button (it reports calling as unavailable), so nothing is offered that can't work.
-Who may call follows the backend's rule: anyone signed in for an open SOS in the last 30 minutes, otherwise
-`SURVEILLANCE_MANAGE`. Details, what real calls need, and a build check of the WebRTC library: [docs/CALLS.md](docs/CALLS.md).
+On a helmet: **Watch live**, **Call helmet**, and **Join SOS call** (also in the SOS banner and on an SOS alarm). Built on the
+web's own live module, so it uses the same protocol: the helmet's picture and sound over WebRTC from the media server, and
+voice back from the tablet (no camera, no camera permission). Who may: watching needs live view, calling needs live
+management, and anyone signed in can join an SOS. A call ends, and the helmet leaves call mode, when you hang up, leave the
+screen, or stay out of the app for more than a few seconds. **Not yet tried on a real helmet**, so a real build keeps it
+hidden until `EXPO_PUBLIC_LIVE_ENABLED=true`: what to try and what can't be known from here are in [docs/CALLS.md](docs/CALLS.md).
 
 ## Fences
 
@@ -178,7 +204,7 @@ Built from the web app's own fence module (types, geometry and validation are th
 Built from the web app's track-playback module; the rules in `lib/track.ts` and `lib/availability.ts` are
 the web code, with the changes below.
 
-- **Screen.** More > Track playback, or "Replay route" on any helmet (which opens its last 7 days at once).
+- **Screen.** The **Track** module in the side rail (More > Track playback on a narrow screen), or "Replay route" on any helmet (which opens its last 7 days at once).
   Pick a helmet and a period (quick ranges, or two YYYY-MM-DD dates), then View: six figures, an uptime
   chart, the route with A/B markers and a moving marker, play/pause, point-by-point stepping, 1x to 64x
   speeds, and a scrubber. Export hands over a CSV (a download in the browser, the share sheet on a tablet).

@@ -8,7 +8,7 @@ import { cn } from '@/shared/lib/cn'
 import type { DeviceView } from '@/modules/devices/types'
 import { formatBytes, type ClipFile } from '../lib/clip'
 import { describePeriod, isTooSmall, narrowestAcrossM, validateDraft } from '../lib/geometry'
-import { ClipPreview } from './ClipPreview'
+import { AudioPreview } from '@/shared/components/AudioPreview'
 import { BEHAVIOR_LABEL, FREQUENCIES, MIN_FENCE_ACROSS_M, type Fence, type FenceBehavior, type FenceDraft } from '../types'
 
 /** "0830" -> "08:30": digits only, the colon added for you. */
@@ -278,7 +278,7 @@ export function FenceForm({ draft, onChange, existing, devices, saving, error, c
               <Text className="flex-1 text-sm" numberOfLines={1}>{clip.name}</Text>
               {clip.size != null || clip.file ? <Text className="text-xs text-slate-500">{formatBytes(clip.file?.size ?? clip.size ?? 0)}</Text> : null}
             </View>
-            <ClipPreview uri={clip.uri} />
+            <AudioPreview uri={clip.uri} />
             <Pressable hitSlop={8} onPress={onDiscardClip}>
               <Text className="text-sm text-slate-600 underline">Discard new clip</Text>
             </Pressable>

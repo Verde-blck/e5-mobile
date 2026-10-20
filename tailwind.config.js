@@ -19,6 +19,7 @@ module.exports = {
           secondary: '#0C352F',
           tint: '#E6F2F0',
           soft: '#B9DAD4',
+          mint: '#A3E2D7', // the light teal on dark panels (live status, call controls)
         },
       },
       /*

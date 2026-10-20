@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native'
 import Feather from '@expo/vector-icons/Feather'
 import { Card, SectionTitle } from '@/shared/components/Card'
@@ -8,6 +9,7 @@ import { Screen } from '@/shared/components/Screen'
 import { ErrorState, LoadingState } from '@/shared/components/States'
 import { Text } from '@/shared/components/Text'
 import { cn } from '@/shared/lib/cn'
+import { tileWidthFor } from '@/shared/lib/layout'
 import { useCan } from '@/shared/lib/permissions'
 import { useAuthStore } from '@/shared/store/authStore'
 import type { IconName } from '@/shared/constants/modules'
@@ -30,11 +32,14 @@ function Tile({
   label,
   value,
   tone,
+  width,
 }: {
   icon: IconName
   label: string
   value: number | string
   tone: 'brand' | 'green' | 'slate' | 'red'
+  /** The tile's width once the row has been measured; until then it just shares the row. */
+  width?: number
 }) {
   const TONES = {
     brand: { bg: 'bg-brand-tint', color: '#0A6659' },
@@ -43,7 +48,7 @@ function Tile({
     red: { bg: 'bg-red-50', color: '#DC2626' },
   }[tone]
   return (
-    <View style={{ flexGrow: 1, flexBasis: 130 }}>
+    <View style={width ? { width } : { flexGrow: 1, flexBasis: 130 }}>
     <Card>
       <View className={cn('mb-3 h-9 w-9 items-center justify-center rounded-full', TONES.bg)}>
         <Feather name={icon} size={18} color={TONES.color} />
@@ -72,6 +77,10 @@ function DashboardScreen() {
   const user = useAuthStore((s) => s.user)
   const fleet = useDeviceViews()
   const summary = useFleetSummary()
+  // Four tiles in a row when they have room, otherwise an even two by two: never three and an orphan, which is what
+  // a flowing row gives beside a side rail on a tablet in portrait.
+  const [rowWidth, setRowWidth] = useState(0)
+  const tileWidth = tileWidthFor(rowWidth)
 
   const attention = fleet.devices
     // A deactivated helmet being offline is expected, not something to chase.
@@ -124,11 +133,12 @@ function DashboardScreen() {
           {user?.name ?? 'Welcome'}
         </Text>
 
-        <View className="mb-6 flex-row flex-wrap gap-3">
-          <Tile icon="shield" label="Helmets" value={s?.total ?? '—'} tone="brand" />
-          <Tile icon="wifi" label="Online" value={s?.online ?? '—'} tone="green" />
-          <Tile icon="wifi-off" label="Offline" value={s?.offline ?? '—'} tone="slate" />
+        <View className="mb-6 flex-row flex-wrap gap-3" onLayout={(e) => setRowWidth(e.nativeEvent.layout.width)}>
+          <Tile width={tileWidth} icon="shield" label="Helmets" value={s?.total ?? '—'} tone="brand" />
+          <Tile width={tileWidth} icon="wifi" label="Online" value={s?.online ?? '—'} tone="green" />
+          <Tile width={tileWidth} icon="wifi-off" label="Offline" value={s?.offline ?? '—'} tone="slate" />
           <Tile
+            width={tileWidth}
             icon="bell"
             label="Alarms, last 24 h"
             value={s?.alarms24h ?? '—'}

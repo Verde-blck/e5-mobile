@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useFocusEffect } from 'expo-router'
 import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from 'expo-audio'
 
 /** What a recording produces: a file on the tablet, labelled with what it really is. */
@@ -85,6 +86,16 @@ export function useRecorder({ maxSeconds, namePrefix, onFinished }: { maxSeconds
       if (live.current) void release()
     },
     [release]
+  )
+
+  // Tabs stay mounted when you switch to another one, so leaving the screen must also stop the recording.
+  useFocusEffect(
+    useCallback(
+      () => () => {
+        if (live.current) void release()
+      },
+      [release]
+    )
   )
 
   return { active, seconds: Math.min(maxSeconds, Math.floor((state.durationMillis ?? 0) / 1000)), error, start, stop, cancel }

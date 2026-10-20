@@ -111,7 +111,8 @@ export default function RootLayout() {
               name="alarm/[id]"
               options={{ headerShown: true, title: 'Alarm', ...HEADER }}
             />
-            <Stack.Screen name="admins" options={{ headerShown: true, title: 'Administrators', ...HEADER }} />
+            <Stack.Screen name="live/[deviceId]" options={{ headerShown: true, title: 'Live view', ...HEADER }} />
+            <Stack.Screen name="messages/[deviceId]" options={{ headerShown: true, title: 'Voice messages', ...HEADER }} />
             <Stack.Screen name="admin/[id]" options={{ headerShown: true, title: 'Administrator', ...HEADER }} />
             {/* A call covers the whole screen and can't be swiped away by accident. */}
             <Stack.Screen name="call/[deviceId]" options={{ headerShown: false, presentation: 'fullScreenModal', gestureEnabled: false, animation: 'fade' }} />
@@ -122,14 +123,6 @@ export default function RootLayout() {
             <Stack.Screen
               name="fence/[id]"
               options={{ headerShown: true, title: 'Fence', ...HEADER }}
-            />
-            <Stack.Screen
-              name="track"
-              options={{ headerShown: true, title: 'Track playback', ...HEADER }}
-            />
-            <Stack.Screen
-              name="wifi"
-              options={{ headerShown: true, title: 'Site Wi-Fi', ...HEADER }}
             />
             <Stack.Screen
               name="security"

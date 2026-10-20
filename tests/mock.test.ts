@@ -12,6 +12,9 @@ import { ALL_PERMISSIONS } from '@/shared/constants/modules'
 import * as settings from '@/modules/settings/api/settings.api'
 import { TimeoutError, withTimeout } from '@/shared/lib/withTimeout'
 import * as admins from '@/modules/users/api/admins.api'
+import { sendBroadcast } from '@/modules/group-call/api/broadcast.api'
+import { fetchMessages, sendVoiceMessage } from '@/modules/messaging/api/messages.api'
+import { getMockFleet } from '@/modules/devices/api/devices.mock'
 import { mockUserFor } from '@/modules/auth/mock-data'
 import { useAuthStore } from '@/shared/store/authStore'
 import { createRunner } from './harness'
@@ -154,6 +157,26 @@ async function main() {
     useAuthStore.getState().setUser({ ...mockUserFor('ADM-001'), username: 'someone-else' })
     await assert.rejects(admins.deleteAdmin(boss.id), (e: { response?: { status: number; data?: { error?: string } } }) => e.response?.status === 409 && e.response?.data?.error === 'last_super_admin')
     await admins.deleteAdmin(second.id)
+  })
+
+  await t('sample voice messages: a reachable helmet plays it now, an offline one has it queued, a deactivated one is not taken', async () => {
+    const fleet = getMockFleet(), now = Date.now()
+    const online = fleet.find((d) => d.active && derivePresence(d.lastSeenAt, now) !== 'offline')!, offline = fleet.find((d) => d.active && derivePresence(d.lastSeenAt, now) === 'offline')!, inactive = fleet.find((d) => !d.active)
+    assert.ok(online && offline, 'the sample fleet has both')
+    const ids = [online.id, offline.id, ...(inactive ? [inactive.id] : []), 'not-a-helmet']
+    const got = await sendBroadcast(ids, { uri: 'file:///m.m4a', name: 'm.m4a', mimeType: 'audio/mp4' })
+    assert.equal(got.find((d) => d.deviceId === online.id)?.delivered, true); assert.equal(got.find((d) => d.deviceId === offline.id)?.delivered, false)
+    assert.ok(got.every((d) => typeof d.messageId === 'number'), 'each helmet gets its own copy, as in the real answer')
+    assert.ok(!got.some((d) => d.deviceId === 'not-a-helmet') && (!inactive || !got.some((d) => d.deviceId === inactive.id)), 'left out of the answer, which the screen reports as "not sent"')
+  })
+
+  await t('sample conversations: three messages (sent, from the wearer, sent), and a new one joins the end, queued if the helmet is offline', async () => {
+    const fleet = getMockFleet(), now = Date.now()
+    const online = fleet.find((d) => d.active && derivePresence(d.lastSeenAt, now) !== 'offline')!, offline = fleet.find((d) => d.active && derivePresence(d.lastSeenAt, now) === 'offline')!
+    const seeded = await fetchMessages(online.id); assert.deepEqual(seeded.map((m) => m.direction), ['TO_HELMET', 'FROM_HELMET', 'TO_HELMET']); assert.ok(seeded.every((m) => m.audioUrl.startsWith('data:audio/wav')))
+    const audio = { uri: 'blob:fake-recording', name: 'message-1.m4a', mimeType: 'audio/mp4' }
+    assert.equal((await sendVoiceMessage(online.id, audio)).delivered, true); assert.equal((await sendVoiceMessage(offline.id, audio)).delivered, false, 'offline: queued')
+    const after = await fetchMessages(online.id); assert.equal(after.length, 4); assert.deepEqual([after[3].direction, after[3].audioUrl], ['TO_HELMET', 'blob:fake-recording'])
   })
 }
 

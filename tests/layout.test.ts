@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { MEDIUM_MIN_DP, TWO_PANE_MIN_DP, detailGoesInPane, isTwoPaneNow, listPaneWidth, sizeClassOf } from '@/shared/lib/layout'
+import { MEDIUM_MIN_DP, TWO_PANE_MIN_DP, detailGoesInPane, isTwoPaneNow, listPaneWidth, navigationPosition, sizeClassOf, tileWidthFor } from '@/shared/lib/layout'
 import { useSelectionStore } from '@/shared/store/selectionStore'
 import { createRunner } from './harness'
 
@@ -45,6 +45,21 @@ async function main() {
     s.selectAlarm('77'); assert.equal(useSelectionStore.getState().alarmId, '77'); assert.equal(useSelectionStore.getState().helmetId, null)
     s.selectHelmet('866652022956404'); assert.equal(useSelectionStore.getState().alarmId, '77')
     s.clear(); assert.equal(useSelectionStore.getState().alarmId, null); assert.equal(useSelectionStore.getState().helmetId, null)
+  })
+  await t('the main navigation is a side rail on any tablet (600 dp up, portrait or landscape) and a bottom bar only on a narrow screen, where nine modules can\'t fit', () => {
+    assert.equal(navigationPosition(sizeClassOf(MEDIUM_MIN_DP - 1)), 'bottom', 'a phone')
+    assert.equal(navigationPosition(sizeClassOf(MEDIUM_MIN_DP)), 'left', 'an 8 inch tablet in portrait is exactly 600')
+    assert.equal(navigationPosition(sizeClassOf(800)), 'left', 'a 10 inch tablet in portrait')
+    assert.equal(navigationPosition(sizeClassOf(TWO_PANE_MIN_DP)), 'left', 'a tablet in landscape')
+    assert.deepEqual((['compact', 'medium', 'expanded'] as const).map(navigationPosition), ['bottom', 'left', 'left'])
+  })
+  await t('dashboard tiles: four across when there is room, an even two by two when there is not, never three and an orphan', () => {
+    assert.equal(tileWidthFor(0), undefined, 'not measured yet')
+    assert.equal(tileWidthFor(568), 133, 'a 600 dp tablet without a rail: four across (568 = 4 x 133 + 3 x 12)')
+    assert.equal(tileWidthFor(556), 130, 'exactly enough for four')
+    assert.equal(tileWidthFor(555), 271, 'one dp short: two by two, each tile half the row')
+    assert.equal(tileWidthFor(465), 226, 'a 600 dp tablet beside the rail')
+    for (const w of [300, 400, 465, 555]) { const tw = tileWidthFor(w)!; assert.ok(2 * tw + 12 <= w && 3 * tw + 24 > w - 1, `${w}: two tiles fill the row, three would not fit`) }
   })
 }
 main().then(report)

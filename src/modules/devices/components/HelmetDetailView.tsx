@@ -3,6 +3,7 @@ import { Stack } from 'expo-router'
 import { router } from 'expo-router'
 import { Button } from '@/shared/components/Button'
 import { CallButton } from '@/modules/calls/components/CallButton'
+import { LiveButton } from '@/modules/live/components/LiveButton'
 import { Container } from '@/shared/components/Container'
 import { Card, Row, SectionTitle } from '@/shared/components/Card'
 import { Screen } from '@/shared/components/Screen'
@@ -37,6 +38,7 @@ export function HelmetDetailView({ id, embedded = false }: { id: string; embedde
   const { devices, now, isLoading, isError, refetch } = useDeviceViews()
   const device = devices.find((d) => d.id === id)
   const canReplay = useCan('trackPlayback:read')
+  const canMessage = useCan('groupCall:read')
 
   if (isLoading) {
     return (
@@ -156,14 +158,24 @@ export function HelmetDetailView({ id, embedded = false }: { id: string; embedde
           </>
         ) : null}
 
+        <LiveButton deviceId={device.id} active={device.active} className="mb-3" />
         <CallButton deviceId={device.id} className="mb-3" />
+        {canMessage ? (
+          <Button
+            title="Voice messages"
+            variant="secondary"
+            icon="message-circle"
+            className="mb-3"
+            onPress={() => router.push(`/messages/${encodeURIComponent(device.id)}`)}
+          />
+        ) : null}
         {canReplay ? (
           <Button
             title="Replay route"
             variant="secondary"
             icon="rewind"
             className="mb-5"
-            onPress={() => router.push(`/track?deviceId=${encodeURIComponent(device.id)}`)}
+            onPress={() => router.navigate({ pathname: '/track', params: { deviceId: device.id } })}
           />
         ) : null}
 

@@ -18,8 +18,17 @@ export function useAdmins() {
   return { admins: q.data ?? [], isLoading: q.isLoading, isError: q.isError, refetch: q.refetch }
 }
 
+/** Groups are also what the Group Call screen lists, so a role with group call (or group management) sees them without being able to administer accounts. */
+function useGroupsEnabled() {
+  const signedIn = useAuthStore((s) => s.isAuthenticated)
+  const users = useCan('users:read')
+  const groupCall = useCan('groupCall:read')
+  const groups = useCan('groups:read')
+  return signedIn && (users || groupCall || groups)
+}
+
 export function useGroups() {
-  const enabled = useEnabled()
+  const enabled = useGroupsEnabled()
   const q = useQuery({ queryKey: ['groups'], queryFn: fetchGroups, enabled, retry })
   return { groups: q.data ?? [], isLoading: q.isLoading, isError: q.isError, refetch: q.refetch }
 }

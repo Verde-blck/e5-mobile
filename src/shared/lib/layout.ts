@@ -5,8 +5,8 @@ import { Dimensions, useWindowDimensions } from 'react-native'
  * window size classes. The width is the *window's*, not the device's, so
  * turning a tablet or putting the app in split-screen changes the layout.
  *
- *  - compact  < 600   phones                                 one pane, bottom tabs
- *  - medium   600-839 8-10" tablets in portrait              one pane, bottom tabs, capped width
+ *  - compact  < 600   phones                                 one pane, bottom tabs (the modules that don't fit are in More)
+ *  - medium   600-839 8-10" tablets in portrait              one pane, side rail, capped width
  *  - expanded >= 840  8-10" tablets in landscape             side rail, list and detail together
  */
 export const MEDIUM_MIN_DP = 600
@@ -16,6 +16,14 @@ export const TWO_PANE_MIN_DP = 840
 export const CONTENT_MAX_DP = 720
 
 export type SizeClass = 'compact' | 'medium' | 'expanded'
+
+/**
+ * Where the main navigation goes: a rail down the left edge from 600 dp up (a tablet in portrait or landscape),
+ * a bottom bar below that. A rail holds every module like the web's sidebar; a bottom bar can't hold nine.
+ */
+export function navigationPosition(sizeClass: SizeClass): 'left' | 'bottom' {
+  return sizeClass === 'compact' ? 'bottom' : 'left'
+}
 
 export function sizeClassOf(width: number): SizeClass {
   if (width >= TWO_PANE_MIN_DP) return 'expanded'
@@ -47,4 +55,18 @@ export function isTwoPaneNow(): boolean {
  */
 export function detailGoesInPane(twoPane: boolean, tabAvailable: boolean): boolean {
   return twoPane && tabAvailable
+}
+
+const TILE_GAP = 12
+const TILE_MIN = 130
+
+/**
+ * The width of each of the four dashboard tiles in a row `rowWidth` wide, or undefined before the row has been
+ * measured. Four across when they have room, otherwise an even two by two: never three and an orphan, which is what a
+ * flowing row gives beside a side rail on a tablet in portrait.
+ */
+export function tileWidthFor(rowWidth: number): number | undefined {
+  if (!rowWidth) return undefined
+  const columns = rowWidth >= 4 * TILE_MIN + 3 * TILE_GAP ? 4 : 2
+  return Math.floor((rowWidth - TILE_GAP * (columns - 1)) / columns)
 }
