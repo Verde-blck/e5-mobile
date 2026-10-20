@@ -111,9 +111,6 @@ export default function RootLayout() {
               name="alarm/[id]"
               options={{ headerShown: true, title: 'Alarm', ...HEADER }}
             />
-            <Stack.Screen name="live/[deviceId]" options={{ headerShown: true, title: 'Live view', ...HEADER }} />
-            <Stack.Screen name="messages/[deviceId]" options={{ headerShown: true, title: 'Voice messages', ...HEADER }} />
-            <Stack.Screen name="group-call" options={{ headerShown: true, title: 'Group call', ...HEADER }} />
             <Stack.Screen name="admins" options={{ headerShown: true, title: 'Administrators', ...HEADER }} />
             <Stack.Screen name="admin/[id]" options={{ headerShown: true, title: 'Administrator', ...HEADER }} />
             {/* A call covers the whole screen and can't be swiped away by accident. */}

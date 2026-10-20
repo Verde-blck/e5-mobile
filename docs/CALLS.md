@@ -1,58 +1,45 @@
-# Live view and calls with a helmet
+# Calls with a helmet
 
-## State: built to the web's own protocol, not yet tried on a real helmet
+## State: the app side is built; the call itself is not
 
-Live view ("Watch live") and one-to-one calls are built on the web dashboard's live module (supplied 20 Oct 2026) and the
-backend's Helmet Video & Live Stream guide. They work end to end in sample-data mode and in the browser preview. **They have
-not been tried on a real tablet with a real helmet and media server**, which is why a real build keeps them hidden until
-`EXPO_PUBLIC_LIVE_ENABLED=true`.
+Built and tested against a **simulated** engine (sample-data mode and the browser preview):
 
-## What it does
+- **Who may call** (`modules/calls/lib/access.ts`), the backend's rule: anyone signed in may join a call for a
+  helmet with an **open SOS alarm raised in the last 30 minutes**; any other call needs `SURVEILLANCE_MANAGE`
+  (`live:write`). The app only decides what to *offer*; the backend decides what is *allowed*.
+- **Entry points:** *Join call* in the SOS banner (one tap while the siren is going), *Join SOS call* on an open
+  SOS alarm, *Call helmet* on a helmet. Each appears only when this build can call and this account may.
+- **The call screen** (`/call/[deviceId]`): microphone, connecting, in-call timer, mute, speaker, hang up, and
+  a plain screen for each failure (microphone blocked, refused, helmet unreachable, dropped, helmet hung up).
+  Leaving the screen ends the call, including one still connecting.
+- **The seam** (`modules/calls/lib/engine.ts`): the screens, state machine and access rule don't know what a
+  call is made of. A real build currently reports calling as **unavailable** (`engines.ts`), so no Call button
+  is shown that can only fail.
 
-- **Watch live** (needs live view, `live:read`): the helmet's camera and sound. The sound starts off, with one tap to turn
-  it on. Closing only closes this tablet's connection (others may be watching, and the helmet stops by itself about 20
-  seconds after the last viewer leaves). **End stream for everyone** is separate and asks first.
-- **Call helmet** (needs `live:write`) and **Join SOS call** (anyone signed in, for a helmet with an open SOS in the last 30
-  minutes): you hear and see the helmet and the wearer hears you. The tablet sends **voice only** and never uses its own
-  camera, so the app carries no camera permission. A refused microphone is reported **before** the helmet is touched, so a
-  helmet is never left in call mode by a call that couldn't start.
-- A call ends, and takes the helmet out of call mode, whenever it ends: hang up, leave the screen, or leave the app for more
-  than 4 seconds. A glance away (the notification shade, a permission dialog) doesn't end it.
+## What real calls need
 
-## How it works
+1. **The signalling.** I don't have it. I need what `POST /devices/{id}/webrtc-call/start` returns and how the call
+   is set up and torn down: SDP and ICE exchange, the stop/hang-up request, STUN/TURN settings, and whether the
+   tablet's audio reaches the helmet through ZLMediaKit or through Asterisk (SIP). The web dashboard already
+   does all of this, so its call code is the best source (plus Cypher's guide for calls and live view).
+2. **A WebRTC engine** implementing `CallEngine`, on `react-native-webrtc` with `@config-plugins/react-native-webrtc`.
+3. **A real tablet and a real helmet** to test on. A call can't be proven without both.
 
-`POST /devices/{id}/live/start` or `/webrtc-call/start` makes the helmet start and returns media-server addresses. The tablet
-then POSTs its WebRTC offer as plain text to that address and gets `{ code, sdp }` back (ZLMediaKit). Code 0 is connected;
-anything else usually means the helmet hasn't started sending yet, so it retries every 2 seconds for up to 30. There are no
-STUN or TURN servers. The picture is received from the watch address and, in a call, the microphone is sent to the push
-address. `webrtc-call/stop` ends a call; `live/stop` ends a stream for everyone.
+## Build check already done (scratch copy, not in the project)
 
-On the tablet this runs on `react-native-webrtc`; the browser preview runs the same exchange on the browser's own WebRTC. In
-sample-data mode the media addresses are fake and answered with a generated test picture.
+Adding `react-native-webrtc` 155 and its Expo plugin to a copy of this project and running Expo's Android
+prebuild **succeeds** (New Architecture on). It adds `RECORD_AUDIO`, `MODIFY_AUDIO_SETTINGS`, `BLUETOOTH` and
+`WAKE_LOCK`, and also `CAMERA`, which an audio-only call doesn't need. When the engine is added:
 
-## Turning it on, and what to try
+- block `android.permission.CAMERA` in `app.json` (`blockedPermissions`);
+- turn the microphone on in the `expo-audio` plugin (`recordAudioAndroid`, `microphonePermission`), which is off today;
+- expect the APK to grow (native WebRTC libraries).
 
-1. Build with `EXPO_PUBLIC_LIVE_ENABLED=true` and install on a tablet (`npm run apk`).
-2. With the test helmet: **Watch live** (does the picture arrive within about 10 seconds? does the sound work?), then a second
-   viewer, then close one and check the stream carries on.
-3. **Call helmet**: can you hear it and can it hear you? Hang up and confirm the helmet leaves call mode.
-4. **Join SOS call** from an SOS alarm, and from the banner.
-5. Leave the app mid-call for 5 seconds: the helmet should leave call mode.
-6. Try it on the connection the tablets will really use (site Wi-Fi, and mobile data).
+The dependency is deliberately **not** in the project yet: it would add weight for nothing until the signalling is known.
 
-## What can't be known from here
+## Decisions to make
 
-- **The real network path.** With no STUN or TURN, it relies on the media server being reachable directly. That works for the
-  web dashboard, but a tablet on mobile data or behind a stricter firewall may behave differently. If it doesn't connect,
-  ask Cypher whether the media server advertises a public address.
-- **react-native-webrtc on a real device** (the stream handoff, the audio route). The tablet's speaker is the normal output;
-  there is no speaker toggle.
-- **A tablet that is killed or crashes mid-call** can't tell the backend, so the helmet stays in call mode. The web has the
-  same gap and covers closing a tab; for the app, ask Cypher to take a helmet out of call mode by itself when the admin's
-  media connection drops, as live view already does after about 20 seconds.
-
-## Not built: live group call
-
-The protocol is now known (`POST /api/webrtc-group-call/start` with up to 8 helmets, one call room, `GET` to rejoin,
-`POST .../{callId}/stop`), and the session code is the one-helmet session above, several times over. It is a separate piece
-of work: a tile per helmet, per-helmet joining and retry, and rejoining after the app restarts.
+- **Does a call survive the screen locking?** Version one assumes **no**: a call is for someone looking at the
+  tablet. Keeping a call alive while locked needs an Android foreground service and a permission prompt of its own.
+- **Live video** (watching the helmet camera) is the same signalling family and comes after calls.
+- **Group calls** use a different path (Asterisk/SIP, per the web's module) and are a separate piece of work.

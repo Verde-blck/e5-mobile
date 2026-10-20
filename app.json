@@ -28,8 +28,7 @@
       "blockedPermissions": [
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.CAMERA"
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -74,13 +73,6 @@
           "sounds": [
             "./assets/sounds/sos.wav"
           ]
-        }
-      ],
-      [
-        "@config-plugins/react-native-webrtc",
-        {
-          "cameraPermission": "The tablet never uses its camera: it only shows the helmet's.",
-          "microphonePermission": "The microphone is used to talk with the person wearing a helmet."
         }
       ]
     ],

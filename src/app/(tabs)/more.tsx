@@ -15,7 +15,6 @@ import { endSession } from '@/shared/lib/session'
 import { useCan } from '@/shared/lib/permissions'
 import { useAuthStore } from '@/shared/store/authStore'
 import { simulateAlarm } from '@/modules/alarms/api/alarms.mock'
-import { broadcastAvailable } from '@/modules/group-call/api/broadcast.api'
 import { AlertsCard } from '@/modules/push/components/AlertsCard'
 import { unregisterThisTablet } from '@/modules/push/lib/unregister'
 
@@ -54,8 +53,6 @@ export default function MoreScreen() {
   const canTrack = useCan('trackPlayback:read')
   const canFences = useCan('fences:read')
   const canAdmins = useCan('users:read')
-  // Only offered where it can work: a real build keeps it hidden until voice messages are switched on.
-  const canGroupCall = useCan('groupCall:read') && broadcastAvailable()
   const initial = (user?.name ?? '?').trim().charAt(0).toUpperCase()
 
   function signOut() {
@@ -104,11 +101,6 @@ export default function MoreScreen() {
           hint="Two-step verification"
           onPress={() => router.push('/security')}
         />
-        {canGroupCall ? (
-          <View className="mt-3">
-            <MenuRow icon="radio" label="Group call" hint="Send a voice message to several helmets" onPress={() => router.push('/group-call')} />
-          </View>
-        ) : null}
         {canAdmins ? (
           <View className="mt-3">
             <MenuRow icon="users" label="Administrators" hint="Accounts, permissions and groups" onPress={() => router.push('/admins')} />
