@@ -40,7 +40,7 @@ export const mockViewer: AuthUser = {
   name: 'Settings Viewer',
   role: 'Viewer',
   superAdmin: false,
-  permissions: ['devices:read', 'map:read', 'alarms:read', 'unitSettings:read', 'wifi:read'],
+  permissions: ['devices:read', 'map:read', 'alarms:read', 'unitSettings:read', 'wifi:read', 'fences:read', 'trackPlayback:read'],
   deviceIds: [],
   twoFactorEnabled: false,
   scope: { allSites: true, sites: [] },

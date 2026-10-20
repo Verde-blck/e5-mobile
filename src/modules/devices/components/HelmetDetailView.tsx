@@ -1,12 +1,15 @@
 import { ScrollView, View } from 'react-native'
 import { Stack } from 'expo-router'
+import { router } from 'expo-router'
 import { Button } from '@/shared/components/Button'
+import { CallButton } from '@/modules/calls/components/CallButton'
 import { Container } from '@/shared/components/Container'
 import { Card, Row, SectionTitle } from '@/shared/components/Card'
 import { Screen } from '@/shared/components/Screen'
 import { EmptyState, ErrorState, LoadingState } from '@/shared/components/States'
 import { Text } from '@/shared/components/Text'
 import { cn } from '@/shared/lib/cn'
+import { useCan } from '@/shared/lib/permissions'
 import { formatCoord, formatDateTime } from '@/shared/lib/format'
 import { BatteryChip } from '@/modules/devices/components/BatteryChip'
 import { PresenceBadge } from '@/modules/devices/components/PresenceBadge'
@@ -33,6 +36,7 @@ const yesNo = (v: boolean | undefined) => (v === undefined ? '—' : v ? 'Yes' :
 export function HelmetDetailView({ id, embedded = false }: { id: string; embedded?: boolean }) {
   const { devices, now, isLoading, isError, refetch } = useDeviceViews()
   const device = devices.find((d) => d.id === id)
+  const canReplay = useCan('trackPlayback:read')
 
   if (isLoading) {
     return (
@@ -150,6 +154,17 @@ export function HelmetDetailView({ id, embedded = false }: { id: string; embedde
               ) : null}
             </Card>
           </>
+        ) : null}
+
+        <CallButton deviceId={device.id} className="mb-3" />
+        {canReplay ? (
+          <Button
+            title="Replay route"
+            variant="secondary"
+            icon="rewind"
+            className="mb-5"
+            onPress={() => router.push(`/track?deviceId=${encodeURIComponent(device.id)}`)}
+          />
         ) : null}
 
         <ConnectionSection device={device} />

@@ -22,6 +22,11 @@ export type ModuleKey =
   | 'unitSettings'
   | 'wifi'
   | 'profile'
+  // Permission-only: features inside other pages, with their own backend code but no
+  // tab or menu entry of their own. See CAPABILITIES below. (Same as the web dashboard.)
+  | 'live'
+  | 'fences'
+  | 'groups'
 
 // Permissions are module + action, not just module. See the web dashboard's
 // modules.ts for why.
@@ -47,13 +52,21 @@ export const MODULES: ModuleDef[] = [
   { key: 'alarms', label: 'Alarm Record', icon: 'bell' },
   { key: 'users', label: 'Administrators', icon: 'users' },
   { key: 'unitSettings', label: 'Unit Setting', icon: 'sliders' },
-  { key: 'wifi', label: 'Wi-Fi', icon: 'wifi' },
+  // Wi-Fi, SIM and mobile data. Key stays "wifi" so existing permissions keep working.
+  { key: 'wifi', label: 'Connectivity', icon: 'wifi' },
   { key: 'profile', label: 'Company Profile', icon: 'briefcase' },
 ]
 
 export const ACTIONS: Action[] = ['read', 'write', 'delete']
 
+/**
+ * Permissions that belong to a feature rather than a page: live view and calls (inside Monitoring
+ * Center and each helmet's page), fences (inside Live Map) and groups (inside Group Call). They
+ * gate buttons and panels and never get a tab.
+ */
+export const CAPABILITIES: ModuleKey[] = ['live', 'fences', 'groups']
+
 /** Every permission string the system knows about. */
-export const ALL_PERMISSIONS: Permission[] = MODULES.flatMap((m) =>
-  ACTIONS.map((a): Permission => `${m.key}:${a}`)
+export const ALL_PERMISSIONS: Permission[] = [...MODULES.map((m) => m.key), ...CAPABILITIES].flatMap((key) =>
+  ACTIONS.map((a): Permission => `${key}:${a}`)
 )

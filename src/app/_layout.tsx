@@ -24,6 +24,7 @@ import { GeistMono_500Medium } from '@expo-google-fonts/geist-mono/500Medium'
 import { restoreSession } from '@/modules/auth/api/auth.api'
 import { AlarmChrome } from '@/modules/alarms/components/AlarmChrome'
 import { LiveAlarms } from '@/modules/alarms/components/LiveAlarms'
+import { PushRuntime } from '@/modules/push/components/PushRuntime'
 import { queryClient } from '@/shared/lib/query-client'
 import { endSession } from '@/shared/lib/session'
 import { onUnauthorized } from '@/shared/lib/unauthorized'
@@ -96,6 +97,8 @@ export default function RootLayout() {
         <StatusBar style="dark" />
         {/* Alarm alerts run for as long as someone is signed in. */}
         {isAuthenticated ? <LiveAlarms /> : null}
+        {/* ...and so do alerts for a locked tablet, when this build has them. */}
+        {isAuthenticated ? <PushRuntime /> : null}
         <AlarmChrome>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Protected guard={isAuthenticated}>
@@ -107,6 +110,20 @@ export default function RootLayout() {
             <Stack.Screen
               name="alarm/[id]"
               options={{ headerShown: true, title: 'Alarm', ...HEADER }}
+            />
+            {/* A call covers the whole screen and can't be swiped away by accident. */}
+            <Stack.Screen name="call/[deviceId]" options={{ headerShown: false, presentation: 'fullScreenModal', gestureEnabled: false, animation: 'fade' }} />
+            <Stack.Screen
+              name="fences"
+              options={{ headerShown: true, title: 'Fences', ...HEADER }}
+            />
+            <Stack.Screen
+              name="fence/[id]"
+              options={{ headerShown: true, title: 'Fence', ...HEADER }}
+            />
+            <Stack.Screen
+              name="track"
+              options={{ headerShown: true, title: 'Track playback', ...HEADER }}
             />
             <Stack.Screen
               name="wifi"

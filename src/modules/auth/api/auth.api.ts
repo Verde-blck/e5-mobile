@@ -5,6 +5,7 @@ import { storage } from '@/shared/lib/storage'
 import { isForbidden, statusOf } from '@/shared/lib/errors'
 import { expandPermissions } from '@/shared/constants/backend-permissions'
 import { ALL_PERMISSIONS } from '@/shared/constants/modules'
+import { withTimeout } from '@/shared/lib/withTimeout'
 import type { AuthUser } from '@/shared/store/authStore'
 import { mockTwoFactorOn, mockUserFor, setMockTwoFactor } from '../mock-data'
 
@@ -259,13 +260,17 @@ export async function disableTwoFactor(username: string, code: string): Promise<
  *   this phone saw, so the app still opens on a site with no signal. If there
  *   isn't one, returns null but keeps the token for the next launch.
  */
+const RESTORE_TIMEOUT_MS = 6000
+
 export async function restoreSession(): Promise<AuthUser | null> {
   const token = await tokenStore.load()
   if (!token) return null
 
   const username = decodeToken(token)?.sub ?? 'unknown'
   try {
-    return await loadProfile(username)
+    // The splash screen waits for this. On a dead network the request could take its full 20 s timeout;
+    // after 6 s the saved profile is used instead, and the app carries on.
+    return await withTimeout(loadProfile(username), RESTORE_TIMEOUT_MS)
   } catch (error) {
     const status = statusOf(error)
     if (status === 401 || (status === 403 && !isForbidden(error))) {

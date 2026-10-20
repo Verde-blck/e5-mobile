@@ -10,11 +10,16 @@ const HAS_FONT = /(^|\s)font-(sans|display|mono)/
 const HAS_COLOR =
   /(^|\s)text-(white|black|slate|gray|zinc|brand|red|amber|emerald|green|teal|sky|blue|orange|yellow|transparent)/
 
-export function Text({ className, ...props }: TextProps & { className?: string }) {
+// Readings, IDs and timers refresh constantly; tabular figures keep every digit the same width so the
+// layout doesn't jitter (the web's `.data-numeric`).
+const HAS_MONO = /(^|\s)font-mono/
+
+export function Text({ className, style, ...props }: TextProps & { className?: string }) {
   const given = className ?? ''
   return (
     <RNText
       className={cn(!HAS_FONT.test(given) && 'font-sans', !HAS_COLOR.test(given) && 'text-slate-900', given)}
+      style={HAS_MONO.test(given) ? [{ fontVariant: ['tabular-nums'] }, style] : style}
       {...props}
     />
   )

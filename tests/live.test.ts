@@ -7,7 +7,7 @@ import { safeKey } from '@/shared/lib/storage'
 import { endSession } from '@/shared/lib/session'
 import { queryClient } from '@/shared/lib/query-client'
 import { useAuthStore } from '@/shared/store/authStore'
-import { ALL_PERMISSIONS } from '@/shared/constants/modules'
+import { CAPABILITIES, MODULES, ALL_PERMISSIONS } from '@/shared/constants/modules'
 import { expandPermissions } from '@/shared/constants/backend-permissions'
 import { num, flag, ts, pageContent, parseGasData, shortDeviceName } from '@/shared/lib/api-normalize'
 import * as auth from '@/modules/auth/api/auth.api'
@@ -73,7 +73,7 @@ async function main() {
     assert.deepEqual(expandPermissions(['ALARM_RECORD_MANAGE']).sort(), ['alarms:delete', 'alarms:read', 'alarms:write'])
     assert.deepEqual(expandPermissions(['UNIT_SETTING']).sort(), ['unitSettings:read', 'wifi:read'])
     assert.deepEqual(expandPermissions(['NOT_A_REAL_CODE']), [])
-    assert.deepEqual(expandPermissions(['GEO_FENCE', 'FENCE']), [], 'GEO_FENCE is retired and means FENCE')
+    assert.deepEqual(expandPermissions(['GEO_FENCE', 'FENCE']), ['fences:read'], 'GEO_FENCE is retired and means FENCE')
     assert.ok(expandPermissions(['MONITORING_CENTER']).includes('devices:read'))
     for (const p of expandPermissions(['MONITORING_CENTER_MANAGE', 'GROUP_SETTING', 'ADMINISTRATOR_SETTING', 'PHOTO_RECORD', 'VIDEO_RECORD_MANAGE']))
       assert.ok(ALL_PERMISSIONS.includes(p), `${p} must be a real module:action`)
@@ -330,7 +330,12 @@ async function main() {
     assert.equal(alarmCursor.get(), undefined, 'the next account must not inherit this one\'s stream position')
     assert.equal(streamStatus.get(), 'down'); assert.deepEqual(useAlertStore.getState().silenced, {})
   })
-  await t('permission model matches the web: 12 modules x 3 actions', () => assert.equal(ALL_PERMISSIONS.length, 36))
+  await t('permission model is the web\'s exactly: its 12 modules plus the capabilities live, fences and groups, x read/write/delete', () => {
+    const keys = [...new Set(ALL_PERMISSIONS.map((p) => p.split(':')[0]))].sort()
+    assert.deepEqual(keys, ['alarms', 'dashboard', 'devices', 'fences', 'groupCall', 'groups', 'live', 'map', 'photos', 'profile', 'trackPlayback', 'unitSettings', 'users', 'videos', 'wifi'])
+    assert.equal(ALL_PERMISSIONS.length, 45)
+    assert.ok(!MODULES.some((m) => CAPABILITIES.includes(m.key)), 'a capability never gets a tab')
+  })
 }
 
 main().then(report)

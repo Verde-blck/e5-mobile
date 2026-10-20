@@ -1,7 +1,7 @@
 import { createElement, useEffect, useMemo, useRef, useState } from 'react'
 import { View } from 'react-native'
 import { env } from '@/config/env'
-import { parseMapEvent } from '../lib/mapEvents'
+import { dispatchMapEvent, parseMapEvent, type MapHandlers } from '../lib/mapEvents'
 import { buildMapHtml } from '../lib/mapHtml'
 import type { MapSurfaceProps } from '../types'
 
@@ -11,34 +11,28 @@ type MapWindow = Window & { __apply?: (message: object) => void }
  * The map in the browser preview: the same embedded Leaflet page, in an iframe. This is a
  * development convenience; the product is the tablet APK, where MapSurface.tsx runs.
  */
-export function MapSurface({
-  helmets,
-  alarms,
-  selectedId,
-  fitKey,
-  onSelectHelmet,
-  onSelectAlarm,
-}: MapSurfaceProps) {
+export function MapSurface(props: MapSurfaceProps) {
+  const { helmets, alarms, selectedId, fences, selectedFenceId, dimFences, draft, track, cursor, fitKey, fitTarget, fitInsetBottom } = props
   const frame = useRef<HTMLIFrameElement>(null)
   const [ready, setReady] = useState(false)
-  const html = useMemo(
-    () => buildMapHtml({ tileUrl: env.mapTileUrl, attribution: env.mapAttribution }),
-    []
-  )
+  const html = useMemo(() => buildMapHtml({ tileUrl: env.mapTileUrl, attribution: env.mapAttribution }), [])
 
-  const handlers = useRef({ onSelectHelmet, onSelectAlarm })
-  handlers.current = { onSelectHelmet, onSelectAlarm }
+  const handlers = useRef<MapHandlers>({})
+  handlers.current = {
+    onReady: () => setReady(true),
+    onSelectHelmet: props.onSelectHelmet,
+    onSelectAlarm: props.onSelectAlarm,
+    onSelectFence: props.onSelectFence,
+    onMapTap: props.onMapTap,
+    onDraftChange: props.onDraftChange,
+  }
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       // Only listen to our own iframe.
       if (event.source !== frame.current?.contentWindow) return
       const message = parseMapEvent((event.data as { __e5map?: unknown } | null)?.__e5map)
-      if (!message) return
-      if (message.type === 'ready') setReady(true)
-      else if (message.type === 'select') handlers.current.onSelectHelmet(message.id)
-      else if (message.type === 'deselect') handlers.current.onSelectHelmet(null)
-      else handlers.current.onSelectAlarm(message.id)
+      if (message) dispatchMapEvent(message, handlers.current)
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
@@ -47,12 +41,28 @@ export function MapSurface({
   const send = (message: object) => (frame.current?.contentWindow as MapWindow | null)?.__apply?.(message)
 
   useEffect(() => {
-    if (ready) send({ type: 'state', helmets, alarms, selectedId })
+    if (ready && helmets) send({ type: 'state', helmets, alarms: alarms ?? [], selectedId: selectedId ?? null })
   }, [ready, helmets, alarms, selectedId])
 
   useEffect(() => {
-    if (ready && fitKey > 0) send({ type: 'fit' })
-  }, [fitKey, ready])
+    if (ready && fences) send({ type: 'fences', fences, selectedId: selectedFenceId ?? null, dim: !!dimFences })
+  }, [ready, fences, selectedFenceId, dimFences])
+
+  useEffect(() => {
+    if (ready && draft !== undefined) send({ type: 'draft', draft })
+  }, [ready, draft])
+
+  useEffect(() => {
+    if (ready && track !== undefined) send({ type: 'track', track, fit: true, inset: fitInsetBottom ?? 0 })
+  }, [ready, track, fitInsetBottom])
+
+  useEffect(() => {
+    if (ready && cursor !== undefined) send({ type: 'cursor', at: cursor })
+  }, [ready, cursor])
+
+  useEffect(() => {
+    if (ready && (fitKey ?? 0) > 0) send({ type: 'fit', target: fitTarget ?? 'all', inset: fitInsetBottom ?? 0 })
+  }, [ready, fitKey, fitTarget])
 
   return (
     <View style={{ flex: 1 }}>

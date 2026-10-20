@@ -4,7 +4,7 @@
     "slug": "e5-smart-helmet",
     "scheme": "e5helmet",
     "version": "0.1.0",
-    "orientation": "default",
+    "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
@@ -43,7 +43,7 @@
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",
-          "imageWidth": 200,
+          "imageWidth": 240,
           "resizeMode": "contain",
           "backgroundColor": "#0C352F"
         }
@@ -63,7 +63,19 @@
           "supportsPictureInPicture": false
         }
       ],
-      "expo-asset"
-    ]
+      "expo-asset",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#0A6659",
+          "defaultChannel": "alarm",
+          "sounds": [
+            "./assets/sounds/sos.wav"
+          ]
+        }
+      ]
+    ],
+    "primaryColor": "#0A6659"
   }
 }

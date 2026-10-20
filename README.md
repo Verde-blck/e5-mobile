@@ -106,6 +106,73 @@ Built from Cypher's 16 Oct backend update.
 - **Not built.** The rest of a helmet's Unit Setting (upload method, picture quality, temperatures,
   hat-off and no-movement times, alarm sounds). The backend sends them, but their field names aren't documented.
 
+## Branding and orientation
+
+The look follows the web dashboard (colours, Inter / Epilogue / Geist Mono, the dot-grid canvas and the
+"Command Centre" sign-in panel), and the app is locked to **portrait**. What is where, and how to swap in the
+real company logo (the one in the app is an interim crop): [docs/BRANDING.md](docs/BRANDING.md).
+
+## Alarm alerts for a locked tablet (push)
+
+The app hears alarms over a live connection that stops when the screen locks, so a locked tablet misses an SOS.
+Push fixes that. The app side is built and tested; it stays **off** (`EXPO_PUBLIC_PUSH_ENABLED=false`) until the
+backend can register tablets and send the push, and until E5's Firebase project exists. While off, More > Alarm
+alerts says so plainly. Full setup and turn-on steps: [docs/PUSH_SETUP.md](docs/PUSH_SETUP.md).
+
+- Two Android channels, `sos` (siren, alarm volume, can pass Do Not Disturb) and `alarm`. The ids are a contract
+  with the backend.
+- The app uses the tablet's own FCM token (not an Expo push token) and registers it with
+  `PUT /api/push/registrations/{installId}`; signing out unregisters it. **This contract is proposed, not agreed.**
+- Notifications are never requested out of the blue: a banner and the More screen offer "Turn on alerts".
+- Tapping an alert opens that alarm; while the app is open and its alarm connection is live the system
+  notification is suppressed, and shown again if the connection drops.
+- "Send a test alert" works without the backend, to check the siren on a locked tablet.
+- Permissions follow the web: `fences`, `live` and `groups` are capabilities (no tab), as in the web's `modules.ts`.
+
+## Calls with a helmet
+
+The app side is built and tested against a simulated engine; real calls wait for the backend's signalling.
+A real build shows no Call button (it reports calling as unavailable), so nothing is offered that can't work.
+Who may call follows the backend's rule: anyone signed in for an open SOS in the last 30 minutes, otherwise
+`SURVEILLANCE_MANAGE`. Details, what real calls need, and a build check of the WebRTC library: [docs/CALLS.md](docs/CALLS.md).
+
+## Fences
+
+Built from the web app's own fence module (types, geometry and validation are the same code).
+
+- **On the Live Map.** Saved fences draw under the helmets: work areas in teal, no-entry zones in amber,
+  grey when switched off. A "Fences" chip toggles them. On a tablet the side panel has Helmets and Fences
+  tabs; on a phone, tapping a fence opens a card, and "Fence list" opens the full list.
+- **Drawing.** Tap the map to place a circle's centre or add polygon corners; drag the circle's handle or a
+  numbered corner to adjust. Radius is typed or stepped by 50 m. The same rules as the web: a name is
+  required, a polygon needs 3 corners, a fence under 50 m across warns about GPS false alarms, active hours
+  may cross midnight, and "chosen helmets" can't be unticked down to none (that would silently mean everyone).
+  The backend's own 400 messages are shown as written.
+- **Permissions.** A `fences` module, as the web's fence screens use: `FENCE` views, `FENCE_MANAGE` changes.
+- **Warning clip.** Attach an MP3 or WAV (up to 5 MB) from the tablet, replace it, remove it, and preview it
+  before saving. If the fence saves but the clip upload fails, the fence is kept and only the clip is retried
+  (saving again edits it, it can't create a duplicate). Recording a clip on the tablet needs the backend to accept
+  phone recordings (m4a): it is in the request to Cypher.
+
+## Track playback
+
+Built from the web app's track-playback module; the rules in `lib/track.ts` and `lib/availability.ts` are
+the web code, with the changes below.
+
+- **Screen.** More > Track playback, or "Replay route" on any helmet (which opens its last 7 days at once).
+  Pick a helmet and a period (quick ranges, or two YYYY-MM-DD dates), then View: six figures, an uptime
+  chart, the route with A/B markers and a moving marker, play/pause, point-by-point stepping, 1x to 64x
+  speeds, and a scrubber. Export hands over a CSV (a download in the browser, the share sheet on a tablet).
+- **Rules kept from the web.** Under 3 m between fixes counts as no movement; a silence over 5 minutes
+  starts a new segment and adds no distance; a leg faster than 40 m/s is rejected as an impossible fix.
+- **Changed from the web.** Positions from the mobile network or Wi-Fi are left out by default (Cypher's
+  16 Oct update added the fix type, and those can be hundreds of metres off, which inflates distance); a
+  switch brings them back. Dates use the tablet's local day, where the web page used UTC (a day off for the
+  first hour after midnight in Lagos). The map fits every run of real length, not only the longest, and keeps
+  the route clear of the playback bar.
+- **Limit.** The telemetry endpoint has no date filter, so only the latest 2,000 rows can be read; a range
+  that is cut short says so. Worth asking Cypher for `from` and `to` parameters.
+
 ## How alarms work
 
 - **Stream.** `GET /alarms/stream` (Server-Sent Events) is read with `fetch` while

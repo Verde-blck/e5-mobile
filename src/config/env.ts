@@ -18,6 +18,9 @@ export const env = {
     process.env.EXPO_PUBLIC_MAP_TILE_URL ?? 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
   mapAttribution:
     process.env.EXPO_PUBLIC_MAP_ATTRIBUTION ?? '© OpenStreetMap contributors',
+  // Push alerts for a locked tablet. Off until the backend can register tablets and send the push
+  // (see docs/PUSH_SETUP.md); while off, the app says plainly that alerts need the app to be open.
+  pushEnabled: process.env.EXPO_PUBLIC_PUSH_ENABLED === 'true',
   /** The backend has no push channel for the dashboard, so lists poll. */
   pollIntervalMs: 10_000,
 } as const

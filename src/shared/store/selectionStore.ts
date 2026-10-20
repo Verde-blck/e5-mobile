@@ -10,15 +10,19 @@ import { create } from 'zustand'
 interface SelectionState {
   alarmId: string | null
   helmetId: string | null
+  fenceId: number | null
   selectAlarm: (id: string | null) => void
   selectHelmet: (id: string | null) => void
+  selectFence: (id: number | null) => void
   clear: () => void
 }
 
 export const useSelectionStore = create<SelectionState>((set) => ({
   alarmId: null,
   helmetId: null,
+  fenceId: null,
   selectAlarm: (alarmId) => set({ alarmId }),
   selectHelmet: (helmetId) => set({ helmetId }),
-  clear: () => set({ alarmId: null, helmetId: null }),
+  selectFence: (fenceId) => set({ fenceId }),
+  clear: () => set({ alarmId: null, helmetId: null, fenceId: null }),
 }))

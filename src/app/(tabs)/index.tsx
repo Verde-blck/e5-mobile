@@ -1,6 +1,7 @@
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native'
 import Feather from '@expo/vector-icons/Feather'
 import { Card, SectionTitle } from '@/shared/components/Card'
+import { AlertsBanner } from '@/modules/push/components/AlertsBanner'
 import { Container } from '@/shared/components/Container'
 import { RequirePermission } from '@/shared/components/RequirePermission'
 import { Screen } from '@/shared/components/Screen'
@@ -117,6 +118,7 @@ function DashboardScreen() {
         }
       >
         <Container max={960}>
+        <AlertsBanner />
         <Text className="text-sm text-slate-500">{greeting()}</Text>
         <Text className="mb-5 font-display-bold text-2xl" numberOfLines={1}>
           {user?.name ?? 'Welcome'}

@@ -34,6 +34,7 @@ export const future = Math.floor(Date.now() / 1000) + 3600
 export const past = Math.floor(Date.now() / 1000) - 3600
 
 export interface Req {
+  contentType?: string
   method?: string
   url?: string
   baseURL?: string
@@ -57,7 +58,9 @@ export function installHttp() {
       url: config.url,
       baseURL: config.baseURL,
       params: config.params,
-      data: config.data ? JSON.parse(config.data) : undefined,
+      // A multipart body is passed through untouched; everything else in the app is JSON.
+      data: !config.data ? undefined : typeof FormData !== 'undefined' && config.data instanceof FormData ? config.data : JSON.parse(config.data),
+      contentType: String((config.headers as any)?.get?.('Content-Type') ?? (config.headers as any)?.['Content-Type'] ?? ''),
       auth: (config.headers as any)?.Authorization,
     }
     state.calls.push(req)

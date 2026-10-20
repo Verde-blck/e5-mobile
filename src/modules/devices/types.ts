@@ -121,6 +121,9 @@ export interface TelemetrySample {
   altitude?: number
   isCharging?: boolean
   isWorn?: boolean
+  /** How the position was worked out (older rows have none, and count as GPS). */
+  fixType?: FixType
+  accuracyMeters?: number
   /** Per-sample gas readings, so a history view can chart exposure over time. */
   gas?: GasReading[]
 }

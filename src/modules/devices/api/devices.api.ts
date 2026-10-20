@@ -40,7 +40,7 @@ interface ApiDevice {
   networkType?: string | null
 }
 
-function toFixType(value: unknown): FixType | undefined {
+export function toFixType(value: unknown): FixType | undefined {
   if (typeof value !== 'string' || !value) return undefined
   return value === 'gps' || value === 'network' || value === 'wifi' ? value : 'other'
 }

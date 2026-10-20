@@ -6,6 +6,7 @@ import { env } from '@/config/env'
 import { Button } from '@/shared/components/Button'
 import { Container } from '@/shared/components/Container'
 import { Card, Row, SectionTitle } from '@/shared/components/Card'
+import { CompanyLogo } from '@/shared/components/Logo'
 import { Screen } from '@/shared/components/Screen'
 import { Text } from '@/shared/components/Text'
 import type { IconName } from '@/shared/constants/modules'
@@ -14,6 +15,8 @@ import { endSession } from '@/shared/lib/session'
 import { useCan } from '@/shared/lib/permissions'
 import { useAuthStore } from '@/shared/store/authStore'
 import { simulateAlarm } from '@/modules/alarms/api/alarms.mock'
+import { AlertsCard } from '@/modules/push/components/AlertsCard'
+import { unregisterThisTablet } from '@/modules/push/lib/unregister'
 
 function MenuRow({
   icon,
@@ -47,6 +50,8 @@ function MenuRow({
 export default function MoreScreen() {
   const user = useAuthStore((s) => s.user)
   const canWifi = useCan('wifi:read')
+  const canTrack = useCan('trackPlayback:read')
+  const canFences = useCan('fences:read')
   const initial = (user?.name ?? '?').trim().charAt(0).toUpperCase()
 
   function signOut() {
@@ -55,7 +60,8 @@ export default function MoreScreen() {
       message: 'You will need your username and password to sign back in.',
       confirmLabel: 'Sign out',
       destructive: true,
-      onConfirm: () => void endSession(),
+      // The tablet stops getting this account's alarms first, while the sign-in still works.
+      onConfirm: () => void unregisterThisTablet().then(() => endSession()),
     })
   }
 
@@ -84,13 +90,26 @@ export default function MoreScreen() {
           </View>
         </Card>
 
-        <SectionTitle>Account</SectionTitle>
+        <SectionTitle>Alarm alerts</SectionTitle>
+        <AlertsCard />
+
+        <SectionTitle className="mt-6">Account</SectionTitle>
         <MenuRow
           icon="shield"
           label="Account security"
           hint="Two-step verification"
           onPress={() => router.push('/security')}
         />
+        {canTrack ? (
+          <View className="mt-3">
+            <MenuRow icon="navigation" label="Track playback" hint="Replay where a helmet has been" onPress={() => router.push('/track')} />
+          </View>
+        ) : null}
+        {canFences ? (
+          <View className="mt-3">
+            <MenuRow icon="hexagon" label="Fences" hint="Work areas and no-entry zones" onPress={() => router.push('/fences')} />
+          </View>
+        ) : null}
         {canWifi ? (
           <View className="mt-3">
             <MenuRow
@@ -104,6 +123,9 @@ export default function MoreScreen() {
 
         <SectionTitle className="mt-6">About</SectionTitle>
         <Card className="py-1">
+          <View className="items-center border-b border-slate-100 pb-3 pt-4">
+            <CompanyLogo width={112} />
+          </View>
           <Row label="App version" value={Constants.expoConfig?.version ?? '—'} />
           <Row label="Data source" value={env.useMocks ? 'Sample data' : 'Live backend'} last />
         </Card>

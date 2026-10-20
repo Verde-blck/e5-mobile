@@ -3,6 +3,8 @@ import { ScrollView, View } from 'react-native'
 import { Stack } from 'expo-router'
 import Feather from '@expo/vector-icons/Feather'
 import { Button } from '@/shared/components/Button'
+import { isSos } from '@/modules/alarms/types'
+import { CallButton } from '@/modules/calls/components/CallButton'
 import { Card, Row, SectionTitle } from '@/shared/components/Card'
 import { Screen } from '@/shared/components/Screen'
 import { EmptyState, LoadingState } from '@/shared/components/States'
@@ -133,6 +135,7 @@ export function AlarmDetailView({ id, embedded = false }: { id: string; embedded
           ) : null}
 
           <View className="mt-4 gap-2">
+            {isSos(alarm.type) && alarm.status === 'active' ? <CallButton deviceId={alarm.deviceId} className="mb-2" /> : null}
             {canResolve ? (
               <Button
                 title={active ? 'Resolve alarm' : 'Reopen alarm'}

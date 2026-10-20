@@ -18,6 +18,10 @@ const suites = [
   ['layout', {}], // screen-size classes and the list/detail pane rules
   ['map', {}], // map data rules, the embedded map page, and events from it
   ['settings', {}], // site Wi-Fi, helmet settings and network switching against Cypher's documented requests
+  ['fences', {}], // fence API shapes, geometry and validation (ported from the web app)
+  ['calls', {}], // call access rule (SOS window), state machine, engines
+  ['push', {}], // alarm push: payloads, channels, registration contract, permission flow, build config
+  ['track', { TZ: 'Africa/Lagos' }], // track rules (gaps, jumps, noise), availability and dates, in Lagos time
   ['mock', { EXPO_PUBLIC_USE_MOCKS: 'true' }], // sample-data mode
 ]
 

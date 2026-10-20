@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native'
+import { KeyboardAvoidingView, Platform, ScrollView, useWindowDimensions, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
-import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   describeAuthError,
@@ -12,7 +11,9 @@ import {
 import { env } from '@/config/env'
 import { Button } from '@/shared/components/Button'
 import { Container } from '@/shared/components/Container'
-import { Logo } from '@/shared/components/Logo'
+import { AppCanvas } from '@/shared/components/AppCanvas'
+import { BrandConstellation } from '@/shared/components/BrandConstellation'
+import { CompanyLogo, Logo } from '@/shared/components/Logo'
 import { Text } from '@/shared/components/Text'
 import { TextField } from '@/shared/components/TextField'
 import { cn } from '@/shared/lib/cn'
@@ -76,36 +77,42 @@ export default function SignInScreen() {
     setError(null)
   }
 
+  const { width, height } = useWindowDimensions()
+  // A tablet in portrait has room for a taller banner and larger type than a phone.
+  const roomy = width >= 600
+  // Portrait: the hero is a banner and the card overlaps its lower edge. Wide (a large tablet, or the
+  // browser preview): the hero is a full-height panel beside the card.
+  const bannerHeight = Math.round(Math.min(Math.max(height * (roomy ? 0.4 : 0.34), 270), roomy ? 520 : 360))
+
   const hero = (
-    <LinearGradient
-      colors={['#0C352F', '#0A6659']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={
-        twoPane
-          ? { flex: 1, justifyContent: 'space-between', padding: 48, paddingTop: insets.top + 40, paddingBottom: 56 }
-          : { paddingTop: insets.top + 24, paddingBottom: 56, paddingHorizontal: 24 }
-      }
-    >
-      <Logo />
-      <View className={twoPane ? undefined : 'mt-10'}>
-        <Text
-          className={cn(
-            'font-display-bold text-white',
-            twoPane ? 'text-5xl leading-[54px]' : 'text-3xl leading-9'
-          )}
-        >
-          Fleet safety,{'\n'}always in view.
-        </Text>
-        <Text className={cn('mt-3 leading-6 text-white/75', twoPane ? 'text-lg' : 'text-base')}>
-          Monitor helmets, alarms and live locations in one place.
-        </Text>
+    <View style={twoPane ? { flex: 1, overflow: 'hidden' } : { height: bannerHeight, overflow: 'hidden' }}>
+      <BrandConstellation />
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'space-between',
+          paddingHorizontal: twoPane ? 48 : roomy ? 40 : 24,
+          paddingTop: insets.top + (twoPane ? 40 : 18),
+          paddingBottom: twoPane ? 56 : 54,
+        }}
+      >
+        <Logo />
+        <View>
+          <Text className={twoPane ? 'font-display-extrabold text-6xl leading-[64px] text-white' : roomy ? 'font-display-extrabold text-5xl leading-[56px] text-white' : 'font-display-extrabold text-4xl leading-[42px] text-white'}>
+            Command Centre
+          </Text>
+          <Text className={twoPane ? 'mt-4 max-w-sm text-lg leading-7 text-brand-soft' : roomy ? 'mt-3 max-w-md text-lg leading-7 text-brand-soft' : 'mt-2 text-[15px] leading-6 text-brand-soft'}>
+            Live location, alarms and gas readings for every helmet in the fleet.
+          </Text>
+        </View>
       </View>
-    </LinearGradient>
+    </View>
   )
 
-  const form = (
+  const card = (
     <>
+      <CompanyLogo width={92} />
+      <View className="h-5" />
       {challenge ? (
         <>
           <Text className="font-display-bold text-2xl">Two-step verification</Text>
@@ -121,7 +128,8 @@ export default function SignInScreen() {
             mono
             autoComplete="one-time-code"
             textContentType="oneTimeCode"
-            placeholder="123456"
+            placeholder="000000"
+            code
             onSubmitEditing={submitCode}
             error={error}
           />
@@ -179,8 +187,13 @@ export default function SignInScreen() {
         </>
       )}
 
+    </>
+  )
+
+  const footer = (
+    <>
       {env.useMocks ? (
-        <View className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-3.5">
+        <View className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-3.5">
           <Text className="font-sans-semibold text-xs text-amber-900">
             Sample data mode — no server needed
           </Text>
@@ -191,23 +204,28 @@ export default function SignInScreen() {
         </View>
       ) : null}
 
-      <Text className="mt-8 text-center text-xs text-slate-400">
-        Accounts are issued by your administrator.
+      <Text className="mt-6 px-4 text-center text-sm leading-5 text-slate-500">
+        {challenge
+          ? 'Lost access to your authenticator app? Your administrator can reset it.'
+          : 'Accounts are issued by your administrator.'}
       </Text>
     </>
   )
 
+  const cardBox = 'rounded-3xl bg-white p-7 shadow-lg shadow-slate-900/10'
+
   if (twoPane) {
     return (
-      <View className="flex-1 flex-row bg-slate-50">
+      <View className="flex-1 flex-row" style={{ backgroundColor: '#F2F8F8' }}>
         <StatusBar style="light" />
         <View style={{ flex: 1 }}>{hero}</View>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            contentContainerClassName="flex-grow justify-center px-12 py-10"
-          >
-            <Container max={420}>{form}</Container>
+          <AppCanvas />
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerClassName="flex-grow justify-center px-12 py-10">
+            <Container max={420}>
+              <View className={cardBox}>{card}</View>
+              {footer}
+            </Container>
           </ScrollView>
         </KeyboardAvoidingView>
       </View>
@@ -215,17 +233,17 @@ export default function SignInScreen() {
   }
 
   return (
-    <View className="flex-1 bg-slate-50">
+    <View className="flex-1" style={{ backgroundColor: '#F2F8F8' }}>
       <StatusBar style="light" />
+      <AppCanvas />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          bounces={false}
-          contentContainerClassName="flex-grow"
-        >
+        <ScrollView keyboardShouldPersistTaps="handled" bounces={false} contentContainerClassName="flex-grow">
           {hero}
-          <View className="-mt-6 flex-1 rounded-t-3xl bg-slate-50 px-6 pb-10 pt-8">
-            <Container max={480}>{form}</Container>
+          <View className="-mt-9 px-4 pb-10">
+            <Container max={480}>
+              <View className={cardBox}>{card}</View>
+              {footer}
+            </Container>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

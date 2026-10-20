@@ -36,12 +36,17 @@ const CODE_GRANTS: Record<string, Grant> = {
   VIDEO_RECORD: read('videos'),
   VIDEO_RECORD_MANAGE: manage('videos'),
 
+  // Live view and calls: the `live` capability. VERIFY against the web's expandPermissions(): the
+  // rule "calls other than SOS need SURVEILLANCE_MANAGE" is what makes SURVEILLANCE_MANAGE `live:write`.
+  SURVEILLANCE: read('live'),
+  SURVEILLANCE_MANAGE: manage('live'),
+
+  // Fences are drawn on the Live Map but have their own permission, as on the web.
+  FENCE: read('fences'),
+  FENCE_MANAGE: manage('fences'),
+
   // Real codes with no screen in the mobile app yet. Listed so that "known but
   // not exposed" is visible here rather than looking like an oversight.
-  SURVEILLANCE: [],
-  SURVEILLANCE_MANAGE: [],
-  FENCE: [],
-  FENCE_MANAGE: [],
   TASK_MANAGE: [],
   TASK_LIST: [],
   RELEASE_TASK: [],

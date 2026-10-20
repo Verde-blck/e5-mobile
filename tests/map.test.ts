@@ -6,7 +6,10 @@ import { toAlarm } from '@/modules/alarms/api/alarms.api'
 import type { Alarm } from '@/modules/alarms/types'
 import { buildMapAlarms, buildMapHelmets, countByPresence, hasPosition } from '@/modules/map/lib/mapData'
 import { buildMapHtml, safeJson } from '@/modules/map/lib/mapHtml'
-import { parseMapEvent } from '@/modules/map/lib/mapEvents'
+import { dispatchMapEvent, parseMapEvent, type MapEvent, type MapHandlers } from '@/modules/map/lib/mapEvents'
+import { useSelectionStore } from '@/shared/store/selectionStore'
+import { toMapDraft, toMapFence } from '@/modules/map/lib/mapData'
+import { getMockFences } from '@/modules/fences/api/fences.mock'
 import { createRunner } from './harness'
 
 const { t, report } = createRunner()
@@ -87,6 +90,40 @@ async function main() {
     assert.deepEqual(parseMapEvent({ type: 'selectAlarm', id: '77' }), { type: 'selectAlarm', id: '77' })
     for (const bad of [null, undefined, 'nope', '{', 42, {}, { type: 'select' }, { type: 'select', id: 5 }, { type: 'select', id: '' }, { type: 'evil', id: '1' }])
       assert.equal(parseMapEvent(bad), null, JSON.stringify(bad))
+  })
+
+  await t('the page\'s drawing events are validated too: fence taps, map taps, dragged handles', () => {
+    assert.deepEqual(parseMapEvent({ type: 'selectFence', id: 7 }), { type: 'selectFence', id: 7 })
+    assert.deepEqual(parseMapEvent('{"type":"mapTap","lat":6.45,"lng":3.4}'), { type: 'mapTap', lat: 6.45, lng: 3.4 })
+    assert.deepEqual(parseMapEvent({ type: 'draftCenter', lat: -33.9, lng: 18.4 }), { type: 'draftCenter', lat: -33.9, lng: 18.4 })
+    assert.deepEqual(parseMapEvent({ type: 'draftPoints', points: [{ lat: 6.4, lng: 3.4 }, { lat: 6.5, lng: 3.5 }] }), { type: 'draftPoints', points: [{ lat: 6.4, lng: 3.4 }, { lat: 6.5, lng: 3.5 }] })
+    for (const bad of [{ type: 'selectFence', id: '7' }, { type: 'selectFence', id: 1.5 }, { type: 'mapTap', lat: 91, lng: 3 }, { type: 'mapTap', lat: 6, lng: 181 }, { type: 'mapTap', lat: NaN, lng: 3 },
+      { type: 'mapTap', lat: '6', lng: '3' }, { type: 'draftPoints', points: [{ lat: 6, lng: 3 }, { lat: 'x', lng: 3 }] }, { type: 'draftPoints', points: 'no' }, { type: 'draftPoints' }])
+      assert.equal(parseMapEvent(bad), null, JSON.stringify(bad))
+  })
+  await t('each event reaches the right handler, and a screen that ignores an event is not an error', () => {
+    const seen: string[] = []
+    const h: MapHandlers = { onReady: () => seen.push('ready'), onSelectHelmet: (id) => seen.push('helmet:' + id), onSelectAlarm: (id) => seen.push('alarm:' + id), onSelectFence: (id) => seen.push('fence:' + id),
+      onMapTap: (lat, lng) => seen.push(`tap:${lat},${lng}`), onDraftChange: (p) => seen.push('draft:' + JSON.stringify(p)) }
+    const events: MapEvent[] = [{ type: 'ready' }, { type: 'select', id: 'h1' }, { type: 'deselect' }, { type: 'selectAlarm', id: 'a1' }, { type: 'selectFence', id: 3 }, { type: 'mapTap', lat: 1, lng: 2 }, { type: 'draftCenter', lat: 3, lng: 4 }, { type: 'draftPoints', points: [{ lat: 5, lng: 6 }] }]
+    for (const e of events) dispatchMapEvent(e, h)
+    assert.deepEqual(seen, ['ready', 'helmet:h1', 'helmet:null', 'alarm:a1', 'fence:3', 'tap:1,2', 'draft:{"center":{"lat":3,"lng":4}}', 'draft:{"points":[{"lat":5,"lng":6}]}'])
+    dispatchMapEvent({ type: 'mapTap', lat: 1, lng: 2 }, {}); dispatchMapEvent({ type: 'selectFence', id: 1 }, {})
+  })
+  await t('the page knows every layer the app sends it, and tells fences, accuracy circles and routes apart by class', () => {
+    const html = buildMapHtml({ tileUrl: 'https://t/{z}/{x}/{y}.png', attribution: 'x' })
+    for (const needle of ["message.type === 'fences'", "message.type === 'draft'", "message.type === 'track'", "message.type === 'cursor'", "type: 'selectFence'", "type: 'mapTap'", "type: 'draftCenter'", "type: 'draftPoints'", "style.className = 'fence'", "className: 'acc'", "className: 'route'", "draggable: true", 'invalidateSize', 'paddingBottomRight'])
+      assert.ok(html.includes(needle), needle)
+  })
+  await t('a fence reaches the map as just what it draws (no names or helmet lists), and a draft as its shape', async () => {
+    const [fence] = await getMockFences(); const m = toMapFence(fence)
+    assert.deepEqual(Object.keys(m).sort(), ['active', 'behavior', 'center', 'id', 'points', 'radiusMeters', 'type'])
+    assert.deepEqual(Object.keys(toMapDraft({ ...fence })).sort(), ['active', 'behavior', 'center', 'points', 'radiusMeters', 'type'])
+  })
+  await t('a fence can be the open item, independently of helmets and alarms, and clear() forgets it too', () => {
+    const s = useSelectionStore.getState(); assert.equal(s.fenceId, null)
+    s.selectFence(4); s.selectHelmet('h'); assert.equal(useSelectionStore.getState().fenceId, 4); assert.equal(useSelectionStore.getState().helmetId, 'h')
+    s.selectFence(null); assert.equal(useSelectionStore.getState().helmetId, 'h'); s.selectFence(2); s.clear(); assert.equal(useSelectionStore.getState().fenceId, null)
   })
 }
 main().then(report)

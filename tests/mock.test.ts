@@ -8,7 +8,9 @@ import { simulateAlarm, subscribeMockStream } from '@/modules/alarms/api/alarms.
 import { videoStatus } from '@/modules/alarms/footage'
 import { criticalActive } from '@/modules/alarms/lib/alert-policy'
 import { tokenStore } from '@/shared/lib/token'
+import { ALL_PERMISSIONS } from '@/shared/constants/modules'
 import * as settings from '@/modules/settings/api/settings.api'
+import { TimeoutError, withTimeout } from '@/shared/lib/withTimeout'
 import { createRunner } from './harness'
 
 const { t, report } = createRunner()
@@ -19,7 +21,7 @@ async function main() {
   await t('ADM-001 is a super admin and signs straight in; no token is stored', async () => {
     const r = await auth.login({ username: 'adm-001', password: 'anything' })
     assert.equal(r.status, 'signed-in')
-    if (r.status === 'signed-in') { assert.equal(r.user.username, 'ADM-001'); assert.equal(r.user.superAdmin, true); assert.equal(r.user.permissions.length, 36) }
+    if (r.status === 'signed-in') { assert.equal(r.user.username, 'ADM-001'); assert.equal(r.user.superAdmin, true); assert.equal(r.user.permissions.length, ALL_PERMISSIONS.length) }
     assert.equal(tokenStore.get(), null)
   })
   await t('OP-014 is a restricted account: no dashboard, but devices/map/alarms', async () => {
@@ -109,6 +111,13 @@ async function main() {
     assert.equal(after.telemetry.networkType, '4g'); assert.equal(after.connectivity, 'sim')
     await settings.switchToWifi(noSim); assert.equal((await fetchDevices()).find((d) => d.id === noSim)!.telemetry.networkType, 'wifi')
     assert.equal((await settings.switchToMobileData('866652022956404', false)).delivered, true, 'a helmet with a SIM needs no force')
+  })
+
+  await t('a slow start-up request gives up after the limit (and passes through its own result or error if quicker)', async () => {
+    const slow = new Promise<string>((resolve) => setTimeout(() => resolve('late'), 200))
+    await assert.rejects(withTimeout(slow, 30), (e: Error) => e instanceof TimeoutError && /30 ms/.test(e.message))
+    assert.equal(await withTimeout(Promise.resolve('ok'), 500), 'ok')
+    await assert.rejects(withTimeout(Promise.reject(new Error('boom')), 500), /boom/)
   })
 }
 

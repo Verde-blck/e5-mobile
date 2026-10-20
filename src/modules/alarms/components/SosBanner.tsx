@@ -1,12 +1,14 @@
 import { useEffect, useRef } from 'react'
 import { Animated, Platform, Pressable, View } from 'react-native'
+import { openCall } from '@/modules/calls/components/CallButton'
+import { useCallAccess } from '@/modules/calls/hooks/useCallAccess'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Text } from '@/shared/components/Text'
 import { lastSeenLabel } from '@/modules/devices/lib/presence'
 import { cn } from '@/shared/lib/cn'
 import { useLayout } from '@/shared/lib/layout'
 import { useNow } from '@/shared/lib/useNow'
-import { alarmLabel, type Alarm } from '../types'
+import { alarmLabel, isSos, type Alarm } from '../types'
 import { useAlertStore } from '../store/alertStore'
 import { openAlarm } from './AlarmCard'
 
@@ -20,6 +22,24 @@ import { openAlarm } from './AlarmCard'
  *
  * A "Join call" button belongs here for SOS alarms; it arrives with calling.
  */
+function JoinCall({ deviceId, onJoin }: { deviceId: string; onJoin: () => void }) {
+  const { supported, access } = useCallAccess(deviceId)
+  if (!supported || !access.allowed) return null
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Join call"
+      onPress={() => {
+        onJoin()
+        openCall(deviceId)
+      }}
+      className="h-10 flex-1 items-center justify-center rounded-xl border-2 border-white bg-red-700 active:bg-red-800"
+    >
+      <Text className="font-sans-bold text-sm text-white">Join call</Text>
+    </Pressable>
+  )
+}
+
 export function SosBanner({ alarms }: { alarms: Alarm[] }) {
   const insets = useSafeAreaInsets()
   // On a wide screen the text and buttons share one row, which keeps the banner short.
@@ -83,6 +103,7 @@ export function SosBanner({ alarms }: { alarms: Alarm[] }) {
           >
             <Text className="font-sans-semibold text-sm text-red-700">View alarm</Text>
           </Pressable>
+          {isSos(latest.type) ? <JoinCall deviceId={latest.deviceId} onJoin={() => silence(alarms.map((x) => x.id))} /> : null}
           {ringing ? (
             <Pressable
               accessibilityRole="button"

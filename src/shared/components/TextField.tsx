@@ -10,10 +10,12 @@ interface TextFieldProps extends Omit<TextInputProps, 'className'> {
   /** Password-style field with a show/hide toggle. */
   secret?: boolean
   mono?: boolean
+  /** A tall, centred, letter-spaced field for a one-time code. */
+  code?: boolean
   className?: string
 }
 
-export function TextField({ label, error, secret, mono, className, ...input }: TextFieldProps) {
+export function TextField({ label, error, secret, mono, code, className, ...input }: TextFieldProps) {
   const [revealed, setRevealed] = useState(false)
   const [focused, setFocused] = useState(false)
 
@@ -22,7 +24,8 @@ export function TextField({ label, error, secret, mono, className, ...input }: T
       <Text className="mb-1.5 font-sans-medium text-sm text-slate-700">{label}</Text>
       <View
         className={cn(
-          'h-12 flex-row items-center rounded-xl border bg-white px-3.5',
+          'flex-row items-center rounded-xl border bg-white px-3.5',
+          code ? 'h-14' : 'h-12',
           error ? 'border-red-500' : focused ? 'border-brand-primary' : 'border-slate-300'
         )}
       >
@@ -38,8 +41,13 @@ export function TextField({ label, error, secret, mono, className, ...input }: T
             input.onBlur?.(e)
           }}
           placeholderTextColor="#94A3B8"
+          // The typing cursor and selection in the brand teal (Android; the browser ignores these).
+          cursorColor="#0A6659"
+          selectionColor="#0A665940"
           accessibilityLabel={label}
-          className={cn('flex-1 text-base text-slate-900', mono ? 'font-mono' : 'font-sans')}
+          className={cn('flex-1 text-slate-900', code ? 'text-center text-2xl' : 'text-base', mono || code ? 'font-mono' : 'font-sans')}
+          // minWidth 0: a browser input won't shrink below its intrinsic width, which the spaced code digits exceed.
+          style={code ? { letterSpacing: 10, minWidth: 0 } : { minWidth: 0 }}
         />
         {secret ? (
           <Pressable
