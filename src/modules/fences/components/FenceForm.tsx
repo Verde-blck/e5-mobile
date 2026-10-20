@@ -8,13 +8,17 @@ import { cn } from '@/shared/lib/cn'
 import type { DeviceView } from '@/modules/devices/types'
 import { formatBytes, type ClipFile } from '../lib/clip'
 import { describePeriod, isTooSmall, narrowestAcrossM, validateDraft } from '../lib/geometry'
-import { ClipPreview } from './ClipPreview'
+import { AudioPreview } from '@/shared/components/AudioPreview'
 import { BEHAVIOR_LABEL, FREQUENCIES, MIN_FENCE_ACROSS_M, type Fence, type FenceBehavior, type FenceDraft } from '../types'
 
 /** "0830" -> "08:30": digits only, the colon added for you. */
 export function formatTimeInput(raw: string): string {
   const digits = raw.replace(/\D/g, '').slice(0, 4)
   return digits.length > 2 ? `${digits.slice(0, 2)}:${digits.slice(2)}` : digits
+}
+
+function formatSeconds(total: number): string {
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
 }
 
 function Label({ children }: { children: string }) {
@@ -49,6 +53,11 @@ interface Props {
   clipRemoved: boolean
   clipError: string | null
   onPickClip: () => void
+  /** The tablet's own recorder: active while recording, with seconds so far and the limit. */
+  recording: { active: boolean; seconds: number; limit: number; error: string | null }
+  onRecord: () => void
+  onStopRecording: () => void
+  onCancelRecording: () => void
   onDiscardClip: () => void
   onRemoveClip: (removed: boolean) => void
   onSave: () => void
@@ -56,7 +65,7 @@ interface Props {
 }
 
 /** The fence's details. Its shape is drawn on the map beside or above this. */
-export function FenceForm({ draft, onChange, existing, devices, saving, error, clip, clipRemoved, clipError, onPickClip, onDiscardClip, onRemoveClip, onSave, onCancel }: Props) {
+export function FenceForm({ draft, onChange, existing, devices, saving, error, clip, clipRemoved, clipError, onPickClip, recording, onRecord, onStopRecording, onCancelRecording, onDiscardClip, onRemoveClip, onSave, onCancel }: Props) {
   const [showProblems, setShowProblems] = useState(false)
   const [radiusText, setRadiusText] = useState(String(Math.round(draft.radiusMeters)))
 
@@ -269,7 +278,7 @@ export function FenceForm({ draft, onChange, existing, devices, saving, error, c
               <Text className="flex-1 text-sm" numberOfLines={1}>{clip.name}</Text>
               {clip.size != null || clip.file ? <Text className="text-xs text-slate-500">{formatBytes(clip.file?.size ?? clip.size ?? 0)}</Text> : null}
             </View>
-            <ClipPreview uri={clip.uri} />
+            <AudioPreview uri={clip.uri} />
             <Pressable hitSlop={8} onPress={onDiscardClip}>
               <Text className="text-sm text-slate-600 underline">Discard new clip</Text>
             </Pressable>
@@ -290,17 +299,37 @@ export function FenceForm({ draft, onChange, existing, devices, saving, error, c
           <Text className="text-sm text-slate-600">No warning clip is attached.</Text>
         )}
 
-        {!clip ? (
-          <Button
-            className="mt-2"
-            variant="secondary"
-            icon="upload"
-            title={existing?.hasWarningAudio && !clipRemoved ? 'Choose a replacement (MP3 or WAV)' : 'Choose an MP3 or WAV file'}
-            onPress={onPickClip}
-          />
+        {recording.active ? (
+          <View className="mt-2 gap-3 rounded-xl border border-red-200 bg-red-50 p-3">
+            <View className="flex-row items-center gap-2">
+              <View className="h-3 w-3 rounded-full bg-red-600" />
+              <Text className="flex-1 font-sans-semibold text-sm text-red-800">Recording…</Text>
+              <Text className="font-mono text-sm text-red-800">{formatSeconds(recording.seconds)} / {formatSeconds(recording.limit)}</Text>
+            </View>
+            <View className="flex-row gap-2">
+              <Button title="Stop" icon="square" className="h-11 flex-1" onPress={onStopRecording} />
+              <Button title="Cancel recording" variant="secondary" className="h-11 flex-1" onPress={onCancelRecording} />
+            </View>
+          </View>
+        ) : !clip ? (
+          <View className="mt-2 gap-2">
+            <Button
+              variant="secondary"
+              icon="mic"
+              title={existing?.hasWarningAudio && !clipRemoved ? 'Record a replacement' : 'Record a clip'}
+              onPress={onRecord}
+            />
+            <Button
+              variant="secondary"
+              icon="upload"
+              title={existing?.hasWarningAudio && !clipRemoved ? 'Choose a replacement file' : 'Choose an audio file'}
+              onPress={onPickClip}
+            />
+          </View>
         ) : null}
+        {recording.error ? <Text className="mt-2 text-sm text-red-600">{recording.error}</Text> : null}
         {clipError ? <Text className="mt-2 text-sm text-red-600">{clipError}</Text> : null}
-        <Text className="mt-2 text-xs leading-5 text-slate-500">Up to 5 MB. To record a clip instead, use the web dashboard for now.</Text>
+        <Text className="mt-2 text-xs leading-5 text-slate-500">Up to 5 MB. MP3, WAV or M4A; a recording is converted to MP3 for the helmet.</Text>
       </View>
 
       <View className="flex-row items-center justify-between">

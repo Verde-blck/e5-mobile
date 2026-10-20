@@ -15,10 +15,10 @@ const ROUND: FenceDraft = { ...EMPTY_DRAFT, name: '  Site A  ', center: { lat: 6
 const POLY: FenceDraft = { ...EMPTY_DRAFT, name: 'Yard', type: 'POLYGON', behavior: 'NO_ENTRY', center: null, points: [{ lat: 6.5285, lng: 3.3735 }, { lat: 6.5292, lng: 3.3762 }, { lat: 6.5271, lng: 3.3768 }] }
 
 async function main() {
-  await t('fence permissions: FENCE views, FENCE_MANAGE changes (and includes viewing); the retired GEO_FENCE means FENCE', () => {
+  await t('fence permissions: FENCE views, FENCE_MANAGE changes (and includes viewing); GEO_FENCE grants nothing here (the backend converts it to FENCE)', () => {
     assert.deepEqual(expandPermissions(['FENCE']), ['fences:read'])
     assert.deepEqual(expandPermissions(['FENCE_MANAGE']).sort(), ['fences:delete', 'fences:read', 'fences:write'])
-    assert.deepEqual(expandPermissions(['GEO_FENCE']), ['fences:read'])
+    assert.deepEqual(expandPermissions(['GEO_FENCE']), [])
   })
 
   await t('a fence from the API: strings become numbers, "HH:mm:ss" becomes "HH:mm", junk falls back safely', () => {
@@ -26,6 +26,7 @@ async function main() {
       validPeriods: [{ start: '08:00:00', end: '17:30:00' }], deviceIds: [12, '13'], active: false, warningAudioUrl: 'https://x/clip.mp3' })
     assert.deepEqual([f.id, f.center, f.radiusMeters, f.behavior, f.frequencyMinutes, f.active], [7, { lat: 6.5244, lng: 3.3792 }, 400, 'NO_ENTRY', 15, false])
     assert.deepEqual(f.validPeriods, [{ start: '08:00', end: '17:30' }]); assert.deepEqual(f.deviceIds, ['12', '13']); assert.equal(f.hasWarningAudio, true)
+    assert.equal(toFence({ id: 1, hasWarningAudio: true, warningAudioUrl: 'https://x/c.mp3' }).hasWarningAudio, true); assert.equal(toFence({ id: 1, hasWarningAudio: false, warningAudioUrl: null }).hasWarningAudio, false, 'null url and false flag: no clip'); assert.equal(toFence({ id: 1, warningAudioUrl: null }).hasWarningAudio, false)
     const odd = toFence({ id: 1, frequencyMinutes: 7, type: 'weird', behavior: 'weird' })
     assert.equal(odd.type, 'ROUND'); assert.equal(odd.behavior, 'FORBIDDEN_TO_LEAVE'); assert.equal(odd.frequencyMinutes, 0); assert.equal(odd.active, true, 'a fence is on unless the API says off'); assert.equal(odd.hasWarningAudio, false)
   })
@@ -86,13 +87,14 @@ async function main() {
   // ---- warning clip: attach, replace, remove ----
   const mp3 = (bytes = 2000, name = 'left-area.mp3'): ClipFile => ({ uri: 'file:///cache/' + name, name, mimeType: 'audio/mpeg', size: bytes, file: new Blob([new Uint8Array(bytes)], { type: 'audio/mpeg' }) })
 
-  await t('which files can be a clip: MP3 or WAV by name or type, not empty, up to 5 MB', () => {
-    for (const ok of [{ name: 'a.mp3' }, { name: 'A.WAV' }, { name: 'voice', mimeType: 'audio/x-wav' }, { name: 'x.bin', mimeType: 'audio/mpeg' }, { name: 'a.mp3', size: CLIP_MAX_BYTES }]) assert.equal(validateClip(ok), null, JSON.stringify(ok))
-    for (const bad of [{ name: 'notes.txt', mimeType: 'text/plain' }, { name: 'song.m4a', mimeType: 'audio/mp4' }, { name: 'song.flac' }, { name: 'a.mp3', size: 0 }, { name: 'a.mp3', size: CLIP_MAX_BYTES + 1 }]) assert.ok(validateClip(bad), JSON.stringify(bad))
-    assert.match(validateClip({ name: 'a.mp3', size: CLIP_MAX_BYTES + 1 }) ?? '', /5 MB/); assert.match(validateClip({ name: 'song.m4a' }) ?? '', /MP3 or WAV/)
+  await t('which files can be a clip: MP3, WAV, M4A, AAC or 3GP by name or type, not empty, up to 5 MB', () => {
+    for (const ok of [{ name: 'a.mp3' }, { name: 'A.WAV' }, { name: 'rec.m4a', mimeType: 'audio/mp4' }, { name: 'x.aac' }, { name: 'x.3gp' }, { name: 'voice', mimeType: 'audio/x-m4a' }, { name: 'voice', mimeType: 'audio/x-wav' }, { name: 'x.bin', mimeType: 'audio/mpeg' }, { name: 'a.mp3', size: CLIP_MAX_BYTES }]) assert.equal(validateClip(ok), null, JSON.stringify(ok))
+    for (const bad of [{ name: 'notes.txt', mimeType: 'text/plain' }, { name: 'song.ogg', mimeType: 'audio/ogg' }, { name: 'song.flac' }, { name: 'clip.mp4', mimeType: 'video/mp4' }, { name: 'a.mp3', size: 0 }, { name: 'a.mp3', size: CLIP_MAX_BYTES + 1 }]) assert.ok(validateClip(bad), JSON.stringify(bad))
+    assert.match(validateClip({ name: 'a.mp3', size: CLIP_MAX_BYTES + 1 }) ?? '', /5 MB/); assert.match(validateClip({ name: 'song.flac' }) ?? '', /MP3, WAV or M4A/)
   })
   await t('it is uploaded as what its name says, whatever vague type the picker reported', () => {
     assert.equal(clipMimeType('a.mp3', 'application/octet-stream'), 'audio/mpeg'); assert.equal(clipMimeType('a.WAV', ''), 'audio/wav'); assert.equal(clipMimeType('voice', 'audio/mpeg'), 'audio/mpeg')
+    assert.deepEqual(['a.m4a', 'a.AAC', 'a.3gp', 'noext'].map((n, i) => clipMimeType(n, i === 3 ? 'audio/mp4' : '')), ['audio/mp4', 'audio/aac', 'audio/3gpp', 'audio/mp4'], 'what a tablet records is sent as what it is')
     assert.deepEqual([formatBytes(900), formatBytes(2048), formatBytes(3 * 1024 * 1024)], ['900 B', '2 KB', '3.0 MB'])
   })
   await t('upload: multipart POST to /fences/{id}/warning-audio with one field, `file`, named as chosen', async () => {

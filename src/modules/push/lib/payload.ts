@@ -39,7 +39,7 @@ export function parsePushData(raw: unknown): PushMessage | null {
     kind: 'alarm',
     alarmId,
     alarmType: text(d.alarmType, 40),
-    severity: d.severity === 'critical' ? 'critical' : d.severity === 'warning' ? 'warning' : undefined,
+    severity: d.severity === 'critical' || d.severity === 'warning' || d.severity === 'normal' ? d.severity : undefined,
     deviceId: text(d.deviceId, 32),
     deviceName: text(d.deviceName, 80),
   }

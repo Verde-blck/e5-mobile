@@ -11,6 +11,12 @@ import { tokenStore } from '@/shared/lib/token'
 import { ALL_PERMISSIONS } from '@/shared/constants/modules'
 import * as settings from '@/modules/settings/api/settings.api'
 import { TimeoutError, withTimeout } from '@/shared/lib/withTimeout'
+import * as admins from '@/modules/users/api/admins.api'
+import { sendBroadcast } from '@/modules/group-call/api/broadcast.api'
+import { fetchMessages, sendVoiceMessage } from '@/modules/messaging/api/messages.api'
+import { getMockFleet } from '@/modules/devices/api/devices.mock'
+import { mockUserFor } from '@/modules/auth/mock-data'
+import { useAuthStore } from '@/shared/store/authStore'
 import { createRunner } from './harness'
 
 const { t, report } = createRunner()
@@ -118,6 +124,59 @@ async function main() {
     await assert.rejects(withTimeout(slow, 30), (e: Error) => e instanceof TimeoutError && /30 ms/.test(e.message))
     assert.equal(await withTimeout(Promise.resolve('ok'), 500), 'ok')
     await assert.rejects(withTimeout(Promise.reject(new Error('boom')), 500), /boom/)
+  })
+
+  // ---------- sample administrators enforce the backend's rules ----------
+  const signInAs = (username: string) => useAuthStore.getState().setUser(mockUserFor(username))
+  await t('sample administrators: you can\'t delete yourself (400), only a super admin deletes a super admin (403)', async () => {
+    signInAs('AD-001')
+    const list = await admins.fetchAdmins(); const self = list.find((a) => a.username === 'AD-001')!, boss = list.find((a) => a.superAdmin)!
+    await assert.rejects(admins.deleteAdmin(self.id), (e: { response?: { status: number } }) => e.response?.status === 400)
+    await assert.rejects(admins.deleteAdmin(boss.id), (e: { response?: { status: number } }) => e.response?.status === 403)
+    await assert.rejects(admins.updateAdmin(boss.id, { department: 'x' }), (e: { response?: { status: number } }) => e.response?.status === 403, 'nor edit one')
+  })
+  await t('sample administrators: you can\'t grant a code you don\'t hold (403 naming it), but may grant what you hold', async () => {
+    signInAs('AD-001')
+    const refused = await admins.createAdmin({ username: 'grants-too-much', password: 'secret1', permissions: ['PHOTO_RECORD_MANAGE'], deviceIds: [] }).catch((e) => e)
+    assert.equal(refused.response?.status, 403); assert.equal(refused.response?.data?.permission, 'PHOTO_RECORD_MANAGE')
+    const ok = await admins.createAdmin({ username: 'fine', password: 'secret1', permissions: ['MONITORING_CENTER', 'ALARM_RECORD'], deviceIds: [] }); assert.ok(ok.id > 5 && ok.superAdmin === false)
+  })
+  await t('sample administrators: a name can be used once (409), a short password is refused (400), and a super admin may do all of it', async () => {
+    signInAs('ADM-001')
+    await assert.rejects(admins.createAdmin({ username: 'op-014', password: 'secret1', permissions: ['DASHBOARD'], deviceIds: [] }), (e: { response?: { status: number } }) => e.response?.status === 409, 'case-insensitive')
+    await assert.rejects(admins.createAdmin({ username: 'short-pw', password: '123', permissions: ['DASHBOARD'], deviceIds: [] }), (e: { response?: { status: number } }) => e.response?.status === 400)
+    const fine = await admins.createAdmin({ username: 'anything-goes', password: 'secret1', permissions: ['PHOTO_RECORD_MANAGE'], deviceIds: [] })
+    await admins.updateAdmin(fine.id, { department: 'HSE', password: '' }); assert.equal((await admins.fetchAdmins()).find((a) => a.id === fine.id)?.department, 'HSE')
+    await admins.deleteAdmin(fine.id); assert.ok(!(await admins.fetchAdmins()).some((a) => a.id === fine.id))
+  })
+  await t('sample administrators: the last super admin can\'t be deleted (409), checked from a second super admin', async () => {
+    signInAs('ADM-001')
+    const second = await admins.createAdmin({ username: 'second-boss', password: 'secret1', permissions: ['DASHBOARD'], deviceIds: [] })
+    // (the sample data has one super admin: confirm the rule by trying to delete them as someone else who is a super admin)
+    const boss = (await admins.fetchAdmins()).find((a) => a.superAdmin)!
+    useAuthStore.getState().setUser({ ...mockUserFor('ADM-001'), username: 'someone-else' })
+    await assert.rejects(admins.deleteAdmin(boss.id), (e: { response?: { status: number; data?: { error?: string } } }) => e.response?.status === 409 && e.response?.data?.error === 'last_super_admin')
+    await admins.deleteAdmin(second.id)
+  })
+
+  await t('sample voice messages: a reachable helmet plays it now, an offline one has it queued, a deactivated one is not taken', async () => {
+    const fleet = getMockFleet(), now = Date.now()
+    const online = fleet.find((d) => d.active && derivePresence(d.lastSeenAt, now) !== 'offline')!, offline = fleet.find((d) => d.active && derivePresence(d.lastSeenAt, now) === 'offline')!, inactive = fleet.find((d) => !d.active)
+    assert.ok(online && offline, 'the sample fleet has both')
+    const ids = [online.id, offline.id, ...(inactive ? [inactive.id] : []), 'not-a-helmet']
+    const got = await sendBroadcast(ids, { uri: 'file:///m.m4a', name: 'm.m4a', mimeType: 'audio/mp4' })
+    assert.equal(got.find((d) => d.deviceId === online.id)?.delivered, true); assert.equal(got.find((d) => d.deviceId === offline.id)?.delivered, false)
+    assert.ok(got.every((d) => typeof d.messageId === 'number'), 'each helmet gets its own copy, as in the real answer')
+    assert.ok(!got.some((d) => d.deviceId === 'not-a-helmet') && (!inactive || !got.some((d) => d.deviceId === inactive.id)), 'left out of the answer, which the screen reports as "not sent"')
+  })
+
+  await t('sample conversations: three messages (sent, from the wearer, sent), and a new one joins the end, queued if the helmet is offline', async () => {
+    const fleet = getMockFleet(), now = Date.now()
+    const online = fleet.find((d) => d.active && derivePresence(d.lastSeenAt, now) !== 'offline')!, offline = fleet.find((d) => d.active && derivePresence(d.lastSeenAt, now) === 'offline')!
+    const seeded = await fetchMessages(online.id); assert.deepEqual(seeded.map((m) => m.direction), ['TO_HELMET', 'FROM_HELMET', 'TO_HELMET']); assert.ok(seeded.every((m) => m.audioUrl.startsWith('data:audio/wav')))
+    const audio = { uri: 'blob:fake-recording', name: 'message-1.m4a', mimeType: 'audio/mp4' }
+    assert.equal((await sendVoiceMessage(online.id, audio)).delivered, true); assert.equal((await sendVoiceMessage(offline.id, audio)).delivered, false, 'offline: queued')
+    const after = await fetchMessages(online.id); assert.equal(after.length, 4); assert.deepEqual([after[3].direction, after[3].audioUrl], ['TO_HELMET', 'blob:fake-recording'])
   })
 }
 

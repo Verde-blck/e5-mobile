@@ -12,7 +12,7 @@ export interface PushAdapter {
   setup(): Promise<void>
   permission(): Promise<PermissionState>
   requestPermission(): Promise<PermissionState>
-  /** The native FCM token. Throws when Google services or Firebase aren't available in this build. */
+  /** The Expo push token. Throws when there is no EAS project id, or Google services / Firebase aren't available. */
   getToken(): Promise<string>
   onTokenChange(callback: (token: string) => void): () => void
   /** A push arrived while the app is open. */

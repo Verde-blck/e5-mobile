@@ -5,8 +5,9 @@ import { registerPush, unregisterPush } from '@/modules/push/api/push.api'
 import type { PermissionState, PushAdapter } from '@/modules/push/lib/adapter'
 import { ALARM_CHANNEL, CHANNELS, SIREN_SOUND, SOS_CHANNEL, channelFor } from '@/modules/push/lib/channels'
 import { describeStatus } from '@/modules/push/lib/describe'
-import { shouldShowInForeground } from '@/modules/push/lib/foreground'
+import { appCoversAlarm, shouldShowInForeground } from '@/modules/push/lib/foreground'
 import { getInstallId, resetInstallIdCache } from '@/modules/push/lib/installId'
+import { isExpoPushToken, isValidInstallId } from '@/modules/push/lib/expoToken'
 import { parsePushData } from '@/modules/push/lib/payload'
 import { syncPush } from '@/modules/push/lib/sync'
 import { unregisterThisTablet } from '@/modules/push/lib/unregister'
@@ -21,7 +22,7 @@ const ID = 'a1b2c3d4e5f60718293a4b5c6d7e8f90'
 
 function fakeAdapter(over: Partial<{ supported: boolean; permission: PermissionState; afterRequest: PermissionState; token: string | Error }> = {}) {
   const calls: string[] = []
-  const state = { supported: true, permission: 'undetermined' as PermissionState, afterRequest: 'granted' as PermissionState, token: 'tok-1' as string | Error, ...over }
+  const state = { supported: true, permission: 'undetermined' as PermissionState, afterRequest: 'granted' as PermissionState, token: 'ExponentPushToken[tok-1]' as string | Error, ...over }
   const adapter: PushAdapter = {
     isSupported: () => state.supported,
     setup: async () => { calls.push('setup') },
@@ -47,6 +48,8 @@ async function main() {
     assert.deepEqual(parsePushData({ kind: 'alarm-resolved', alarmId: 77 }), { kind: 'alarm-resolved', alarmId: '77' })
     assert.deepEqual(parsePushData('{"kind":"alarm","alarmId":"5"}'), { kind: 'alarm', alarmId: '5', alarmType: undefined, severity: undefined, deviceId: undefined, deviceName: undefined })
     assert.equal(parsePushData({ kind: 'alarm', alarmId: '5', severity: 'bogus' })?.kind === 'alarm' && (parsePushData({ kind: 'alarm', alarmId: '5', severity: 'bogus' }) as { severity?: string }).severity, undefined)
+    // The backend marks non-critical alarms 'normal' (and gas warnings 'warning').
+    for (const sev of ['critical', 'warning', 'normal']) assert.equal((parsePushData({ kind: 'alarm', alarmId: '5', severity: sev }) as { severity?: string }).severity, sev)
   })
   await t('anything else is ignored: an alarm id that could steer a route, a wrong kind, junk', () => {
     for (const bad of [null, undefined, 5, [], {}, { kind: 'alarm' }, { kind: 'alarm', alarmId: '../settings' }, { kind: 'alarm', alarmId: 'a/b' }, { kind: 'alarm', alarmId: '77?x=1' }, { kind: 'alarm', alarmId: '' }, { kind: 'alarm', alarmId: 'x'.repeat(65) },
@@ -74,10 +77,19 @@ async function main() {
     assert.ok(fs.existsSync(plugin[1].icon), 'the status-bar icon exists')
   })
 
-  await t('while the app is open and its alarm connection is live the system notification stays quiet; otherwise it shows', () => {
-    assert.equal(shouldShowInForeground({ appActive: true, streamOpen: true }), false)
-    assert.equal(shouldShowInForeground({ appActive: true, streamOpen: false }), true, 'stream down: the notification is the only warning')
-    assert.equal(shouldShowInForeground({ appActive: false, streamOpen: true }), true); assert.equal(shouldShowInForeground({ appActive: false, streamOpen: false }), true)
+  await t('while the app is open and its alarm connection is live the system notification stays quiet, but only if the app covers that alarm; otherwise it shows', () => {
+    const show = (appActive: boolean, streamOpen: boolean, covers: boolean) => shouldShowInForeground({ appActive, streamOpen, appCoversAlarm: covers })
+    assert.equal(show(true, true, true), false)
+    assert.equal(show(true, true, false), true, 'the app alone would not warn as loudly: show it')
+    assert.equal(show(true, false, true), true, 'stream down: the notification is the only warning')
+    assert.equal(show(false, true, true), true); assert.equal(show(false, false, true), true)
+  })
+  await t('the backend calls more alarms critical than the app: gas at danger level is siren-worthy there, so the app must not hide its notification', () => {
+    const push = (alarmType: string, severity?: 'critical' | 'warning' | 'normal') => ({ kind: 'alarm' as const, alarmId: '1', alarmType, severity })
+    for (const code of ['7', 'manual_sos_button', '4', '11', '6']) assert.equal(appCoversAlarm(push(code, 'critical')), true, 'the app sirens for ' + code + ' itself')
+    assert.equal(appCoversAlarm(push('99', 'critical')), false, 'an alarm only the backend calls critical (a gas danger)')
+    assert.equal(appCoversAlarm(push('99', 'warning')), true, 'a non-critical alarm: the app\'s toast covers it'); assert.equal(appCoversAlarm(push('99', 'normal')), true)
+    assert.equal(appCoversAlarm({ kind: 'alarm-resolved', alarmId: '1' }), true); assert.equal(appCoversAlarm(null), false, 'unrecognisable: show it')
   })
 
   // ---- this installation's id ----
@@ -125,7 +137,7 @@ async function main() {
   })
   await t('after "Turn on": ask, and if allowed register this tablet once with its token and the app version', async () => {
     const r = await run({}, true); assert.equal(r.status, 'on'); assert.deepEqual(r.calls, ['setup', 'request', 'token'])
-    assert.deepEqual(r.sent, [{ installId: ID, token: 'tok-1', platform: 'android', appVersion: '1.2.3' }])
+    assert.deepEqual(r.sent, [{ installId: ID, token: 'ExponentPushToken[tok-1]', platform: 'android', appVersion: '1.2.3' }])
   })
   await t('a refusal is "blocked" and registers nothing', async () => {
     const r = await run({ afterRequest: 'denied' }, true); assert.equal(r.status, 'blocked'); assert.equal(r.sent.length, 0)
@@ -150,6 +162,20 @@ async function main() {
     assert.match(describeStatus('off').detail, /keep this app open/i, 'while off, say what actually works')
   })
 
+  // ---- Cypher's reply: Expo tokens, install ids ----
+  await t('only an Expo push token is accepted (what the backend takes; anything else is a 400 invalid_token)', () => {
+    for (const ok of ['ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]', 'ExpoPushToken[abc-123_X]']) assert.equal(isExpoPushToken(ok), true, ok)
+    for (const bad of ['', 'fcm:APA91bHxxxxxxxx', 'ExponentPushToken[]', 'ExponentPushToken[a b]', 'ExponentPushToken[abc', 'exponentpushtoken[abc]', ' ExponentPushToken[abc]', null, undefined, 42, {}]) assert.equal(isExpoPushToken(bad), false, String(bad))
+  })
+  await t('the install id fits the backend\'s rule (8 to 64 of letters, digits, - and _), and the one the app makes does', async () => {
+    for (const ok of ['abcd1234', 'a'.repeat(64), 'abc_DEF-123']) assert.equal(isValidInstallId(ok), true, ok)
+    for (const bad of ['short', 'a'.repeat(65), 'has space1', 'dots.not.ok1', 'slash/ok/no1', '']) assert.equal(isValidInstallId(bad), false, bad)
+    resetInstallIdCache(); await storage.remove('push.installId'); assert.equal(isValidInstallId(await getInstallId()), true)
+  })
+  await t('a token that is not an Expo token (a raw FCM token, say) is never sent: "unavailable", not a failing registration', async () => {
+    const r = await run({ permission: 'granted', token: 'fcm:APA91bHrawdevicetoken' }, true); assert.equal(r.status, 'unavailable'); assert.equal(r.sent.length, 0)
+  })
+
   // ---- build config ----
   await t('the Firebase file is added to the Android config only when it exists (or EAS supplies it), so the app builds without it', () => {
     const load = createRequire(`${process.cwd()}/`)
@@ -158,6 +184,31 @@ async function main() {
     if (!fs.existsSync('google-services.json')) assert.equal(cfg().android.googleServicesFile, undefined, 'no file, no setting')
     process.env.GOOGLE_SERVICES_JSON = '/eas/secret/google-services.json'; assert.equal(cfg().android.googleServicesFile, '/eas/secret/google-services.json'); assert.equal(cfg().android.package, 'com.e5energy.smarthelmet', 'the rest of the config is untouched')
     if (saved === undefined) delete process.env.GOOGLE_SERVICES_JSON; else process.env.GOOGLE_SERVICES_JSON = saved
+  })
+  await t('the Expo project link survives unpacking a new zip: it lives in e5.local.json (never in a zip), with app.json and the environment as the other sources', () => {
+    const load = createRequire(`${process.cwd()}/`)
+    type Out = { owner?: string; extra?: { eas?: { projectId?: string } } }
+    const cfg = (config: object = {}) => (load('./app.config.js') as (a: { config: object }) => Out)({ config: { android: {}, ...config } })
+    const file = 'e5.local.json'
+    const hadFile = fs.existsSync(file), kept = hadFile ? fs.readFileSync(file, 'utf8') : ''
+    const savedEnv = process.env.EAS_PROJECT_ID; delete process.env.EAS_PROJECT_ID
+    try {
+      if (hadFile) fs.rmSync(file)
+      assert.equal(cfg().extra?.eas?.projectId, undefined, 'nothing anywhere: nothing invented'); assert.equal(cfg().owner, undefined)
+      process.env.EAS_PROJECT_ID = 'env-id'; assert.equal(cfg().extra?.eas?.projectId, 'env-id', 'the environment is the last resort')
+      fs.writeFileSync(file, JSON.stringify({ projectId: 'file-id', owner: 'acme' }))
+      assert.deepEqual([cfg().extra?.eas?.projectId, cfg().owner], ['file-id', 'acme'], 'the local file beats the environment')
+      assert.deepEqual([cfg({ extra: { eas: { projectId: 'app-json-id' } }, owner: 'json-owner' }).extra?.eas?.projectId, cfg({ owner: 'json-owner' }).owner], ['app-json-id', 'json-owner'], 'app.json, where eas init may have put it, beats both')
+      assert.equal(cfg({ extra: { other: 1 } }).extra?.eas?.projectId, 'file-id'); assert.equal((cfg({ extra: { other: 1 } }).extra as { other?: number }).other, 1, 'the rest of extra is kept')
+      fs.writeFileSync(file, JSON.stringify({ projectId: '00000000-0000-0000-0000-000000000000', owner: 'your-expo-username-or-organisation'.slice(0, 0) }))
+      assert.equal(cfg().extra?.eas?.projectId, 'env-id', 'the placeholder from the example file is ignored, not used as a real id')
+      fs.writeFileSync(file, '{ this is not json')
+      assert.equal(cfg().extra?.eas?.projectId, 'env-id', 'a damaged file must never break the build')
+    } finally {
+      if (fs.existsSync(file)) fs.rmSync(file)
+      if (hadFile) fs.writeFileSync(file, kept)
+      if (savedEnv === undefined) delete process.env.EAS_PROJECT_ID; else process.env.EAS_PROJECT_ID = savedEnv
+    }
   })
 }
 main().then(report)

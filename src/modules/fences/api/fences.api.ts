@@ -45,10 +45,8 @@ export function toFence(api: ApiFence): Fence {
       : [],
     deviceIds: Array.isArray(api.deviceIds) ? (api.deviceIds as unknown[]).map(String) : [],
     active: api.active !== false,
-    // The guide doesn't name this field; accept the likely spellings.
-    hasWarningAudio: Boolean(
-      api.hasWarningAudio ?? api.warningAudioUrl ?? api.warningAudio ?? api.warningAudioKey
-    ),
+    // Confirmed by Cypher (20 Oct): hasWarningAudio, and warningAudioUrl which is null when there is no clip.
+    hasWarningAudio: Boolean(api.hasWarningAudio ?? api.warningAudioUrl),
   }
 }
 

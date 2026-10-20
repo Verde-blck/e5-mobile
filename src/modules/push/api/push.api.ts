@@ -3,13 +3,14 @@ import { env } from '@/config/env'
 import { statusOf } from '@/shared/lib/errors'
 
 /**
- * PROPOSED contract, not yet agreed with the backend (it is in the request to Cypher):
+ * The backend's contract (Cypher's reply of 20 Oct 2026; built, going live with the next deploy):
  *
  *   PUT    /api/push/registrations/{installId}   { token, platform: "android", appVersion }  -> 204
- *   DELETE /api/push/registrations/{installId}                                               -> 204
+ *          (400 invalid_token / invalid_install_id for a malformed token or id)
+ *   DELETE /api/push/registrations/{installId}                                               -> 204 (404 if unknown)
  *
- * `token` is the tablet's native FCM token (not an Expo push token), so alarm data goes from E5's
- * backend to Google and the tablet and nowhere else. PUT is an upsert keyed on the signed-in user
+ * `token` is the Expo push token (ExponentPushToken[...]): Cypher's backend sends through Expo's push
+ * service, which delivers via Google FCM using the key held in E5's Expo account. PUT is an upsert keyed on the signed-in user
  * plus installId, so a refreshed token or a second sign-in updates one record.
  */
 export interface PushRegistration {

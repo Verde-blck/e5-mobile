@@ -1,0 +1,47 @@
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { HelmetSession } from '../lib/session'
+import { defaultDeps } from '../lib/defaultDeps'
+import type { SessionMode, SessionState } from '../types'
+
+const noopSubscribe = () => () => {}
+const noState = () => null
+
+/**
+ * Owns at most one session for the screen that uses it.
+ *
+ * Starting a session sends the helmet a command, so it must never happen twice by accident. React can run an
+ * effect, undo it and run it again (in development), which would send start, stop, start within a blink; callers
+ * therefore begin from a click, or from a timer that the undo cancels. The effect below only ever ends a
+ * session, which is safe to repeat.
+ */
+export function useHelmetSession(deviceId: string) {
+  const [session, setSession] = useState<HelmetSession | null>(null)
+  const sessionRef = useRef<HelmetSession | null>(null)
+
+  const state = useSyncExternalStore(session ? session.subscribe : noopSubscribe, session ? session.getState : noState) as SessionState | null
+
+  const begin = useCallback(
+    (mode: SessionMode) => {
+      sessionRef.current?.end()
+      const next = new HelmetSession(deviceId, mode, defaultDeps)
+      sessionRef.current = next
+      setSession(next)
+      void next.start()
+    },
+    [deviceId]
+  )
+
+  const end = useCallback(() => {
+    sessionRef.current?.end()
+  }, [])
+
+  // Leaving the screen ends the session.
+  useEffect(
+    () => () => {
+      sessionRef.current?.end()
+    },
+    []
+  )
+
+  return { session, state, begin, end }
+}

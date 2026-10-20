@@ -106,6 +106,40 @@ Built from Cypher's 16 Oct backend update.
 - **Not built.** The rest of a helmet's Unit Setting (upload method, picture quality, temperatures,
   hat-off and no-movement times, alarm sounds). The backend sends them, but their field names aren't documented.
 
+## Group call
+
+More > Group call (needs `groupCall:read`). Choose a group and helmets, **record a voice message on the tablet**, listen back,
+and send it to every chosen helmet, with a result per helmet (played, queued for when it reconnects, not sent). Live group
+calls (video) are not in the app. In a real build the screen stays hidden until voice messages are switched on, because the
+upload request is unchecked: what is known, what is guessed and how to switch it on are in [docs/GROUP_CALL.md](docs/GROUP_CALL.md).
+
+## Voice messages with one helmet
+
+On any helmet: **Voice messages** (needs `groupCall:read`). A conversation like the web's: what was sent to the helmet on the
+right, recordings from the wearer on the left, each with a player (one plays at a time). Before a recording is played its link
+is checked, because the links expire after about an hour; a dead one is reported as "no longer available" instead of playing
+silence. The list refreshes every few seconds while it is open. Reading works in a real build. **Sending** (record, listen
+back, send, then "Delivered" or "Queued" for an offline helmet) is off in a real build until
+`EXPO_PUBLIC_BROADCAST_ENABLED=true`, for the same reason as group messages: the web sends MP3 and a tablet can only record
+`.m4a`, which the backend must be willing to convert ([docs/GROUP_CALL.md](docs/GROUP_CALL.md)).
+
+## Administrators
+
+More > Administrators (needs `ADMINISTRATOR_SETTING`; viewing needs only read). Built from the web's users module, with
+its permission file copied verbatim so a role shows the same screens on a tablet as in the browser.
+
+- **Accounts:** list with search, add, edit, delete. A password left blank on an edit is never sent, so it can't be wiped.
+- **Permissions:** a tree where each area is View, or View plus *Can change* (only one code is ever stored). You can
+  only tick what you hold yourself, as the backend insists; *Select all* gives the strongest right you may grant.
+- **Helmets:** an account can be limited to chosen helmets; the last one can't be unticked (that would silently mean
+  every helmet).
+- **Delete** follows the backend's rules (Cypher, 20 Oct): not your own account, only a super admin deletes a super
+  admin, never the last super admin. Deleting signs that account out on its next request and removes its tablets'
+  push registrations. It is also how a lost tablet is cut off, since there is no logout or revoke endpoint.
+- **Groups:** add, rename, delete, with a count of who is in each.
+- Sample accounts: `AD-001` administers but is not a super admin (so the grant limits and locked super-admin rows
+  can be seen); `ADM-001` is the super admin.
+
 ## Branding and orientation
 
 The look follows the web dashboard (colours, Inter / Epilogue / Geist Mono, the dot-grid canvas and the
@@ -115,14 +149,84 @@ real company logo (the one in the app is an interim crop): [docs/BRANDING.md](do
 ## Alarm alerts for a locked tablet (push)
 
 The app hears alarms over a live connection that stops when the screen locks, so a locked tablet misses an SOS.
-Push fixes that. The app side is built and tested; it stays **off** (`EXPO_PUBLIC_PUSH_ENABLED=false`) until the
-backend can register tablets and send the push, and until E5's Firebase project exists. While off, More > Alarm
+Push fixes that. The backend side is built (Cypher, 20 Oct, going live with his next deploy) and the app side is built and
+tested; it stays **off** (`EXPO_PUBLIC_PUSH_ENABLED=false`) until E5's Expo, Firebase and FCM-key set-up exists. While off, More > Alarm
 alerts says so plainly. Full setup and turn-on steps: [docs/PUSH_SETUP.md](docs/PUSH_SETUP.md).
 
 - Two Android channels, `sos` (siren, alarm volume, can pass Do Not Disturb) and `alarm`. The ids are a contract
   with the backend.
-- The app uses the tablet's own FCM token (not an Expo push token) and registers it with
-  `PUT /api/push/registrations/{installId}`; signing out unregisters it. **This contract is proposed, not agreed.**
+- The backend sends through Expo's push service, so the app registers an **Expo push token** with
+  `PUT /api/push/registrations/{installId}`; signing out unregisters it. (Expo is a third party in the path.)
+- Gas alarms at danger level are critical on the backend: the app never hides their notification, since on its own it
+  would only chime.
+- Notifications are never requested out of the blue: a banner and the More screen offer "Turn on alerts".
+- Tapping an alert opens that alarm; while the app is open and its alarm connection is live the system
+  notification is suppressed, and shown again if the connection drops.
+- "Send a test alert" works without the backend, to check the siren on a locked tablet.
+- Permissions follow the web: `fences`, `live` and `groups` are capabilities (no tab), as in the web's `modules.ts`.
+
+## Live view and calls with a helmet
+
+On a helmet: **Watch live**, **Call helmet**, and **Join SOS call** (also in the SOS banner and on an SOS alarm). Built on the
+web's own live module, so it uses the same protocol: the helmet's picture and sound over WebRTC from the media server, and
+voice back from the tablet (no camera, no camera permission). Who may: watching needs live view, calling needs live
+management, and anyone signed in can join an SOS. A call ends, and the helmet leaves call mode, when you hang up, leave the
+screen, or stay out of the app for more than a few seconds. **Not yet tried on a real helmet**, so a real build keeps it
+hidden until `EXPO_PUBLIC_LIVE_ENABLED=true`: what to try and what can't be known from here are in [docs/CALLS.md](docs/CALLS.md).
+
+## Group call
+
+More > Group call (needs `groupCall:read`). Choose a group and helmets, **record a voice message on the tablet**, listen back,
+and send it to every chosen helmet, with a result per helmet (played, queued for when it reconnects, not sent). Live group
+calls (video) are not in the app. In a real build the screen stays hidden until voice messages are switched on, because the
+upload request is unchecked: what is known, what is guessed and how to switch it on are in [docs/GROUP_CALL.md](docs/GROUP_CALL.md).
+
+## Voice messages with one helmet
+
+On any helmet: **Voice messages** (needs `groupCall:read`). A conversation like the web's: what was sent to the helmet on the
+right, recordings from the wearer on the left, each with a player (one plays at a time). Before a recording is played its link
+is checked, because the links expire after about an hour; a dead one is reported as "no longer available" instead of playing
+silence. The list refreshes every few seconds while it is open. Reading works in a real build. **Sending** (record, listen
+back, send, then "Delivered" or "Queued" for an offline helmet) is off in a real build until
+`EXPO_PUBLIC_BROADCAST_ENABLED=true`, for the same reason as group messages: the web sends MP3 and a tablet can only record
+`.m4a`, which the backend must be willing to convert ([docs/GROUP_CALL.md](docs/GROUP_CALL.md)).
+
+## Administrators
+
+More > Administrators (needs `ADMINISTRATOR_SETTING`; viewing needs only read). Built from the web's users module, with
+its permission file copied verbatim so a role shows the same screens on a tablet as in the browser.
+
+- **Accounts:** list with search, add, edit, delete. A password left blank on an edit is never sent, so it can't be wiped.
+- **Permissions:** a tree where each area is View, or View plus *Can change* (only one code is ever stored). You can
+  only tick what you hold yourself, as the backend insists; *Select all* gives the strongest right you may grant.
+- **Helmets:** an account can be limited to chosen helmets; the last one can't be unticked (that would silently mean
+  every helmet).
+- **Delete** follows the backend's rules (Cypher, 20 Oct): not your own account, only a super admin deletes a super
+  admin, never the last super admin. Deleting signs that account out on its next request and removes its tablets'
+  push registrations. It is also how a lost tablet is cut off, since there is no logout or revoke endpoint.
+- **Groups:** add, rename, delete, with a count of who is in each.
+- Sample accounts: `AD-001` administers but is not a super admin (so the grant limits and locked super-admin rows
+  can be seen); `ADM-001` is the super admin.
+
+## Branding and orientation
+
+The look follows the web dashboard (colours, Inter / Epilogue / Geist Mono, the dot-grid canvas and the
+"Command Centre" sign-in panel), and the app is locked to **portrait**. What is where, and how to swap in the
+real company logo (the one in the app is an interim crop): [docs/BRANDING.md](docs/BRANDING.md).
+
+## Alarm alerts for a locked tablet (push)
+
+The app hears alarms over a live connection that stops when the screen locks, so a locked tablet misses an SOS.
+Push fixes that. The backend side is built (Cypher, 20 Oct, going live with his next deploy) and the app side is built and
+tested; it stays **off** (`EXPO_PUBLIC_PUSH_ENABLED=false`) until E5's Expo, Firebase and FCM-key set-up exists. While off, More > Alarm
+alerts says so plainly. Full setup and turn-on steps: [docs/PUSH_SETUP.md](docs/PUSH_SETUP.md).
+
+- Two Android channels, `sos` (siren, alarm volume, can pass Do Not Disturb) and `alarm`. The ids are a contract
+  with the backend.
+- The backend sends through Expo's push service, so the app registers an **Expo push token** with
+  `PUT /api/push/registrations/{installId}`; signing out unregisters it. (Expo is a third party in the path.)
+- Gas alarms at danger level are critical on the backend: the app never hides their notification, since on its own it
+  would only chime.
 - Notifications are never requested out of the blue: a banner and the More screen offer "Turn on alerts".
 - Tapping an alert opens that alarm; while the app is open and its alarm connection is live the system
   notification is suppressed, and shown again if the connection drops.
@@ -150,9 +254,9 @@ Built from the web app's own fence module (types, geometry and validation are th
   The backend's own 400 messages are shown as written.
 - **Permissions.** A `fences` module, as the web's fence screens use: `FENCE` views, `FENCE_MANAGE` changes.
 - **Warning clip.** Attach an MP3 or WAV (up to 5 MB) from the tablet, replace it, remove it, and preview it
-  before saving. If the fence saves but the clip upload fails, the fence is kept and only the clip is retried
-  (saving again edits it, it can't create a duplicate). Recording a clip on the tablet needs the backend to accept
-  phone recordings (m4a): it is in the request to Cypher.
+  before saving, or **record one on the tablet** (up to 30 seconds; the backend converts the .m4a to MP3 for the
+  helmet). If the fence saves but the clip upload fails, the fence is kept and only the clip is retried (saving
+  again edits it, it can't create a duplicate).
 
 ## Track playback
 
@@ -170,8 +274,8 @@ the web code, with the changes below.
   switch brings them back. Dates use the tablet's local day, where the web page used UTC (a day off for the
   first hour after midnight in Lagos). The map fits every run of real length, not only the longest, and keeps
   the route clear of the playback bar.
-- **Limit.** The telemetry endpoint has no date filter, so only the latest 2,000 rows can be read; a range
-  that is cut short says so. Worth asking Cypher for `from` and `to` parameters.
+- **Long ranges.** The telemetry endpoint takes `from` and `to` (and pages of up to 10,000 rows). The app reads up to
+  three pages, newest first; a range too big for that is trimmed at its oldest end and says so.
 
 ## How alarms work
 

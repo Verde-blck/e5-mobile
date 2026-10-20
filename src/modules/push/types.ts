@@ -13,7 +13,7 @@ export interface AlarmPush {
   kind: 'alarm'
   alarmId: string
   alarmType?: string
-  severity?: 'critical' | 'warning'
+  severity?: 'critical' | 'warning' | 'normal'
   deviceId?: string
   deviceName?: string
 }

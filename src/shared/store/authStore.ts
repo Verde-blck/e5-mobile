@@ -20,6 +20,12 @@ export interface AuthUser {
   role: string
   permissions: Permission[]
   /**
+   * The backend's own permission codes (e.g. MONITORING_CENTER_MANAGE), kept so the Administrators form can
+   * offer only what this person may hand out: the backend refuses to let anyone grant a code they don't hold.
+   * Absent on a profile cached before this existed, which is treated as none.
+   */
+  apiPermissions?: string[]
+  /**
    * Set when an administrator issued or reset the password. The web dashboard
    * refuses to render anything but a change-password screen until it clears.
    * The mobile app carries the flag but doesn't act on it yet.

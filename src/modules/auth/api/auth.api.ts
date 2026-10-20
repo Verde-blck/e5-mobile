@@ -4,7 +4,7 @@ import { decodeToken, tokenStore } from '@/shared/lib/token'
 import { storage } from '@/shared/lib/storage'
 import { isForbidden, statusOf } from '@/shared/lib/errors'
 import { expandPermissions } from '@/shared/constants/backend-permissions'
-import { ALL_PERMISSIONS } from '@/shared/constants/modules'
+import { ALL_PERMISSIONS, type Permission } from '@/shared/constants/modules'
 import { withTimeout } from '@/shared/lib/withTimeout'
 import type { AuthUser } from '@/shared/store/authStore'
 import { mockTwoFactorOn, mockUserFor, setMockTwoFactor } from '../mock-data'
@@ -50,7 +50,9 @@ export function userFromProfile(profile: ApiProfile, fallbackUsername: string): 
     name: username,
     role: superAdmin ? 'Super admin' : (profile.roleName ?? 'No role'),
     superAdmin,
-    permissions: superAdmin ? ALL_PERMISSIONS : expandPermissions(profile.permissions ?? []),
+    // expandPermissions only ever produces module:action strings from MODULE_PERMISSION's keys.
+    permissions: superAdmin ? ALL_PERMISSIONS : (expandPermissions(profile.permissions ?? []) as Permission[]),
+    apiPermissions: profile.permissions ?? [],
     deviceIds: profile.deviceIds ?? [],
     twoFactorEnabled: profile.twoFactorEnabled === true,
     scope: { allSites: true, sites: [] },

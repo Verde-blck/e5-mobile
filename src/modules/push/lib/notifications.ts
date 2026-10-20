@@ -1,9 +1,10 @@
 import { AppState, Linking, Platform } from 'react-native'
+import Constants from 'expo-constants'
 import * as Notifications from 'expo-notifications'
 import { streamStatus } from '@/modules/alarms/lib/alarmStream'
 import type { PermissionState, PushAdapter } from './adapter'
 import { CHANNELS, SOS_CHANNEL } from './channels'
-import { shouldShowInForeground } from './foreground'
+import { appCoversAlarm, shouldShowInForeground } from './foreground'
 import { parsePushData } from './payload'
 
 const IMPORTANCE = {
@@ -12,6 +13,20 @@ const IMPORTANCE = {
 } as const
 
 let configured = false
+
+/** The EAS project this build belongs to: Expo needs it to issue a push token (`eas init` writes it into app.json). */
+function easProjectId(): string | undefined {
+  const fromConfig = (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId
+  return fromConfig ?? Constants.easConfig?.projectId
+}
+
+async function fetchExpoToken(): Promise<string> {
+  const projectId = easProjectId()
+  if (!projectId) throw new Error('No EAS project id: run `eas init` (see docs/PUSH_SETUP.md)')
+  const token = await Notifications.getExpoPushTokenAsync({ projectId })
+  if (typeof token.data !== 'string' || !token.data) throw new Error('No push token')
+  return token.data
+}
 
 /** The Android tablet implementation, on expo-notifications and the device's own FCM token. */
 export const notifications: PushAdapter = {
@@ -22,10 +37,11 @@ export const notifications: PushAdapter = {
     configured = true
 
     Notifications.setNotificationHandler({
-      handleNotification: async () => {
+      handleNotification: async (notification) => {
         const show = shouldShowInForeground({
           appActive: AppState.currentState === 'active',
           streamOpen: streamStatus.get() === 'open',
+          appCoversAlarm: appCoversAlarm(parsePushData(notification.request.content.data)),
         })
         return { shouldShowBanner: show, shouldShowList: show, shouldPlaySound: show, shouldSetBadge: false }
       },
@@ -65,15 +81,14 @@ export const notifications: PushAdapter = {
     return result.granted ? 'granted' : 'denied'
   },
 
-  async getToken() {
-    const token = await Notifications.getDevicePushTokenAsync()
-    if (typeof token.data !== 'string' || !token.data) throw new Error('No push token')
-    return token.data
-  },
+  // The backend sends through Expo's push service, so it needs the Expo token, not the raw FCM one.
+  getToken: fetchExpoToken,
 
   onTokenChange(callback) {
-    const subscription = Notifications.addPushTokenListener((token) => {
-      if (typeof token.data === 'string' && token.data) callback(token.data)
+    // The device's own FCM token rotating is the cue; the Expo token is then asked for again, and the
+    // caller registers it if it is different.
+    const subscription = Notifications.addPushTokenListener(() => {
+      void fetchExpoToken().then(callback, () => {})
     })
     return () => subscription.remove()
   },

@@ -67,16 +67,27 @@ async function main() {
 
   // ---------- roles: permission codes -> module:action ----------
   await t('expandPermissions: Cypher\'s "Viewer" test role (DASHBOARD + TRACK_PLAYBACK)', () => {
-    assert.deepEqual(expandPermissions(['DASHBOARD', 'TRACK_PLAYBACK']).sort(), ['dashboard:read', 'trackPlayback:read'])
+    // Single-code areas mean full access in the web's model (only the paired areas split view from manage).
+    assert.deepEqual(expandPermissions(['DASHBOARD', 'TRACK_PLAYBACK']).sort(), ['dashboard:delete', 'dashboard:read', 'dashboard:write', 'trackPlayback:delete', 'trackPlayback:read', 'trackPlayback:write'])
+  })
+  await t('permission parity with the web (its users/lib/permissions.ts): the codes my old table got wrong', () => {
+    const full = (m: string) => [`${m}:delete`, `${m}:read`, `${m}:write`]
+    assert.deepEqual(expandPermissions(['GROUP_SETTING']).sort(), full('groups'), 'GROUP_SETTING is the groups capability, not group call')
+    assert.deepEqual(expandPermissions(['GROUP_CALL']).sort(), full('groupCall'), 'a single code is full access')
+    assert.deepEqual(expandPermissions(['ADMINISTRATOR_SETTING']).sort(), [...full('profile'), ...full('users')].sort(), 'administrators includes Company Profile')
+    assert.deepEqual(expandPermissions(['MONITORING_CENTER']).sort(), ['devices:read', 'map:read'], 'Live Map shares Monitoring Center'); assert.deepEqual(expandPermissions(['MONITORING_CENTER_MANAGE']).sort(), [...full('devices'), ...full('map')].sort())
+    assert.deepEqual(expandPermissions(['SURVEILLANCE']), ['live:read']); assert.deepEqual(expandPermissions(['SURVEILLANCE_MANAGE']).sort(), full('live'))
+    assert.deepEqual(expandPermissions(['TASK_MANAGE', 'BLUETOOTH_BEACON', 'ATTENDANCE_RECORD']), [], 'codes with no screen grant nothing')
   })
   await t('expandPermissions: _MANAGE includes view; Wi-Fi follows Unit Setting; unknown and retired codes are safe', () => {
     assert.deepEqual(expandPermissions(['ALARM_RECORD_MANAGE']).sort(), ['alarms:delete', 'alarms:read', 'alarms:write'])
     assert.deepEqual(expandPermissions(['UNIT_SETTING']).sort(), ['unitSettings:read', 'wifi:read'])
     assert.deepEqual(expandPermissions(['NOT_A_REAL_CODE']), [])
-    assert.deepEqual(expandPermissions(['GEO_FENCE', 'FENCE']), ['fences:read'], 'GEO_FENCE is retired and means FENCE')
+    assert.deepEqual(expandPermissions(['GEO_FENCE', 'FENCE']), ['fences:read'], 'GEO_FENCE grants nothing itself: the backend turns it into FENCE before it reaches the app')
+    assert.deepEqual(expandPermissions(['GEO_FENCE']), [])
     assert.ok(expandPermissions(['MONITORING_CENTER']).includes('devices:read'))
     for (const p of expandPermissions(['MONITORING_CENTER_MANAGE', 'GROUP_SETTING', 'ADMINISTRATOR_SETTING', 'PHOTO_RECORD', 'VIDEO_RECORD_MANAGE']))
-      assert.ok(ALL_PERMISSIONS.includes(p), `${p} must be a real module:action`)
+      assert.ok(ALL_PERMISSIONS.includes(p as typeof ALL_PERMISSIONS[number]), `${p} must be a real module:action`)
   })
 
   // ---------- sign-in, /auth/me ----------
@@ -99,7 +110,7 @@ async function main() {
     http.routes = { 'POST /auth/login': () => ({ status: 200, data: { token: viewerToken } }), 'GET /auth/me': () => ({ status: 200, data: VIEWER_ME }) }
     const r = await auth.login({ username: 'roletest', password: 'Test12345' })
     assert.equal(r.status === 'signed-in' && r.user.role, 'Viewer')
-    assert.deepEqual(r.status === 'signed-in' && [...r.user.permissions].sort(), ['dashboard:read', 'trackPlayback:read'])
+    assert.deepEqual(r.status === 'signed-in' && [...new Set(r.user.permissions.map((p) => p.split(':')[0]))].sort(), ['dashboard', 'trackPlayback'], 'only the permitted screens')
     assert.equal(r.status === 'signed-in' && r.user.twoFactorEnabled, false)
   })
   await t('a limited account carries its helmet list; a role-less account is labelled, not crashed', async () => {

@@ -1,3 +1,4 @@
+import { expandPermissions } from '@/shared/constants/backend-permissions'
 import type { AuthUser } from '@/shared/store/authStore'
 import { ALL_PERMISSIONS } from '@/shared/constants/modules'
 
@@ -46,6 +47,22 @@ export const mockViewer: AuthUser = {
   scope: { allSites: true, sites: [] },
 }
 
+// Administers accounts but is not a super admin: can't touch super admins, and can only grant what they hold.
+// Sign in as AD-001.
+const SUB_ADMIN_CODES = ['ADMINISTRATOR_SETTING', 'MONITORING_CENTER', 'ALARM_RECORD_MANAGE', 'FENCE']
+export const mockSubAdmin: AuthUser = {
+  id: 'user-7',
+  username: 'AD-001',
+  name: 'Site Admin',
+  role: 'Site admin',
+  superAdmin: false,
+  permissions: expandPermissions(SUB_ADMIN_CODES) as AuthUser['permissions'],
+  apiPermissions: SUB_ADMIN_CODES,
+  deviceIds: [],
+  twoFactorEnabled: false,
+  scope: { allSites: true, sites: [] },
+}
+
 // Sign in as NEW-001 to get a user flagged mustChangePassword. The mobile app
 // doesn't act on the flag yet (the web dashboard blocks on a change-password
 // screen; that arrives with the users/roles batch).
@@ -79,8 +96,10 @@ export function mockUserFor(username: string): AuthUser {
   const id = username.trim().toUpperCase()
   const base = id.startsWith('OP')
     ? mockOperator
-    : id.startsWith('RO')
-      ? mockViewer
+    : id.startsWith('AD') && !id.startsWith('ADM')
+      ? mockSubAdmin
+      : id.startsWith('RO')
+        ? mockViewer
       : id.startsWith('NEW')
         ? mockNewStarter
         : mockAdmin

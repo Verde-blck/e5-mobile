@@ -198,8 +198,8 @@ export default function SignInScreen() {
             Sample data mode — no server needed
           </Text>
           <Text className="mt-1 text-xs leading-5 text-amber-800">
-            ADM-001 (full access), OP-014 (restricted), RO-001 (view-only settings),
-            MFA-001 (two-step; code 123456). Any password works.
+            ADM-001 (full access), AD-001 (administers, not a super admin), OP-014 (restricted),
+            RO-001 (view-only settings), MFA-001 (two-step; code 123456). Any password works.
           </Text>
         </View>
       ) : null}

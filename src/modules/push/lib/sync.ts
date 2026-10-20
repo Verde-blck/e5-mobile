@@ -1,6 +1,7 @@
 import type { PushRegistration } from '../api/push.api'
 import type { PushAdapter } from './adapter'
 import type { PushStatus } from '../types'
+import { isExpoPushToken } from './expoToken'
 
 export interface SyncDeps {
   adapter: PushAdapter
@@ -31,9 +32,12 @@ export async function syncPush({ adapter, register, installId, appVersion, ask }
   try {
     token = await adapter.getToken()
   } catch {
-    // No Google services on the tablet, or this build has no Firebase config: nothing to retry.
+    // No EAS project id, no Google services, or no Firebase config in this build: nothing to retry.
     return 'unavailable'
   }
+
+  // The backend refuses anything but an Expo token (400 invalid_token): not worth sending.
+  if (!isExpoPushToken(token)) return 'unavailable'
 
   try {
     await register({ installId: await installId(), token, platform: 'android', appVersion })

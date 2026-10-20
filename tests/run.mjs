@@ -19,7 +19,13 @@ const suites = [
   ['map', {}], // map data rules, the embedded map page, and events from it
   ['settings', {}], // site Wi-Fi, helmet settings and network switching against Cypher's documented requests
   ['fences', {}], // fence API shapes, geometry and validation (ported from the web app)
-  ['calls', {}], // call access rule (SOS window), state machine, engines
+  ['groupcall', { EXPO_PUBLIC_BROADCAST_ENABLED: 'true' }], // group voice message: roster, per-helmet results, the (unverified) request with the switch on
+  ['messages', { EXPO_PUBLIC_BROADCAST_ENABLED: 'true' }], // a helmet's conversation: the web's exact requests, ordering, defaults
+  ['groupcalloff', {}], // ...and refusing to send with the switch off
+  ['users', {}], // administrators: grant rules, permission tree, who may edit or delete whom, endpoints
+  ['build', {}], // the generated style sheet is sound (a stray pattern in source can break the NATIVE build only)
+  ['calls', {}], // call access rule (the SOS window)
+  ['session', {}], // the live session, the media-server exchange, retries, leaving the app, the live API
   ['push', {}], // alarm push: payloads, channels, registration contract, permission flow, build config
   ['track', { TZ: 'Africa/Lagos' }], // track rules (gaps, jumps, noise), availability and dates, in Lagos time
   ['mock', { EXPO_PUBLIC_USE_MOCKS: 'true' }], // sample-data mode

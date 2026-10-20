@@ -147,7 +147,7 @@ function TrackScreen() {
           ) : null}
           {track.truncated ? (
             <Note tone="amber">
-              Only the most recent part of this range was returned. The telemetry endpoint has no date filter, so older history was cut off. Narrow the range for a complete track.
+              This range has too many readings to load in full, so only the most recent part is shown. Choose a shorter period for the complete track.
             </Note>
           ) : null}
           <TrackStats track={track} />

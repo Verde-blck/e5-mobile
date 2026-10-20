@@ -39,7 +39,7 @@ export const notifications: PushAdapter = {
   },
 
   async getToken() {
-    return 'mock-fcm-token'
+    return 'ExponentPushToken[mock-token]'
   },
 
   onTokenChange: () => () => {},

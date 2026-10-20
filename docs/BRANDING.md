@@ -13,12 +13,12 @@ same dot-grid canvas with its faint brand washes, and the same "Command Centre" 
 | Company logo (E5 ENERGY) | `assets/brand/e5-energy-logo.png`, `CompanyLogo` in `src/shared/components/Logo.tsx` |
 | Launcher icon, adaptive icon (+ themed monochrome), splash, notification icon, favicon | `assets/*.png`, configured in `app.json` |
 
-## The company logo is an interim
+## The company logo
 
-`assets/brand/e5-energy-logo.png` is a crop of the logo from a screenshot of the web sign-in page (96 x 56
-pixels, enlarged), so it is soft on a high-density screen. **Replace that one file with the original** (a
-transparent PNG at 3x or better, or anything with about the same proportions) and every place it appears is
-fixed: `CompanyLogo` reads the file's own size. It appears on the sign-in card and in More > About.
+`assets/brand/e5-energy-logo.png` is E5's real logo (a transparent PNG, 236 x 132 pixels). That is enough for the
+sizes it's shown at (about 92 to 112 points wide), though a larger file or an SVG would be a little crisper on
+the highest-density screens. To change it, replace that one file: `CompanyLogo` reads the file's own size. It
+appears on the sign-in card and in More > About.
 
 ## Rules kept on purpose
 

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { AxiosError } from 'axios'
 import type { TelemetrySample } from '@/modules/devices/types'
-import { fetchTrackSamples } from '@/modules/track/api/track.api'
+import { MAX_PAGES, fetchTrackSamples } from '@/modules/track/api/track.api'
 import { getMockTrackSamples } from '@/modules/track/api/track.mock'
 import { buildAvailability, formatUptime } from '@/modules/track/lib/availability'
 import { buildTrack, formatDistance, formatDuration, haversine, isApproximate, segmentsOf, trackToCsv } from '@/modules/track/lib/track'
@@ -110,17 +110,37 @@ async function main() {
     assert.match((rangeFromDates('2026-10-20', '2026-10-19') as { error: string }).error, /after/); assert.match((rangeFromDates('nope', '2026-10-19') as { error: string }).error, /YYYY-MM-DD/)
   })
 
-  // ---- the endpoint ----
-  await t('telemetry: rows map to samples, including Cypher\'s fix type and accuracy; a full page that stops short of the range is "truncated"', async () => {
-    const row = (i: number, extra = {}) => ({ id: i, deviceId: 'd', latitude: '6.5', longitude: '3.4', recordedAt: new Date(T0 + i * MIN).toISOString(), batteryLevel: '80', netStrength: '4', ...extra })
-    http.routes = { 'GET /devices/d/telemetry': () => ({ status: 200, data: { content: [row(1, { fixType: 'network', accuracyMeters: 320.5 }), row(2, { fixType: 'gps' }), row(3, { fixType: null })] } }) }
-    const small = await fetchTrackSamples('d', T0, T0 + 10 * MIN)
-    assert.deepEqual(http.calls.at(-1)?.params, { page: 0, size: 2000 }); assert.deepEqual(small.samples.map((s) => s.fixType), ['network', 'gps', undefined]); assert.equal(small.samples[0].accuracyMeters, 320.5); assert.equal(small.truncated, false)
-    const full = Array.from({ length: 2000 }, (_, i) => row(i + 100))
-    http.routes = { 'GET /devices/d/telemetry': () => ({ status: 200, data: { content: full } }) }
-    assert.equal((await fetchTrackSamples('d', T0, T0 + 5000 * MIN)).truncated, true, 'the oldest row is newer than the range start: older history was cut off')
-    assert.equal((await fetchTrackSamples('d', T0 + 500 * MIN, T0 + 5000 * MIN)).truncated, false, 'the page reaches back past the start: nothing missing')
-    http.routes = { 'GET /devices/d/telemetry': () => { throw new AxiosError('x') } }
+  // ---- the endpoint (Cypher's from / to, 20 Oct) ----
+  const row = (i: number, extra = {}) => ({ id: i, deviceId: 'd', latitude: '6.5', longitude: '3.4', recordedAt: new Date(T0 + i * MIN).toISOString(), batteryLevel: '80', netStrength: '4', ...extra })
+  const pageOf = (rows: object[], totalPages: number) => ({ content: rows, totalPages, totalElements: rows.length, last: true })
+  await t('telemetry: asks for exactly the range, newest first, 10,000 a page, with Z times; rows map to samples including fix type and accuracy', async () => {
+    http.calls.length = 0
+    http.routes = { 'GET /devices/d/telemetry': () => ({ status: 200, data: pageOf([row(1, { fixType: 'network', accuracyMeters: 320.5 }), row(2, { fixType: 'gps' }), row(3, { fixType: null })], 1) }) }
+    const r = await fetchTrackSamples('d', T0, T0 + 10 * MIN)
+    assert.deepEqual(http.calls[0].params, { from: new Date(T0).toISOString(), to: new Date(T0 + 10 * MIN).toISOString(), sort: 'desc', page: 0, size: 10000 })
+    assert.match(String((http.calls[0].params as { from: string }).from), /Z$/, 'UTC, so no +01:00 to encode')
+    assert.deepEqual(r.samples.map((s) => s.fixType), ['network', 'gps', undefined]); assert.equal(r.samples[0].accuracyMeters, 320.5); assert.equal(r.truncated, false); assert.equal(http.calls.length, 1, 'one page was enough')
+  })
+  await t('a range bigger than a page is read page by page and joined', async () => {
+    http.calls.length = 0
+    http.routes = { 'GET /devices/d/telemetry': (r) => ({ status: 200, data: pageOf((r.params as { page: number }).page === 0 ? [row(1), row(2)] : [row(3)], 2) }) }
+    const r = await fetchTrackSamples('d', T0, T0 + 10 * MIN); assert.equal(r.samples.length, 3); assert.deepEqual(http.calls.map((c) => (c.params as { page: number }).page), [0, 1]); assert.equal(r.truncated, false)
+  })
+  await t('a range too big to pull is cut at MAX_PAGES pages (keeping the newest) and says so', async () => {
+    http.calls.length = 0
+    http.routes = { 'GET /devices/d/telemetry': () => ({ status: 200, data: pageOf([row(1)], MAX_PAGES + 4) }) }
+    const r = await fetchTrackSamples('d', T0, T0 + 10 * MIN); assert.equal(http.calls.length, MAX_PAGES); assert.equal(r.truncated, true); assert.equal(MAX_PAGES, 3)
+    http.routes = { 'GET /devices/d/telemetry': () => ({ status: 200, data: pageOf([row(1)], MAX_PAGES) }) }
+    assert.equal((await fetchTrackSamples('d', T0, T0 + 10 * MIN)).truncated, false, 'exactly MAX_PAGES pages is complete, not cut')
+  })
+  await t('without a page count: a short page ends it, a full page means more', async () => {
+    http.calls.length = 0; http.routes = { 'GET /devices/d/telemetry': () => ({ status: 200, data: [row(1), row(2)] }) }
+    assert.equal((await fetchTrackSamples('d', T0, T0 + MIN)).truncated, false); assert.equal(http.calls.length, 1)
+    http.calls.length = 0; const full = Array.from({ length: 10_000 }, (_, i) => row(i + 1)); http.routes = { 'GET /devices/d/telemetry': () => ({ status: 200, data: full }) }
+    const r = await fetchTrackSamples('d', T0, T0 + MIN); assert.equal(http.calls.length, MAX_PAGES); assert.equal(r.truncated, true)
+  })
+  await t('a failing request is an error, not an empty track', async () => {
+    http.routes = { 'GET /devices/d/telemetry': () => ({ status: 500 }) }; await assert.rejects(fetchTrackSamples('d', T0, T0 + MIN))
   })
 
   // ---- the sample data shows each wrinkle ----

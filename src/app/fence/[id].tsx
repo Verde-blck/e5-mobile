@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ScrollView, View } from 'react-native'
 import { Stack, router, useLocalSearchParams } from 'expo-router'
 import { EmptyState, LoadingState } from '@/shared/components/States'
@@ -8,6 +8,7 @@ import { useLayout } from '@/shared/lib/layout'
 import { useDeviceViews } from '@/modules/devices/hooks/useDevices'
 import { fenceErrorMessage, toDraft } from '@/modules/fences/api/fences.api'
 import type { ClipFile } from '@/modules/fences/lib/clip'
+import { MAX_RECORDING_SECONDS, useClipRecorder } from '@/modules/fences/hooks/useClipRecorder'
 import { pickClip } from '@/modules/fences/lib/pickClip'
 import { FenceForm } from '@/modules/fences/components/FenceForm'
 import { useFences, useSaveFence } from '@/modules/fences/hooks/useFences'
@@ -46,6 +47,14 @@ function FenceEditorScreen() {
   // The other fences stay visible for context, faded and not tappable.
   const others = useMemo(() => fences.filter((f) => f.id !== existing?.id).map(toMapFence), [fences, existing?.id])
   const mapDraft = useMemo(() => (draft ? toMapDraft(draft) : null), [draft])
+
+  // A new recording is staged exactly like a chosen file: it replaces whatever was staged, and is saved with the fence.
+  const staged = useCallback((made: ClipFile) => {
+    setClipError(null)
+    setClipRemoved(false)
+    setClip(made)
+  }, [])
+  const recorder = useClipRecorder(staged)
 
   async function onPickClip() {
     const picked = await pickClip()
@@ -112,6 +121,10 @@ function FenceEditorScreen() {
         clipRemoved={clipRemoved}
         clipError={clipError}
         onPickClip={() => void onPickClip()}
+        recording={{ active: recorder.active, seconds: recorder.seconds, limit: MAX_RECORDING_SECONDS, error: recorder.error }}
+        onRecord={() => void recorder.start()}
+        onStopRecording={() => void recorder.stop()}
+        onCancelRecording={() => void recorder.cancel()}
         onDiscardClip={() => setClip(null)}
         onRemoveClip={(removed) => {
           setClipRemoved(removed)
