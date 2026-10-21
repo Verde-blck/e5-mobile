@@ -14,12 +14,14 @@ module.exports = {
         // website hero — the same two values as globals.css on the web app.
         // Their orange is deliberately not a UI colour: red and amber have to
         // stay the most salient things on screen for alarm states.
+        // The five brand colours are variables, so a company's own colour can be applied at runtime (src/modules/branding). Their
+        // defaults are the E5 look, set in global.css and again on the app's root view, so nothing changes without a company colour.
         brand: {
-          primary: '#0A6659',
-          secondary: '#0C352F',
-          tint: '#E6F2F0',
-          soft: '#B9DAD4',
-          mint: '#A3E2D7', // the light teal on dark panels (live status, call controls)
+          primary: 'var(--brand-primary)',
+          secondary: 'var(--brand-secondary)',
+          tint: 'var(--brand-tint)',
+          soft: 'var(--brand-soft)',
+          mint: 'var(--brand-mint)',
         },
       },
       /*

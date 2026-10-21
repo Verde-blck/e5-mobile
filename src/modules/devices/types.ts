@@ -73,6 +73,13 @@ export interface Telemetry {
  * Deliberately not a link to a dashboard account — the worker wearing the
  * helmet never signs in here. Every dashboard user is an administrator.
  */
+/** The person a helmet is assigned to (PUT /api/devices/{id}/worker). Only the name is required. */
+export interface Worker {
+  name: string
+  staffId?: string
+  phone?: string
+}
+
 export interface DeviceAssignment {
   name: string
   phone?: string
@@ -93,6 +100,8 @@ export interface Device {
   named?: boolean
   site?: string
   assignedTo?: DeviceAssignment
+  /** Who is assigned to wear it. Absent shows as "Unassigned". */
+  worker?: Worker
   /**
    * Registration state, set by an administrator — distinct from presence.
    * A deactivated helmet can still be connected and reporting.

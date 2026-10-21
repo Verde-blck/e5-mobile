@@ -9,6 +9,7 @@ import { Text } from '@/shared/components/Text'
 import { useCan } from '@/shared/lib/permissions'
 import { AdminList } from '@/modules/users/components/AdminList'
 import { GroupList } from '@/modules/users/components/GroupList'
+import { RequireTwoFactorCard } from '@/modules/users/components/RequireTwoFactorCard'
 
 function AdminsScreen() {
   const [tab, setTab] = useState<'admins' | 'groups'>('admins')
@@ -24,6 +25,7 @@ function AdminsScreen() {
         {!canEdit ? (
           <Text className="mx-4 mt-3 rounded-xl bg-slate-100 p-3 text-sm text-slate-600">You can view these settings but not change them.</Text>
         ) : null}
+        {tab === 'admins' ? <RequireTwoFactorCard canEdit={canEdit} /> : null}
         {tab === 'admins' ? <AdminList canEdit={canEdit} /> : <GroupList canEdit={canEdit} />}
       </Container>
     </Screen>

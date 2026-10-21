@@ -1,3 +1,4 @@
+import { mockTwoFactorOn, setMockTwoFactor } from '@/modules/auth/mock-data'
 import { viewCodeOf, type ApiPermission } from '@/shared/constants/backend-permissions'
 import { useAuthStore } from '@/shared/store/authStore'
 import type { Administrator, AdministratorUpdate, Group, NewAdministrator } from '../types'
@@ -38,6 +39,8 @@ const firstNotHeld = (codes: readonly ApiPermission[]) => codes.find((c) => !hol
 
 export async function getMockAdmins(): Promise<Administrator[]> {
   await delay()
+  // Each account's two-step state is the one the sign-in uses, so setting it up, turning it off or resetting it shows here.
+  admins = admins.map((a) => ({ ...a, twoFactorEnabled: mockTwoFactorOn(a.username) }))
   return admins.map(copy)
 }
 
@@ -76,6 +79,20 @@ export async function deleteMockAdmin(id: number): Promise<void> {
   if (target.superAdmin && !me()?.superAdmin) throw httpError(403, { error: 'forbidden' })
   if (target.superAdmin && admins.filter((a) => a.superAdmin).length === 1) throw httpError(409, { error: 'last_super_admin' })
   admins = admins.filter((a) => a.id !== id)
+}
+
+/**
+ * A lost or changed phone. Not your own account (400); only a super admin can reset a super admin (403). The person sets
+ * 2FA up again at their next sign-in (and is forced to, if the company requires it).
+ */
+export async function resetMockTwoFactor(id: number): Promise<Administrator> {
+  await delay()
+  const target = admins.find((a) => a.id === id)
+  if (!target) throw httpError(404)
+  if (target.username === me()?.username) throw httpError(400, { error: 'cannot_reset_self' })
+  if (target.superAdmin && !me()?.superAdmin) throw httpError(403, { error: 'forbidden' })
+  setMockTwoFactor(target.username, false)
+  return copy({ ...target, twoFactorEnabled: false })
 }
 
 export async function getMockGroups(): Promise<Group[]> {

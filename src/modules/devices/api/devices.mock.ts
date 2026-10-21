@@ -1,5 +1,5 @@
 import { derivePresence } from '../lib/presence'
-import type { Device, FleetSummary } from '../types'
+import type { Worker, Device, FleetSummary } from '../types'
 
 // Sample fleet for EXPO_PUBLIC_USE_MOCKS=true. Times are relative to "now" so
 // the presence states (online / degraded / offline) are always realistic.
@@ -51,6 +51,13 @@ function helmet(
 // Which link each helmet is on after being switched, so the sample data follows the controls.
 const networkOverride = new Map<string, 'wifi' | '4g'>()
 
+// Who is assigned to which helmet, so the sample data follows the controls. null means removed.
+const workerOverride = new Map<string, Worker | null>([['866652022956404', { name: 'John Ade', staffId: 'E5-014', phone: '+2348031234567' }]])
+
+export function setMockWorker(id: string, worker: Worker | null): void {
+  workerOverride.set(id, worker)
+}
+
 export function setMockNetwork(id: string, networkType: 'wifi' | '4g'): void {
   networkOverride.set(id, networkType)
 }
@@ -95,11 +102,13 @@ export function getMockFleet(): Device[] {
     // Never connected, so it has never reported a position either.
     helmet('866652022960011', 'Unboxed Unit', null, { batteryPercent: undefined, lat: undefined, lng: undefined }, true),
   ]
-  return fleet.map((device) => {
+  return fleet.map((base) => {
+    // A helmet that is offline hasn't reported, so it is never "worn" (the backend sends null).
+    const offline = derivePresence(base.lastSeenAt, Date.now()) === 'offline'
+    const worker = workerOverride.get(base.id)
+    const device: Device = { ...base, worker: worker ?? undefined, telemetry: offline ? { ...base.telemetry, isWorn: undefined } : base.telemetry }
     const networkType = networkOverride.get(device.id)
-    return networkType
-      ? { ...device, connectivity: networkType === 'wifi' ? ('wifi' as const) : ('sim' as const), telemetry: { ...device.telemetry, networkType } }
-      : device
+    return networkType ? { ...device, connectivity: networkType === 'wifi' ? ('wifi' as const) : ('sim' as const), telemetry: { ...device.telemetry, networkType } } : device
   })
 }
 

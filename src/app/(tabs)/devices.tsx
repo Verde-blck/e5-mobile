@@ -1,3 +1,4 @@
+import { useBrandColours } from '@/modules/branding/hooks/useBranding'
 import { useMemo, useState } from 'react'
 import { FlatList, Pressable, RefreshControl, TextInput, View } from 'react-native'
 import Feather from '@expo/vector-icons/Feather'
@@ -25,6 +26,7 @@ const FILTERS: Array<{ key: Filter; label: string }> = [
 ]
 
 function MonitoringScreen() {
+  const brand = useBrandColours()
   const { devices, now, isLoading, isError, isRefetching, refetch } = useDeviceViews()
   const { width, twoPane } = useLayout()
   const selectedId = useSelectionStore((s) => s.helmetId)
@@ -134,8 +136,8 @@ function MonitoringScreen() {
             <RefreshControl
               refreshing={isRefetching}
               onRefresh={() => void refetch()}
-              tintColor="#0A6659"
-              colors={['#0A6659']}
+              tintColor={brand.primary}
+              colors={[brand.primary]}
             />
           }
           ListEmptyComponent={

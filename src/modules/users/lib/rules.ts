@@ -53,6 +53,16 @@ export function saveErrorMessage(error: unknown, editing: boolean): string {
 }
 
 /** Why a delete was refused (Cypher, 20 Oct): not yourself (400), super admins only by a super admin (403), not the last one (409). */
+/** Why a reset of someone's two-step verification was refused, in words that say what to do. */
+export function resetErrorMessage(error: unknown): string {
+  const res = (error as HttpError)?.response
+  if (res?.status === 400) return "You can't reset your own two-step verification. Ask another administrator."
+  if (res?.status === 403) return 'Only a super admin can reset a super admin.'
+  if (res?.status === 404) return "That account no longer exists."
+  if (res?.status) return 'The server had a problem. Try again shortly.'
+  return "Couldn't reach the server. Check your connection and try again."
+}
+
 export function deleteErrorMessage(error: unknown): string {
   const res = (error as HttpError)?.response
   if (res?.status === 400) return "You can't delete your own account."

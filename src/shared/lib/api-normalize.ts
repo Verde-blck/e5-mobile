@@ -18,6 +18,17 @@ export function flag(value: unknown): boolean | undefined {
   return value === '1' || value === 1 || value === true
 }
 
+/**
+ * A raw wear code from the helmet maker's protocol: 2 is worn, 1 is not worn, anything else is unknown. Only for rows that
+ * carry no `worn` field (telemetry history). A helmet itself comes with `worn`, and its raw code must not be read: this app used
+ * to treat "1" as worn, which was the wrong way round.
+ */
+export function wornFromWearCode(value: unknown): boolean | undefined {
+  if (value === 2 || value === '2') return true
+  if (value === 1 || value === '1') return false
+  return undefined
+}
+
 /** ISO 8601 → epoch milliseconds. The API sends "2026-09-18T16:20:40.079727Z". */
 export function ts(value: unknown): number | undefined {
   if (typeof value !== 'string' || !value) return undefined

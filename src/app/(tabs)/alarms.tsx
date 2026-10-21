@@ -1,3 +1,4 @@
+import { useBrandColours } from '@/modules/branding/hooks/useBranding'
 import { useMemo, useState } from 'react'
 import { FlatList, Pressable, RefreshControl, View } from 'react-native'
 import { RequirePermission } from '@/shared/components/RequirePermission'
@@ -15,6 +16,7 @@ import { useAlarms } from '@/modules/alarms/hooks/useAlarms'
 type View_ = 'active' | 'history'
 
 function AlarmsScreen() {
+  const brand = useBrandColours()
   const { alarms, active, now, isLoading, isError, isForbidden, isRefetching, refetch } = useAlarms()
   const { width, twoPane } = useLayout()
   const selectedId = useSelectionStore((s) => s.alarmId)
@@ -93,8 +95,8 @@ function AlarmsScreen() {
             <RefreshControl
               refreshing={isRefetching}
               onRefresh={() => void refetch()}
-              tintColor="#0A6659"
-              colors={['#0A6659']}
+              tintColor={brand.primary}
+              colors={[brand.primary]}
             />
           }
           ListEmptyComponent={

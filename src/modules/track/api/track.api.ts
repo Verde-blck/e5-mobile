@@ -1,6 +1,6 @@
 import { apiClient } from '@/shared/lib/api-client'
 import { env } from '@/config/env'
-import { flag, millivoltsToVolts, num, pageContent, parseGasData, ts } from '@/shared/lib/api-normalize'
+import { flag, millivoltsToVolts, num, pageContent, parseGasData, ts, wornFromWearCode } from '@/shared/lib/api-normalize'
 import type { Page } from '@/shared/lib/api-normalize'
 import { toFixType } from '@/modules/devices/api/devices.api'
 import type { TelemetrySample } from '@/modules/devices/types'
@@ -48,7 +48,7 @@ function toSample(api: ApiTelemetry): TelemetrySample {
     lng: num(api.longitude),
     signalStrength: num(api.netStrength),
     isCharging: flag(api.chargingStatus),
-    isWorn: flag(api.wearStatus),
+    isWorn: wornFromWearCode(api.wearStatus),
     gas: parseGasData(api.rawGasData),
     fixType: toFixType(api.fixType),
     accuracyMeters: num(api.accuracyMeters),

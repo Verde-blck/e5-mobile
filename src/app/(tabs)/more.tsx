@@ -13,11 +13,11 @@ import { Text } from '@/shared/components/Text'
 import type { IconName } from '@/shared/constants/modules'
 import { confirmAction } from '@/shared/lib/confirm'
 import { endSession } from '@/shared/lib/session'
+import { useBrandColours, useBranding } from '@/modules/branding/hooks/useBranding'
 import { useLayout } from '@/shared/lib/layout'
 import { useCan } from '@/shared/lib/permissions'
 import { useAuthStore } from '@/shared/store/authStore'
 import { simulateAlarm } from '@/modules/alarms/api/alarms.mock'
-import { broadcastAvailable } from '@/modules/group-call/api/broadcast.api'
 import { liveAvailable } from '@/modules/live/api/live.api'
 import { AlertsCard } from '@/modules/push/components/AlertsCard'
 import { unregisterThisTablet } from '@/modules/push/lib/unregister'
@@ -40,7 +40,7 @@ function MenuRow({
       className="flex-row items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 active:bg-slate-50"
     >
       <View className="h-9 w-9 items-center justify-center rounded-full bg-brand-tint">
-        <Feather name={icon} size={18} color="#0A6659" />
+        <Feather name={icon} size={18} color={useBrandColours().primary} />
       </View>
       <View className="flex-1">
         <Text className="font-sans-medium">{label}</Text>
@@ -60,6 +60,8 @@ export default function MoreScreen() {
   const canTrack = useCan('trackPlayback:read') && inMore
   const canWall = useCan('live:read') && liveAvailable() && inMore
   const canFences = useCan('fences:read')
+  const canCompany = useCan('profile:read')
+  const company = useBranding()
   const canPhotos = useCan('photos:read')
   const canVideos = useCan('videos:read')
   const canAdmins = useCan('users:read') && inMore
@@ -138,6 +140,11 @@ export default function MoreScreen() {
             <MenuRow icon="hexagon" label="Fences" hint="Work areas and no-entry zones" onPress={() => router.push('/fences')} />
           </View>
         ) : null}
+        {canCompany ? (
+          <View className="mt-3">
+            <MenuRow icon="briefcase" label="Company profile" hint="Name, logo and colours" onPress={() => router.navigate('/company')} />
+          </View>
+        ) : null}
         {canPhotos ? (
           <View className="mt-3">
             <MenuRow icon="image" label="Photo Record" hint="Pictures taken by the helmets" onPress={() => router.navigate('/photos')} />
@@ -164,6 +171,8 @@ export default function MoreScreen() {
           <View className="items-center border-b border-slate-100 pb-3 pt-4">
             <CompanyLogo width={112} />
           </View>
+          {company.companyName ? <Row label="Company" value={company.companyName} /> : null}
+          {company.supportEmail ? <Row label="Support" value={company.supportEmail} /> : null}
           <Row label="App version" value={Constants.expoConfig?.version ?? '—'} />
           <Row label="Data source" value={env.useMocks ? 'Sample data' : 'Live backend'} last />
         </Card>

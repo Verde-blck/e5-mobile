@@ -1,3 +1,4 @@
+import { useBrandColours } from '@/modules/branding/hooks/useBranding'
 import { useEffect, useState } from 'react'
 import { Pressable, Switch, View } from 'react-native'
 import { Button } from '@/shared/components/Button'
@@ -19,6 +20,7 @@ import { SPLIT_CHOICES } from '../types'
  * deliberately no such button here.
  */
 export function HelmetSettingsSection({ id }: { id: string }) {
+  const brand = useBrandColours()
   const canWrite = useCan('unitSettings:write')
   const settings = useUnitSettings(id)
   const save = useSaveUnitSettings(id)
@@ -78,7 +80,7 @@ export function HelmetSettingsSection({ id }: { id: string }) {
               setSplitting(on)
               setNote(null)
             }}
-            trackColor={{ false: '#CBD5E1', true: '#0A6659' }}
+            trackColor={{ false: '#CBD5E1', true: brand.primary }}
           />
         </View>
 

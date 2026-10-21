@@ -1,3 +1,4 @@
+import { useBrandColours } from '@/modules/branding/hooks/useBranding'
 import { useState } from 'react'
 import { Pressable, TextInput, View, type TextInputProps } from 'react-native'
 import Feather from '@expo/vector-icons/Feather'
@@ -16,6 +17,7 @@ interface TextFieldProps extends Omit<TextInputProps, 'className'> {
 }
 
 export function TextField({ label, error, secret, mono, code, className, ...input }: TextFieldProps) {
+  const brand = useBrandColours()
   const [revealed, setRevealed] = useState(false)
   const [focused, setFocused] = useState(false)
 
@@ -42,8 +44,8 @@ export function TextField({ label, error, secret, mono, code, className, ...inpu
           }}
           placeholderTextColor="#94A3B8"
           // The typing cursor and selection in the brand teal (Android; the browser ignores these).
-          cursorColor="#0A6659"
-          selectionColor="#0A665940"
+          cursorColor={brand.primary}
+          selectionColor={`${brand.primary}40`}
           accessibilityLabel={label}
           className={cn('flex-1 text-slate-900', code ? 'text-center text-2xl' : 'text-base', mono || code ? 'font-mono' : 'font-sans')}
           // minWidth 0: a browser input won't shrink below its intrinsic width, which the spaced code digits exceed.

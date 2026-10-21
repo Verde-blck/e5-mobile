@@ -2,7 +2,8 @@ import { apiClient } from '@/shared/lib/api-client'
 import { env } from '@/config/env'
 import { allPermissionCodes, type ApiPermission } from '@/shared/constants/backend-permissions'
 import type { Administrator, AdministratorUpdate, Group, NewAdministrator } from '../types'
-import { createMockAdmin, createMockGroup, deleteMockAdmin, deleteMockGroup, getMockAdmins, getMockGroups, updateMockAdmin, updateMockGroup } from './admins.mock'
+import { mockRequire2fa, setMockRequire2fa } from '@/modules/auth/mock-data'
+import { createMockAdmin, createMockGroup, deleteMockAdmin, deleteMockGroup, getMockAdmins, getMockGroups, resetMockTwoFactor, updateMockAdmin, updateMockGroup } from './admins.mock'
 
 // Administrators. Creating one here is the supported path, unlike POST /api/auth/register, which is
 // unauthenticated and not for staff accounts.
@@ -73,4 +74,35 @@ export async function renameGroup(id: number, name: string): Promise<Group> {
 export async function deleteGroup(id: number): Promise<void> {
   if (env.useMocks) return deleteMockGroup(id)
   await apiClient.delete(`/groups/${id}`)
+}
+
+/**
+ * Lost or changed phone: clears the person's two-step verification so they set it up again at their next sign-in (forced, if the
+ * company requires it). Needs ADMINISTRATOR_SETTING. Refused for your own account (400) and, unless you are a super admin, for a
+ * super admin (403).
+ */
+export async function resetAdminTwoFactor(id: number): Promise<Administrator> {
+  if (env.useMocks) return resetMockTwoFactor(id)
+  const { data } = await apiClient.post<Administrator>(`/admins/${id}/2fa/reset`)
+  return data
+}
+
+/** The company policy: must everyone use two-step verification? (GET and PUT /api/settings/security, ADMINISTRATOR_SETTING.) */
+export async function fetchSecurityPolicy(): Promise<{ require2fa: boolean }> {
+  if (env.useMocks) {
+    await new Promise((resolve) => setTimeout(resolve, 150))
+    return { require2fa: mockRequire2fa() }
+  }
+  const { data } = await apiClient.get<{ require2fa?: boolean }>('/settings/security')
+  return { require2fa: data?.require2fa === true }
+}
+
+export async function setSecurityPolicy(require2fa: boolean): Promise<{ require2fa: boolean }> {
+  if (env.useMocks) {
+    await new Promise((resolve) => setTimeout(resolve, 250))
+    setMockRequire2fa(require2fa)
+    return { require2fa }
+  }
+  const { data } = await apiClient.put<{ require2fa?: boolean }>('/settings/security', { require2fa })
+  return { require2fa: data?.require2fa === true }
 }

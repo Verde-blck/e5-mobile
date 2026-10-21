@@ -1,3 +1,4 @@
+import { useBrandColours } from '@/modules/branding/hooks/useBranding'
 import { useEffect, useState } from 'react'
 import { Pressable, Switch, View } from 'react-native'
 import Feather from '@expo/vector-icons/Feather'
@@ -66,6 +67,7 @@ interface Props {
 
 /** The fence's details. Its shape is drawn on the map beside or above this. */
 export function FenceForm({ draft, onChange, existing, devices, saving, error, clip, clipRemoved, clipError, onPickClip, recording, onRecord, onStopRecording, onCancelRecording, onDiscardClip, onRemoveClip, onSave, onCancel }: Props) {
+  const brand = useBrandColours()
   const [showProblems, setShowProblems] = useState(false)
   const [radiusText, setRadiusText] = useState(String(Math.round(draft.radiusMeters)))
 
@@ -334,7 +336,7 @@ export function FenceForm({ draft, onChange, existing, devices, saving, error, c
 
       <View className="flex-row items-center justify-between">
         <Text className="text-base">Fence is on</Text>
-        <Switch accessibilityLabel="Fence is on" value={draft.active} onValueChange={(active) => onChange({ active })} trackColor={{ false: '#CBD5E1', true: '#0A6659' }} />
+        <Switch accessibilityLabel="Fence is on" value={draft.active} onValueChange={(active) => onChange({ active })} trackColor={{ false: '#CBD5E1', true: brand.primary }} />
       </View>
 
       {showProblems && problems.length > 0 ? (

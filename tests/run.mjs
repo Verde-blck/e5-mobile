@@ -18,14 +18,16 @@ const suites = [
   ['groupsession', {}], // group call: who can start what, the API, one connection per helmet, hanging up on every one
   ['audio', {}], // WAV encoding, browser recording names, and honest upload errors
   ['wall', {}], // the live wall: who can be on it, one session per helmet, leaving and returning
+  ['twofactor', {}], // 2FA: set-up required (never a sign-out), new-phone code, company policy, reset
+  ['worker', {}], // worn (the new field, not the raw code) and who a helmet is assigned to
+  ['branding', {}], // company colours (with their safeguards), the form's rules, and the profile requests
   ['media', {}], // photo and video records: mapping, per-helmet fan-out, calendar, asking the helmet for clips
   ['flags', {}], // how a switch in .env is read
   ['layout', {}], // screen-size classes and the list/detail pane rules
   ['map', {}], // map data rules, the embedded map page, and events from it
   ['settings', {}], // site Wi-Fi, helmet settings and network switching against Cypher's documented requests
   ['fences', {}], // fence API shapes, geometry and validation (ported from the web app)
-  ['messages', { EXPO_PUBLIC_BROADCAST_ENABLED: 'true' }], // a helmet's conversation: the web's exact requests, ordering, defaults
-  ['groupcalloff', {}], // ...and refusing to send with the switch off
+  ['messages', {}], // a helmet's conversation: the web's exact requests, ordering, defaults
   ['users', {}], // administrators: grant rules, permission tree, who may edit or delete whom, endpoints
   ['build', {}], // the generated style sheet is sound (a stray pattern in source can break the NATIVE build only)
   ['calls', {}], // call access rule (the SOS window)

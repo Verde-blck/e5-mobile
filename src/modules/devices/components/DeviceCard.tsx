@@ -59,6 +59,7 @@ export function DeviceCard({
           ) : (
             <Text className="mt-0.5 text-xs text-slate-400">Not named yet</Text>
           )}
+          {device.worker ? <Text className="mt-0.5 text-xs text-slate-500" numberOfLines={1}>Worn by {device.worker.name}</Text> : null}
         </View>
         <PresenceBadge presence={device.presence} />
       </View>

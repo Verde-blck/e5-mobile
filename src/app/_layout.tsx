@@ -25,9 +25,11 @@ import { restoreSession } from '@/modules/auth/api/auth.api'
 import { AlarmChrome } from '@/modules/alarms/components/AlarmChrome'
 import { LiveAlarms } from '@/modules/alarms/components/LiveAlarms'
 import { PushRuntime } from '@/modules/push/components/PushRuntime'
+import { BrandTheme } from '@/modules/branding/components/BrandTheme'
+import { prefetchBranding } from '@/modules/branding/hooks/useBranding'
 import { queryClient } from '@/shared/lib/query-client'
 import { endSession } from '@/shared/lib/session'
-import { onUnauthorized } from '@/shared/lib/unauthorized'
+import { onSetupRequired, onUnauthorized } from '@/shared/lib/unauthorized'
 import { useAuthStore } from '@/shared/store/authStore'
 
 // Hold the native splash screen until fonts and the saved session are ready,
@@ -63,13 +65,17 @@ export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(FONT_ASSETS)
   const isBootstrapping = useAuthStore((s) => s.isBootstrapping)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  // The company requires two-step verification and this account hasn't set it up: the backend refuses everything but sign-in and the
+  // profile, so the only screen is the set-up one, and nothing that would only be refused (the alarm stream, push) runs.
+  const mustSetup = useAuthStore((s) => s.user?.mustSetup2fa === true)
+  const usable = isAuthenticated && !mustSetup
 
   // Restore the saved session once, on launch.
   useEffect(() => {
     let alive = true
     void (async () => {
       try {
-        const user = await restoreSession()
+        const [user] = await Promise.all([restoreSession(), prefetchBranding(queryClient)])
         if (alive) useAuthStore.getState().setUser(user)
       } finally {
         if (alive) useAuthStore.getState().setBootstrapping(false)
@@ -83,6 +89,9 @@ export default function RootLayout() {
   // A 401/403 from anywhere in the app means the token is dead.
   useEffect(() => onUnauthorized(() => void endSession()), [])
 
+  // ...but "set up 2FA first" is not a dead token: it sends the person to set it up, and never signs them out.
+  useEffect(() => onSetupRequired(() => useAuthStore.getState().requireSetup()), [])
+
   const ready = (fontsLoaded || !!fontError) && !isBootstrapping
 
   useEffect(() => {
@@ -94,14 +103,15 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
+        <BrandTheme>
         <StatusBar style="dark" />
         {/* Alarm alerts run for as long as someone is signed in. */}
-        {isAuthenticated ? <LiveAlarms /> : null}
+        {usable ? <LiveAlarms /> : null}
         {/* ...and so do alerts for a locked tablet, when this build has them. */}
-        {isAuthenticated ? <PushRuntime /> : null}
+        {usable ? <PushRuntime /> : null}
         <AlarmChrome>
         <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Protected guard={isAuthenticated}>
+          <Stack.Protected guard={usable}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen
               name="helmet/[id]"
@@ -116,6 +126,7 @@ export default function RootLayout() {
             <Stack.Screen name="admin/[id]" options={{ headerShown: true, title: 'Administrator', ...HEADER }} />
             {/* A call covers the whole screen and can't be swiped away by accident. */}
             <Stack.Screen name="call/[deviceId]" options={{ headerShown: false, presentation: 'fullScreenModal', gestureEnabled: false, animation: 'fade' }} />
+            <Stack.Screen name="company" options={{ headerShown: true, title: 'Company profile', ...HEADER }} />
             <Stack.Screen name="photos" options={{ headerShown: true, title: 'Photo Record', ...HEADER }} />
             <Stack.Screen name="videos" options={{ headerShown: true, title: 'Video Record', ...HEADER }} />
             <Stack.Screen name="wifi" options={{ headerShown: true, title: 'Site Wi-Fi', ...HEADER }} />
@@ -133,11 +144,15 @@ export default function RootLayout() {
               options={{ headerShown: true, title: 'Account security', ...HEADER }}
             />
           </Stack.Protected>
+          <Stack.Protected guard={isAuthenticated && mustSetup}>
+            <Stack.Screen name="setup-2fa" />
+          </Stack.Protected>
           <Stack.Protected guard={!isAuthenticated}>
             <Stack.Screen name="sign-in" />
           </Stack.Protected>
         </Stack>
         </AlarmChrome>
+        </BrandTheme>
       </QueryClientProvider>
     </SafeAreaProvider>
   )

@@ -41,8 +41,5 @@ async function main() {
     assert.equal(describeUploadError(http(400)).detail, 'HTTP 400', 'no words from the server: just the code'); assert.equal(describeUploadError(http(400, { error: 'x'.repeat(500) })).detail!.length, 'HTTP 400: '.length + 160, 'long answers are cut')
     assert.match(describeUploadError(http(413), 'the clip').message, /^The clip is too large/)
   })
-  await t('the switched-off case keeps its own message', () => {
-    assert.equal(describeUploadError({ name: 'BroadcastUnavailable', message: 'not switched on' }).message, 'not switched on')
-  })
 }
 main().then(report)

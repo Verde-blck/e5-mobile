@@ -13,6 +13,7 @@ import { Button } from '@/shared/components/Button'
 import { Container } from '@/shared/components/Container'
 import { AppCanvas } from '@/shared/components/AppCanvas'
 import { BrandConstellation } from '@/shared/components/BrandConstellation'
+import { useBranding } from '@/modules/branding/hooks/useBranding'
 import { CompanyLogo, Logo } from '@/shared/components/Logo'
 import { Text } from '@/shared/components/Text'
 import { TextField } from '@/shared/components/TextField'
@@ -21,6 +22,7 @@ import { useLayout } from '@/shared/lib/layout'
 import { useAuthStore } from '@/shared/store/authStore'
 
 export default function SignInScreen() {
+  const branding = useBranding()
   const insets = useSafeAreaInsets()
   // A tablet in landscape splits the screen: the brand on one side, the form on the other.
   const { twoPane } = useLayout()
@@ -112,6 +114,7 @@ export default function SignInScreen() {
   const card = (
     <>
       <CompanyLogo width={92} />
+      {branding.secondaryColor ? <View accessibilityLabel="Company accent" style={{ marginTop: 8, height: 3, width: 44, borderRadius: 2, backgroundColor: branding.secondaryColor }} /> : null}
       <View className="h-5" />
       {challenge ? (
         <>
@@ -199,7 +202,7 @@ export default function SignInScreen() {
           </Text>
           <Text className="mt-1 text-xs leading-5 text-amber-800">
             ADM-001 (full access), AD-001 (administers, not a super admin), OP-014 (restricted),
-            RO-001 (view-only settings), MFA-001 (two-step; code 123456). Any password works.
+            RO-001 (view-only settings), MFA-001 (two-step; code 123456), SETUP-001 (must set up two-step). Any password works.
           </Text>
         </View>
       ) : null}

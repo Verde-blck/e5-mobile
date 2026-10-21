@@ -1,8 +1,8 @@
 import axios from 'axios'
 import { env } from '@/config/env'
-import { isForbidden } from './errors'
+import { isForbidden, isSetupRequired } from './errors'
 import { tokenStore } from './token'
-import { emitUnauthorized } from './unauthorized'
+import { emitSetupRequired, emitUnauthorized } from './unauthorized'
 
 // Every module's api/*.api.ts file should import THIS, not axios directly —
 // that keeps the base URL and auth in one place.
@@ -37,6 +37,11 @@ apiClient.interceptors.response.use(
     // {"error":"forbidden"} body — that is how an expired token comes back.
     // A 403 WITH that body is a permission refusal: the account is fine, it
     // just isn't allowed to do that, so it must not end the session.
+    // 2FA still to be set up is neither: the session is fine, and the person is sent to set it up.
+    if (isSetupRequired(error)) {
+      emitSetupRequired()
+      return Promise.reject(error)
+    }
     const sessionDead = status === 401 || (status === 403 && !isForbidden(error))
 
     if (sessionDead && !WRONG_INPUT_ENDPOINTS.some((path) => url.includes(path))) {

@@ -1,3 +1,4 @@
+import { useBrandColours } from '@/modules/branding/hooks/useBranding'
 import { useEffect, useMemo, useState } from 'react'
 import { ScrollView, Switch, View } from 'react-native'
 import { useLocalSearchParams } from 'expo-router'
@@ -35,6 +36,7 @@ function Note({ children, tone }: { children: string; tone: 'amber' | 'slate' | 
 }
 
 function TrackScreen() {
+  const brand = useBrandColours()
   const { deviceId: paramId } = useLocalSearchParams<{ deviceId?: string }>()
   const { devices } = useDeviceViews()
   const { twoPane } = useLayout()
@@ -180,7 +182,7 @@ function TrackScreen() {
                   : 'Indoor positions from the mobile network or Wi-Fi are hidden when there are any.'}
             </Text>
           </View>
-          <Switch accessibilityLabel="Show approximate positions" value={includeApproximate} onValueChange={setIncludeApproximate} trackColor={{ false: '#CBD5E1', true: '#0A6659' }} />
+          <Switch accessibilityLabel="Show approximate positions" value={includeApproximate} onValueChange={setIncludeApproximate} trackColor={{ false: '#CBD5E1', true: brand.primary }} />
         </View>
       ) : null}
     </View>

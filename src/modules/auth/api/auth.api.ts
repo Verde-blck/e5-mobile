@@ -7,7 +7,7 @@ import { expandPermissions } from '@/shared/constants/backend-permissions'
 import { ALL_PERMISSIONS, type Permission } from '@/shared/constants/modules'
 import { withTimeout } from '@/shared/lib/withTimeout'
 import type { AuthUser } from '@/shared/store/authStore'
-import { mockTwoFactorOn, mockUserFor, setMockTwoFactor } from '../mock-data'
+import { mockTwoFactorOn, mockUserFor, setMockTwoFactor, mockRequire2fa } from '../mock-data'
 
 export { statusOf }
 
@@ -39,6 +39,8 @@ interface ApiProfile {
   /** The helmets this account is limited to. Empty = every helmet. */
   deviceIds?: string[]
   twoFactorEnabled?: boolean
+  /** The company requires 2FA and this account hasn't set it up: only the set-up screen is usable until it has. */
+  mustSetup2fa?: boolean
 }
 
 export function userFromProfile(profile: ApiProfile, fallbackUsername: string): AuthUser {
@@ -55,6 +57,7 @@ export function userFromProfile(profile: ApiProfile, fallbackUsername: string): 
     apiPermissions: profile.permissions ?? [],
     deviceIds: profile.deviceIds ?? [],
     twoFactorEnabled: profile.twoFactorEnabled === true,
+    mustSetup2fa: profile.mustSetup2fa === true,
     scope: { allSites: true, sites: [] },
   }
 }
@@ -207,10 +210,18 @@ export interface TwoFactorSetup {
 /**
  * Generates a new secret. 2FA is not on yet: it only switches on when
  * confirmTwoFactorSetup succeeds, which proves the app was set up correctly.
+ *
+ * With 2FA already on (moving to a new phone) the CURRENT code must be sent, so that someone holding an unattended signed-in
+ * phone can't swap it for their own. Without it the backend answers 409 2fa_already_enabled. The old phone keeps working
+ * until confirmTwoFactorSetup succeeds with the new one.
  */
-export async function startTwoFactorSetup(username: string): Promise<TwoFactorSetup> {
+export async function startTwoFactorSetup(username: string, currentCode?: string): Promise<TwoFactorSetup> {
   if (env.useMocks) {
     await delay(400)
+    if (mockTwoFactorOn(username)) {
+      if (!currentCode) throw httpError(409, { error: '2fa_already_enabled' })
+      if (currentCode !== MOCK_CODE) throw httpError(401)
+    }
     const secret = 'JBSWY3DPEHPK3PXP'
     const label = encodeURIComponent(`E5 Energy:${username}`)
     return {
@@ -219,7 +230,7 @@ export async function startTwoFactorSetup(username: string): Promise<TwoFactorSe
     }
   }
 
-  const { data } = await apiClient.post<TwoFactorSetup>('/auth/2fa/setup')
+  const { data } = await apiClient.post<TwoFactorSetup>('/auth/2fa/setup', currentCode ? { code: currentCode } : undefined)
   return data
 }
 
@@ -234,13 +245,13 @@ export async function confirmTwoFactorSetup(username: string, code: string): Pro
 }
 
 /**
- * Sends the current code even though the backend doesn't check it yet. It's
- * been asked to, so that someone holding an unattended, signed-in phone can't
- * switch 2FA off; collecting it in the UI now means nothing changes then.
+ * Needs the current code (a wrong or missing one is 401), and is refused with 409 2fa_required_by_company while the company
+ * requires two-step verification.
  */
 export async function disableTwoFactor(username: string, code: string): Promise<void> {
   if (env.useMocks) {
     await delay(400)
+    if (mockRequire2fa()) throw httpError(409, { error: '2fa_required_by_company' })
     if (code !== MOCK_CODE) throw httpError(401)
     setMockTwoFactor(username, false)
     return
@@ -301,9 +312,9 @@ function delay(ms: number) {
 }
 
 /** Shaped like an Axios error, so callers handle mocks and live the same way. */
-function httpError(status: number) {
-  const error = new Error(`HTTP ${status}`) as Error & { response?: { status: number } }
-  error.response = { status }
+function httpError(status: number, data?: { error: string }) {
+  const error = new Error(`HTTP ${status}`) as Error & { response?: { status: number; data?: { error: string } } }
+  error.response = { status, data }
   return error
 }
 
@@ -311,6 +322,13 @@ function httpError(status: number) {
  * Turns a failed sign-in or code check into a sentence for the screen.
  * `wrongInput` is what a 401 means in context ("wrong password" vs "wrong code").
  */
+export function describeTwoFactorError(error: unknown, wrongInput: string): string {
+  const body = (error as { response?: { data?: { error?: string } } })?.response?.data?.error
+  if (statusOf(error) === 409 && body === '2fa_already_enabled') return 'Two-step verification is already on. Enter your current code to move it to a new phone.'
+  if (statusOf(error) === 409 && body === '2fa_required_by_company') return "Your company requires two-step verification, so it can't be turned off."
+  return describeAuthError(error, wrongInput)
+}
+
 export function describeAuthError(error: unknown, wrongInput: string): string {
   const status = statusOf(error)
   if (status === 401 || status === 400) return wrongInput

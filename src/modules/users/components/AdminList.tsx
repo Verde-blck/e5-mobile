@@ -8,14 +8,16 @@ import { Text } from '@/shared/components/Text'
 import { TextField } from '@/shared/components/TextField'
 import { confirmAction } from '@/shared/lib/confirm'
 import { useAuthStore } from '@/shared/store/authStore'
-import { useAdmins, useDeleteAdmin, useGroups } from '../hooks/useAdmins'
-import { deleteErrorMessage, describeAccess, groupLabel, rowRules } from '../lib/rules'
+import { useAdmins, useDeleteAdmin, useGroups, useResetTwoFactor } from '../hooks/useAdmins'
+import { deleteErrorMessage, describeAccess, groupLabel, resetErrorMessage, rowRules } from '../lib/rules'
 
 export function AdminList({ canEdit }: { canEdit: boolean }) {
   const { admins, isLoading, isError, refetch } = useAdmins()
   const { groups } = useGroups()
   const me = useAuthStore((s) => s.user)
   const remove = useDeleteAdmin()
+  const resetTwoFactor = useResetTwoFactor()
+  const [notice, setNotice] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [problem, setProblem] = useState<string | null>(null)
 
@@ -35,6 +37,20 @@ export function AdminList({ canEdit }: { canEdit: boolean }) {
     })
   }
 
+  function askReset(id: number, username: string) {
+    confirmAction({
+      title: `Reset two-step verification for ${username}?`,
+      message: 'Use this when they have lost or changed their phone. They set it up again at their next sign-in, and have to if the company requires it.',
+      confirmLabel: 'Reset',
+      destructive: true,
+      onConfirm: () => {
+        setProblem(null)
+        setNotice(null)
+        resetTwoFactor.mutate(id, { onSuccess: () => setNotice(`Two-step verification reset for ${username}.`), onError: (error) => setProblem(resetErrorMessage(error)) })
+      },
+    })
+  }
+
   if (isLoading) return <LoadingState label="Loading administrators…" />
   if (isError) return <ErrorState title="Couldn't load administrators" onRetry={() => void refetch()} />
 
@@ -44,6 +60,7 @@ export function AdminList({ canEdit }: { canEdit: boolean }) {
         <TextField label="Search" value={search} onChangeText={setSearch} placeholder="Account name" autoCapitalize="none" autoCorrect={false} />
         {canEdit ? <Button title="Add administrator" icon="plus" onPress={() => router.push('/admin/new')} /> : null}
         {problem ? <Text accessibilityRole="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{problem}</Text> : null}
+        {notice ? <Text className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900">{notice}</Text> : null}
       </View>
 
       {rows.length === 0 ? (
@@ -87,6 +104,17 @@ export function AdminList({ canEdit }: { canEdit: boolean }) {
                       ) : null}
                     </View>
                   )
+                ) : null}
+                {canEdit && !rules.lockedSuper && !rules.isSelf && admin.twoFactorEnabled ? (
+                  <Button
+                    title="Reset 2FA"
+                    variant="secondary"
+                    icon="smartphone"
+                    className="mt-2 h-10"
+                    accessibilityLabel={`Reset two-step verification for ${admin.username}`}
+                    loading={resetTwoFactor.isPending && resetTwoFactor.variables === admin.id}
+                    onPress={() => askReset(admin.id, admin.username)}
+                  />
                 ) : null}
               </Card>
             )

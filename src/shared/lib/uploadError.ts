@@ -20,7 +20,6 @@ function serverText(data: unknown): string {
  */
 export function describeUploadError(error: unknown, what = 'the recording'): UploadProblem {
   const e = error as { name?: string; message?: string; response?: { status?: number; data?: unknown } }
-  if (e?.name === 'BroadcastUnavailable' && e.message) return { message: e.message }
   const status = e?.response?.status
   if (!status) return { message: "Couldn't reach the server. Check the connection and try again.", detail: e?.message && e.message !== 'Network Error' ? e.message : undefined }
   const text = serverText(e.response?.data)

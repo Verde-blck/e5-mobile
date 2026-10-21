@@ -26,6 +26,11 @@ export function isForbidden(error: unknown): boolean {
   return statusOf(error) === 403 && bodyOf(error)?.error === 'forbidden'
 }
 
+/** 403 {"error":"2fa_setup_required"}: the company requires two-step verification and this account hasn't set it up yet. */
+export function isSetupRequired(error: unknown): boolean {
+  return statusOf(error) === 403 && bodyOf(error)?.error === '2fa_setup_required'
+}
+
 /** The permission code the server says is missing, e.g. "PHOTO_RECORD". */
 export function missingPermission(error: unknown): string | undefined {
   const permission = bodyOf(error)?.permission

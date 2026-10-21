@@ -2,6 +2,7 @@ import { Platform } from 'react-native'
 import { Tabs } from 'expo-router'
 import Feather from '@expo/vector-icons/Feather'
 import { MODULES, type IconName, type ModuleKey } from '@/shared/constants/modules'
+import { useBrandColours } from '@/modules/branding/hooks/useBranding'
 import { navigationPosition, railItemHeight, useLayout } from '@/shared/lib/layout'
 import { useCan } from '@/shared/lib/permissions'
 import { useAlarms } from '@/modules/alarms/hooks/useAlarms'
@@ -31,6 +32,7 @@ export default function TabsLayout() {
   const { active } = useAlarms()
   // A tablet (600 dp and up, in portrait or landscape) gets a rail down the left edge, like the web's sidebar, which
   // has room for every module. A narrow screen gets a bottom bar, which doesn't: the extra modules stay in More.
+  const brand = useBrandColours()
   const { size, height } = useLayout()
   const rail = navigationPosition(size) === 'left'
   // Squeeze the rail's items on a short screen so that every one (More included) stays on it.
@@ -52,7 +54,7 @@ export default function TabsLayout() {
         tabBarLabelPosition: rail ? 'below-icon' : undefined,
         // Squeezed items also give up their inner padding, or the icon and label would no longer fit the box.
         tabBarItemStyle: itemHeight ? { height: itemHeight, paddingVertical: 0 } : undefined,
-        tabBarActiveTintColor: '#0A6659',
+        tabBarActiveTintColor: brand.primary,
         tabBarInactiveTintColor: '#94A3B8',
         tabBarLabelStyle: { fontFamily: 'Inter_500Medium', fontSize: 11, lineHeight: itemHeight ? 16 : 14 },
         tabBarStyle: {

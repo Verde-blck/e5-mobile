@@ -4,7 +4,6 @@ import { toneDataUri, toneWavBytes } from '@/modules/messaging/lib/tone'
 import type { RecordedAudio } from '@/shared/hooks/useRecorder'
 import { createRunner, installHttp } from './harness'
 
-// Run with EXPO_PUBLIC_BROADCAST_ENABLED=true (see run.mjs): the switch that lets a real build send.
 const { t, report } = createRunner()
 const http = installHttp()
 const audio = (): RecordedAudio => ({ uri: 'file:///cache/message-1.m4a', name: 'message-1.m4a', mimeType: 'audio/mp4', size: 3000, file: new Blob([new Uint8Array(3000)], { type: 'audio/mp4' }) })

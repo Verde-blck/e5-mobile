@@ -1,3 +1,4 @@
+import { useBrandColours } from '@/modules/branding/hooks/useBranding'
 import { ActivityIndicator, View } from 'react-native'
 import Feather from '@expo/vector-icons/Feather'
 import type { IconName } from '@/shared/constants/modules'
@@ -7,7 +8,7 @@ import { Text } from './Text'
 export function LoadingState({ label = 'Loading…' }: { label?: string }) {
   return (
     <View className="flex-1 items-center justify-center gap-3 p-8">
-      <ActivityIndicator size="large" color="#0A6659" />
+      <ActivityIndicator size="large" color={useBrandColours().primary} />
       <Text className="text-sm text-slate-500">{label}</Text>
     </View>
   )

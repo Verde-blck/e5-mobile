@@ -16,7 +16,7 @@ npx expo start              # press a / i, or scan with Expo Go
 
 Set `EXPO_PUBLIC_USE_MOCKS=true` to run on sample data with no backend.
 Mock sign-ins: `ADM-001` (super admin), `OP-014` (read-only: no Dashboard, can't
-resolve alarms), `RO-001` (can view settings, not change them), `MFA-001` (two-step; code `123456`). Any password works. In
+resolve alarms), `RO-001` (can view settings, not change them), `MFA-001` (two-step; code `123456`), `SETUP-001` (must set up two-step before it can use the app). Any password works. In
 sample-data mode the **More** tab has buttons that fire a fake SOS, fall or
 helmet-removed alarm through the same path a real one takes.
 
@@ -75,7 +75,7 @@ short screen (an 8 inch tablet in landscape is only about 600 dp tall) the rail'
 included, stay on it. A narrow screen has no room for nine, so it gets a bottom bar of five and the extra modules are reached from
 More, with a way back.
 
-**Under More** (on every screen size): Fences, Account security, **Site Wi-Fi**, **Photo Record** and **Video Record**. These open as
+**Under More** (on every screen size): Fences, Account security, **Company profile**, **Site Wi-Fi**, **Photo Record** and **Video Record**. These open as
 screens with their own header, and their back arrow returns to More.
 
 ## Live Map
@@ -138,11 +138,53 @@ The **Group call** module in the side rail (More > Group call on a narrow screen
 On a helmet's own screen: **Voice messages** (needs `groupCall:read`). A voice message goes to **one helmet**, from that helmet's
 screen; there is no sending to several at once. It is a conversation like the web's: what was sent to the helmet on the right,
 recordings from the wearer on the left, each with a player (one plays at a time). A link is checked before it is played, because
-the links expire after about an hour; a dead one is reported as "no longer available". Reading works in a real build. **Sending**
-(record, listen back, send, then "Delivered" or "Queued" for an offline helmet) is off in a real build until
-`EXPO_PUBLIC_BROADCAST_ENABLED=true`. A browser records WebM, so the preview converts it to the WAV the web dashboard sends; a
-tablet records `.m4a`, which the backend must be willing to convert ([docs/GROUP_CALL.md](docs/GROUP_CALL.md)). If a send fails, the
-message says what the server actually answered (with its code), and says "check the connection" only when no answer came back.
+the links expire after about an hour; a dead one is reported as "no longer available". Sending (record, listen back, send, then
+"Delivered" or "Queued" for an offline helmet) needs `groupCall:write`, and no switch. A tablet records `.m4a`, which the backend
+now converts to MP3 for the helmet, as it does for fence clips; a browser records WebM, so the preview converts it to the WAV the
+web dashboard sends ([docs/GROUP_CALL.md](docs/GROUP_CALL.md)). If a send fails, the message says what the server actually
+answered (with its code), and says "check the connection" only when no answer came back.
+
+## Worn and Worn by
+
+The helmet page shows **Worn** as Yes, No, or a dash when it isn't known, and a **Worn by** panel with the worker assigned to that
+helmet (name, and staff number and phone if given), or "Unassigned". Assigning, changing and removing a worker needs Monitoring
+Center management (`devices:write`). Alarm notifications then name the worker ("SOS: John Ade (ES5 3)"), and the worker's name shows
+on the helmet's card in the list.
+
+"Worn" is the backend's `worn` field (true, false, or null for unknown, which is also what an offline helmet gives, so a
+disconnected helmet never shows "Yes"). The raw wear code is not read for a helmet: earlier builds treated `1` as worn, but in the
+helmet maker's protocol `1` is not worn and `2` is worn, so "Worn" was the wrong way round against the live backend. Telemetry
+history rows carry no `worn` field, so those are read by that protocol.
+
+## Two-step verification
+
+**Account security** (More) turns two-step verification on or off for your own account. Turning it off needs a current code, and
+moving to a **new phone** needs a code from the current one first (the old phone keeps working until the new one is confirmed).
+
+- **Required by the company.** An administrator can switch on **Require two-step verification for everyone** (Administrators). Then
+  anyone without it can still sign in, but is taken straight to a set-up screen and can use nothing else until it is done; the
+  alarm stream and push alerts stay off until then. Nobody can turn it off while it is required.
+- **A refusal is not a sign-out.** While set-up is outstanding the backend answers other requests with `403 2fa_setup_required`.
+  The app treats that as "go and set it up", never as an expired session, which would sign the person out in a circle.
+- **Lost or changed phone.** An administrator with administrator settings can **Reset 2FA** on an account (Administrators). Not
+  your own account, and only a super admin can reset a super admin. The person sets it up again at their next sign-in.
+
+## Company profile and branding
+
+**Company profile** (More; anyone signed in can see it, changing it needs administrator settings): the company's name, support
+email, logo and two colours. The public branding is fetched while the app starts and on the sign-in screen, so the company's name,
+logo and colours show before anyone signs in; with no signal the E5 look is used. The logo link expires after an hour, so it is
+fetched fresh and never stored.
+
+- **The main colour** colours buttons, the active tab, links, switches, the dot-grid backdrop, and the sign-in panel and helmet mark.
+  Everything else (alarm red and amber, status colours) is never themed. The other four shades are worked out from it.
+- **Two safeguards**, because this is a safety app: a main colour that white text can't be read on is not applied, and neither is
+  one that looks like the alarm colours (red, orange, amber), which must stay the most noticeable things on screen. The screen says
+  so where the colour is chosen, and the app keeps the E5 look.
+- **The accent colour** is only a thin line on the sign-in screen. E5's own orange is deliberately not a UI colour.
+- **The logo** must be PNG, JPEG or WebP, up to 512 KB and 1024 px on each side (checked before it is sent; the backend checks the
+  real image). If an uploaded logo can't be loaded the E5 logo is shown rather than a gap.
+- With no company colour the app is exactly the E5 look: the five brand colours are variables whose defaults are E5's.
 
 ## Administrators
 

@@ -1,3 +1,4 @@
+import { useBrandColours } from '@/modules/branding/hooks/useBranding'
 import { useState } from 'react'
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native'
 import Feather from '@expo/vector-icons/Feather'
@@ -41,8 +42,9 @@ function Tile({
   /** The tile's width once the row has been measured; until then it just shares the row. */
   width?: number
 }) {
+  const brandColour = useBrandColours().primary
   const TONES = {
-    brand: { bg: 'bg-brand-tint', color: '#0A6659' },
+    brand: { bg: 'bg-brand-tint', color: brandColour },
     green: { bg: 'bg-emerald-50', color: '#059669' },
     slate: { bg: 'bg-slate-100', color: '#64748B' },
     red: { bg: 'bg-red-50', color: '#DC2626' },
@@ -74,6 +76,7 @@ function reasonsFor(d: DeviceView, now: number): string[] {
 }
 
 function DashboardScreen() {
+  const brand = useBrandColours()
   const user = useAuthStore((s) => s.user)
   const fleet = useDeviceViews()
   const summary = useFleetSummary()
@@ -121,8 +124,8 @@ function DashboardScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={refresh}
-            tintColor="#0A6659"
-            colors={['#0A6659']}
+            tintColor={brand.primary}
+            colors={[brand.primary]}
           />
         }
       >

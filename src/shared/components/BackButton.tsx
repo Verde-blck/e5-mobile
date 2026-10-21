@@ -1,6 +1,7 @@
 import { Pressable } from 'react-native'
 import { router } from 'expo-router'
 import Feather from '@expo/vector-icons/Feather'
+import { useBrandColours } from '@/modules/branding/hooks/useBranding'
 import { cn } from '@/shared/lib/cn'
 
 /**
@@ -8,6 +9,7 @@ import { cn } from '@/shared/lib/cn'
  * may use). `floating` is the round button that sits over the map.
  */
 export function BackButton({ floating = false, className }: { floating?: boolean; className?: string }) {
+  const brand = useBrandColours()
   return (
     <Pressable
       accessibilityRole="button"
@@ -20,7 +22,7 @@ export function BackButton({ floating = false, className }: { floating?: boolean
         className
       )}
     >
-      <Feather name="arrow-left" size={22} color="#0C352F" />
+      <Feather name="arrow-left" size={22} color={brand.secondary} />
     </Pressable>
   )
 }

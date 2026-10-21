@@ -30,9 +30,6 @@ export const env = {
   // Push alerts for a locked tablet. Off until the backend can register tablets and send the push
   // (see docs/PUSH_SETUP.md); while off, the app says plainly that alerts need the app to be open.
   pushEnabled: parseFlag(process.env.EXPO_PUBLIC_PUSH_ENABLED),
-  // Voice messages to several helmets (POST /api/broadcast). Off in a real build until the request has been
-  // checked against the backend (docs/GROUP_CALL.md); sample data mode always has it.
-  broadcastEnabled: parseFlag(process.env.EXPO_PUBLIC_BROADCAST_ENABLED),
   // Live view and calls with a helmet (WebRTC). Written to the web's own protocol but not yet tried on a real tablet
   // with a real helmet, so a real build keeps them hidden until this is true (docs/CALLS.md). Sample data mode has them.
   liveEnabled: parseFlag(process.env.EXPO_PUBLIC_LIVE_ENABLED),

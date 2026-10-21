@@ -42,6 +42,11 @@ export interface AuthUser {
   deviceIds?: string[]
   /** From the server (GET /auth/me), so it is never a guess. */
   twoFactorEnabled?: boolean
+  /**
+   * The company requires two-step verification and this account hasn't set it up. Until it has, the backend refuses every
+   * request but sign-in and the profile, so the app shows only the set-up screen.
+   */
+  mustSetup2fa?: boolean
 }
 
 interface AuthState {
@@ -52,6 +57,8 @@ interface AuthState {
   setUser: (user: AuthUser | null) => void
   setBootstrapping: (v: boolean) => void
   clearUser: () => void
+  /** The backend has said set-up is required (403 2fa_setup_required), whatever the profile said before. */
+  requireSetup: () => void
 }
 
 // React Query owns server *data*; Zustand owns the session, which many
@@ -67,4 +74,5 @@ export const useAuthStore = create<AuthState>((set) => ({
   setUser: (user) => set({ user, isAuthenticated: !!user }),
   setBootstrapping: (v) => set({ isBootstrapping: v }),
   clearUser: () => set({ user: null, isAuthenticated: false }),
+  requireSetup: () => set((s) => (s.user && !s.user.mustSetup2fa ? { user: { ...s.user, mustSetup2fa: true } } : s)),
 }))

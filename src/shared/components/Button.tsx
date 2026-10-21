@@ -1,5 +1,6 @@
 import { ActivityIndicator, Pressable, View } from 'react-native'
 import Feather from '@expo/vector-icons/Feather'
+import { useBrandColours } from '@/modules/branding/hooks/useBranding'
 import { cn } from '@/shared/lib/cn'
 import type { IconName } from '@/shared/constants/modules'
 import { Text } from './Text'
@@ -32,11 +33,10 @@ const LABEL: Record<Variant, string> = {
   ghost: 'text-brand-primary',
 }
 
-const ICON_COLOR: Record<Variant, string> = {
+const ICON_COLOR: Record<Exclude<Variant, 'ghost'>, string> = {
   primary: '#FFFFFF',
   secondary: '#1E293B',
   danger: '#FFFFFF',
-  ghost: '#0A6659',
 }
 
 export function Button({
@@ -49,6 +49,9 @@ export function Button({
   className,
   accessibilityLabel,
 }: ButtonProps) {
+  const brand = useBrandColours()
+  // The ghost button is the company's colour; the rest are fixed.
+  const iconColor = variant === 'ghost' ? brand.primary : ICON_COLOR[variant]
   const inactive = disabled || loading
   return (
     <Pressable
@@ -65,10 +68,10 @@ export function Button({
       )}
     >
       {loading ? (
-        <ActivityIndicator color={ICON_COLOR[variant]} />
+        <ActivityIndicator color={iconColor} />
       ) : (
         <View className="flex-row items-center gap-2">
-          {icon ? <Feather name={icon} size={18} color={ICON_COLOR[variant]} /> : null}
+          {icon ? <Feather name={icon} size={18} color={iconColor} /> : null}
           <Text className={cn('font-sans-semibold text-base', LABEL[variant])}>{title}</Text>
         </View>
       )}

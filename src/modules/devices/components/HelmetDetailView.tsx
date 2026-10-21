@@ -15,6 +15,7 @@ import { formatCoord, formatDateTime } from '@/shared/lib/format'
 import { BatteryChip } from '@/modules/devices/components/BatteryChip'
 import { PresenceBadge } from '@/modules/devices/components/PresenceBadge'
 import { SignalBars } from '@/modules/devices/components/SignalBars'
+import { WornByCard } from '@/modules/devices/components/WornByCard'
 import { useDeviceViews } from '@/modules/devices/hooks/useDevices'
 import {
   describeFix,
@@ -27,8 +28,7 @@ import { openInMaps } from '@/modules/devices/lib/maps'
 import { ConnectionSection } from '@/modules/settings/components/ConnectionSection'
 import { HelmetSettingsSection } from '@/modules/settings/components/HelmetSettingsSection'
 import { lastSeenLabel } from '@/modules/devices/lib/presence'
-
-const yesNo = (v: boolean | undefined) => (v === undefined ? '—' : v ? 'Yes' : 'No')
+import { wornLabel } from '@/modules/devices/lib/worker'
 
 /**
  * One helmet in full. Its own screen on a phone or portrait tablet; the right-hand
@@ -100,7 +100,7 @@ export function HelmetDetailView({ id, embedded = false }: { id: string; embedde
             <Text className="text-sm text-slate-500">Battery</Text>
             <BatteryChip percent={t.batteryPercent} />
           </View>
-          <Row label="Worn" value={yesNo(t.isWorn)} />
+          <Row label="Worn" value={wornLabel(t.isWorn)} />
           <View className="flex-row items-center justify-between border-b border-slate-100 py-2.5">
             <Text className="text-sm text-slate-500">Signal</Text>
             <SignalBars level={t.signalStrength} />
@@ -108,6 +108,9 @@ export function HelmetDetailView({ id, embedded = false }: { id: string; embedde
           {network ? <Row label="Connection" value={network} /> : null}
           <Row label="Registration" value={device.active ? 'Active' : 'Deactivated'} last />
         </Card>
+
+        <SectionTitle>Worn by</SectionTitle>
+        <WornByCard device={device} />
 
         <SectionTitle>Last known location</SectionTitle>
         <Card className="mb-5">

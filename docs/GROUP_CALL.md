@@ -26,8 +26,7 @@ calls it beta too. It needs `EXPO_PUBLIC_LIVE_ENABLED=true` like the other live 
 
 A voice message is sent to **one helmet**, from that helmet's screen (More > a helmet > **Voice messages**). There is no sending to
 several helmets. It is a conversation (`GET /api/devices/{id}/messages`; `POST /api/devices/{id}/messages/audio` to send,
-multipart `file`). Reading is always available. Sending needs `EXPO_PUBLIC_BROADCAST_ENABLED=true` and the permission
-(`groupCall:write`, backend `GROUP_CALL`).
+multipart `file`). Reading needs `groupCall:read`; sending needs `groupCall:write` (backend `GROUP_CALL`), and there is no switch.
 
 ### The recording's format
 
@@ -35,9 +34,10 @@ multipart `file`). Reading is always available. Sending needs `EXPO_PUBLIC_BROAD
   encoding the web dashboard uses (and the web sends MP3 now; WAV is its fallback). It is attached as a real file. An earlier version
   attached it as an object, which a browser turns into the text `[object Object]`, so the server received no audio at all and every
   send failed whatever the connection.
-- **On a tablet:** Android records AAC in an `.m4a` file and cannot make WAV or MP3. The backend already converts `.m4a` to MP3 for
-  fence clips; it needs to do the same on `POST /api/devices/{id}/messages/audio`. This is unconfirmed, so a tablet's first send is
-  the real test. If the server refuses it the message will say so, with the server's code and its own words.
+- **On a tablet:** Android records AAC in an `.m4a` file and cannot make WAV or MP3. The backend converts `.m4a`, `.aac` and `.3gp`
+  to MP3 for the helmet on `POST /api/devices/{id}/messages/audio`, as it does for fence clips (backend update of 21 Oct 2026). A
+  recording it can't convert is a 400 with its own reason (`could not convert this recording; please send mp3, wav or m4a`), which is
+  shown as it is. Not yet tried on a real tablet.
 
 ### When a send fails
 

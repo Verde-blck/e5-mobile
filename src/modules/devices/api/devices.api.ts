@@ -18,7 +18,12 @@ interface ApiDevice {
   lastBatteryLevel?: string | null
   lastLatitude?: string | null
   lastLongitude?: string | null
-  lastWearStatus?: string | null
+  /** Whether it is on someone's head. null when the helmet is offline or hasn't reported, so a disconnected helmet never shows "Yes". */
+  worn?: boolean | null
+  wearState?: 'worn' | 'not_worn' | 'unknown' | null
+  workerName?: string | null
+  workerStaffId?: string | null
+  workerPhone?: string | null
   lastNetStrength?: string | null
   firstSeenAt?: string | null
   lastSeenAt?: string | null
@@ -63,12 +68,14 @@ function toDevice(api: ApiDevice): Device {
     // Presence is derived from this timestamp rather than from the API's
     // `online` flag, so every screen agrees. See lib/presence.ts.
     lastSeenAt: ts(api.lastSeenAt) ?? 0,
+    worker: api.workerName?.trim() ? { name: api.workerName.trim(), staffId: api.workerStaffId?.trim() || undefined, phone: api.workerPhone?.trim() || undefined } : undefined,
     activeAlarm: null,
     telemetry: {
       batteryPercent: num(api.lastBatteryLevel),
       lat: num(api.lastLatitude),
       lng: num(api.lastLongitude),
-      isWorn: flag(api.lastWearStatus),
+      // The backend works this out (the raw code isn't read here): true, false, or null for unknown.
+      isWorn: api.worn === true ? true : api.worn === false ? false : undefined,
       signalStrength: num(api.lastNetStrength),
       // Empty until a helmet with a gas sensor reports, so the gas slot
       // shows "no reading" rather than a false all-clear of zeros.

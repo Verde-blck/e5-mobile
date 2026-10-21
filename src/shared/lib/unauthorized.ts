@@ -21,3 +21,21 @@ export function onUnauthorized(listener: Listener): () => void {
 export function emitUnauthorized(): void {
   listeners.forEach((listener) => listener())
 }
+
+/**
+ * The company requires two-step verification and this account hasn't set it up: the backend answers every request but sign-in
+ * and the profile with 403 {"error":"2fa_setup_required"}. That is not a dead session (signing out would only send the person
+ * round in a circle); it means "go and set up 2FA".
+ */
+const setupListeners = new Set<Listener>()
+
+export function onSetupRequired(listener: Listener): () => void {
+  setupListeners.add(listener)
+  return () => {
+    setupListeners.delete(listener)
+  }
+}
+
+export function emitSetupRequired(): void {
+  setupListeners.forEach((listener) => listener())
+}

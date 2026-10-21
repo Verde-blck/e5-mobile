@@ -84,6 +84,27 @@ export const mockNewStarter: AuthUser = {
 // on -> off -> on round trip can be exercised.
 const twoFactor = new Map<string, boolean>([['MFA-001', true]])
 
+// SETUP-001 is an account that has to set up two-step verification before it can use anything (the company requires it).
+export const mockSetupRequired: AuthUser = {
+  id: 'user-6',
+  username: 'SETUP-001',
+  name: 'Ngozi Bello',
+  role: 'Monitoring',
+  superAdmin: false,
+  permissions: ['devices:read', 'map:read', 'alarms:read'],
+  deviceIds: [],
+  twoFactorEnabled: false,
+  mustSetup2fa: true,
+  scope: { allSites: true, sites: [] },
+}
+
+// The company policy "require two-step verification for everyone" (GET/PUT /api/settings/security).
+let requireTwoFactor = false
+export const mockRequire2fa = (): boolean => requireTwoFactor
+export function setMockRequire2fa(on: boolean): void {
+  requireTwoFactor = on
+}
+
 export function mockTwoFactorOn(username: string): boolean {
   return twoFactor.get(username.trim().toUpperCase()) ?? false
 }
@@ -102,6 +123,10 @@ export function mockUserFor(username: string): AuthUser {
         ? mockViewer
       : id.startsWith('NEW')
         ? mockNewStarter
-        : mockAdmin
-  return { ...base, username: id || base.username, twoFactorEnabled: mockTwoFactorOn(id) }
+        : id.startsWith('SETUP')
+          ? mockSetupRequired
+          : mockAdmin
+  const on = mockTwoFactorOn(id)
+  // Required by the company (or by this account's own flag), and not yet set up.
+  return { ...base, username: id || base.username, twoFactorEnabled: on, mustSetup2fa: (base.mustSetup2fa === true || requireTwoFactor) && !on }
 }

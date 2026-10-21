@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { isForbidden } from '@/shared/lib/errors'
 import { useCan } from '@/shared/lib/permissions'
 import { useAuthStore } from '@/shared/store/authStore'
-import { createAdmin, createGroup, deleteAdmin, deleteGroup, fetchAdmins, fetchGroups, fetchPermissions, renameGroup, updateAdmin } from '../api/admins.api'
+import { createAdmin, createGroup, deleteAdmin, deleteGroup, fetchAdmins, fetchGroups, fetchPermissions, fetchSecurityPolicy, renameGroup, resetAdminTwoFactor, setSecurityPolicy, updateAdmin } from '../api/admins.api'
 import type { AdministratorUpdate, NewAdministrator } from '../types'
 
 const retry = (count: number, error: unknown) => !isForbidden(error) && count < 1
@@ -70,4 +70,23 @@ export function useRenameGroup() {
 export function useDeleteGroup() {
   const invalidate = useInvalidate()
   return useMutation({ mutationFn: (id: number) => deleteGroup(id), onSuccess: invalidate })
+}
+
+/** Clears an administrator's two-step verification (a lost or changed phone). */
+export function useResetTwoFactor() {
+  const queryClient = useQueryClient()
+  return useMutation({ mutationFn: (id: number) => resetAdminTwoFactor(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admins'] }) })
+}
+
+/** The company policy "require two-step verification for everyone". Needs ADMINISTRATOR_SETTING, as the administrators list does. */
+export function useSecurityPolicy() {
+  const signedIn = useAuthStore((s) => s.isAuthenticated)
+  const canRead = useCan('users:read')
+  const query = useQuery({ queryKey: ['security-policy'], queryFn: fetchSecurityPolicy, enabled: signedIn && canRead, staleTime: 60_000 })
+  return { require2fa: query.data?.require2fa ?? null, isLoading: query.isLoading, isError: query.isError }
+}
+
+export function useSetSecurityPolicy() {
+  const queryClient = useQueryClient()
+  return useMutation({ mutationFn: (on: boolean) => setSecurityPolicy(on), onSuccess: (policy) => queryClient.setQueryData(['security-policy'], policy) })
 }

@@ -12,7 +12,6 @@ import { useRecorder, type RecordedAudio } from '@/shared/hooks/useRecorder'
 import { useCan } from '@/shared/lib/permissions'
 import { describeUploadError, type UploadProblem } from '@/shared/lib/uploadError'
 import { useDeviceViews } from '@/modules/devices/hooks/useDevices'
-import { broadcastAvailable } from '@/modules/group-call/api/broadcast.api'
 import { MAX_MESSAGE_SECONDS } from '@/modules/messaging/lib/limits'
 import { MessageBubble } from '@/modules/messaging/components/MessageBubble'
 import { useMessages, useSendVoiceMessage } from '@/modules/messaging/hooks/useMessages'
@@ -69,9 +68,7 @@ function MessagesScreen({ deviceId }: { deviceId: string }) {
           {canSend ? (
             <View className="mt-2 rounded-xl border border-slate-200 bg-white p-4">
               <Text className="mb-3 text-sm leading-5 text-slate-700">Record a message and the helmet plays it aloud to the wearer.</Text>
-              {!broadcastAvailable() ? (
-                <Text className="rounded-xl bg-slate-100 p-3 text-sm text-slate-600">Sending voice messages isn't switched on in this build yet.</Text>
-              ) : recorder.active ? (
+              {recorder.active ? (
                 <View className="gap-3 rounded-xl border border-red-200 bg-red-50 p-3">
                   <View className="flex-row items-center gap-2">
                     <View className="h-3 w-3 rounded-full bg-red-600" />

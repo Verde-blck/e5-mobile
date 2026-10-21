@@ -42,7 +42,8 @@ async function main() {
     const u = await auth.verifyTwoFactorLogin(r.challenge, '123456')
     assert.equal(u.username, 'MFA-001'); assert.equal(u.twoFactorEnabled, true)
 
-    const setup = await auth.startTwoFactorSetup('MFA-001'); assert.match(setup.otpAuthUrl, /^otpauth:\/\/totp\/E5%20Energy%3AMFA-001\?secret=JBSWY3DPEHPK3PXP/)
+    await assert.rejects(auth.startTwoFactorSetup('MFA-001'), (e: unknown) => auth.statusOf(e) === 409) // already on: a new phone needs the current code
+    const setup = await auth.startTwoFactorSetup('MFA-001', '123456'); assert.match(setup.otpAuthUrl, /^otpauth:\/\/totp\/E5%20Energy%3AMFA-001\?secret=JBSWY3DPEHPK3PXP/)
     await assert.rejects(auth.disableTwoFactor('MFA-001', '111111'), (e: unknown) => auth.statusOf(e) === 401)
     await auth.disableTwoFactor('MFA-001', '123456')
     assert.equal((await auth.refreshProfile('MFA-001')).twoFactorEnabled, false)
@@ -165,6 +166,32 @@ async function main() {
     const audio = { uri: 'blob:fake-recording', name: 'message-1.m4a', mimeType: 'audio/mp4' }
     assert.equal((await sendVoiceMessage(online.id, audio)).delivered, true); assert.equal((await sendVoiceMessage(offline.id, audio)).delivered, false, 'offline: queued')
     const after = await fetchMessages(online.id); assert.equal(after.length, 4); assert.deepEqual([after[3].direction, after[3].audioUrl], ['TO_HELMET', 'blob:fake-recording'])
+  })
+
+  await t('the sample fleet follows the new rules: the test helmet has a worker, assigning and removing change it, and an offline helmet is never worn', async () => {
+    const { getMockFleet } = await import('@/modules/devices/api/devices.mock')
+    const { assignWorker, removeWorker } = await import('@/modules/devices/api/worker.api')
+    const { derivePresence } = await import('@/modules/devices/lib/presence')
+    const fleet = getMockFleet(); assert.equal(fleet.find((d) => d.id === '866652022956404')?.worker?.name, 'John Ade')
+    assert.ok(fleet.filter((d) => derivePresence(d.lastSeenAt, Date.now()) === 'offline').every((d) => d.telemetry.isWorn === undefined), 'offline: unknown, never "Yes"')
+    const other = fleet.find((d) => !d.worker && d.active)!; assert.equal((await assignWorker(other.id, { name: 'Ada Obi', staffId: 'E5-002' })).worker?.name, 'Ada Obi'); assert.equal(getMockFleet().find((d) => d.id === other.id)?.worker?.staffId, 'E5-002')
+    assert.equal((await removeWorker(other.id)).worker, undefined); await assert.rejects(assignWorker(other.id, { name: '  ' }))
+  })
+
+  await t('sample 2FA follows the new rules: set-up is forced until done, the company policy forces it for everyone and blocks turning it off, a new phone needs the current code, and a reset clears it', async () => {
+    const { mockUserFor, setMockRequire2fa, setMockTwoFactor } = await import('@/modules/auth/mock-data')
+    const { confirmTwoFactorSetup, disableTwoFactor, startTwoFactorSetup } = await import('@/modules/auth/api/auth.api')
+    const { resetAdminTwoFactor, fetchAdmins } = await import('@/modules/users/api/admins.api')
+    const { useAuthStore } = await import('@/shared/store/authStore')
+    const status = (p: Promise<unknown>) => p.then(() => 0, (e: { response?: { status?: number } }) => e.response?.status ?? -1)
+    assert.equal(mockUserFor('SETUP-001').mustSetup2fa, true); assert.equal(mockUserFor('OP-014').mustSetup2fa, false)
+    await startTwoFactorSetup('SETUP-001'); await confirmTwoFactorSetup('SETUP-001', '123456'); assert.equal(mockUserFor('SETUP-001').mustSetup2fa, false, 'done: nothing more to set up'); setMockTwoFactor('SETUP-001', false)
+    setMockRequire2fa(true); assert.equal(mockUserFor('OP-014').mustSetup2fa, true, 'the policy forces it on everyone without 2FA'); assert.equal(mockUserFor('MFA-001').mustSetup2fa, false, 'but not on someone who has it')
+    assert.equal(await status(disableTwoFactor('MFA-001', '123456')), 409, 'the company requires it, so it can\'t be turned off'); setMockRequire2fa(false)
+    assert.equal(await status(startTwoFactorSetup('MFA-001')), 409, 'a new phone with no current code'); assert.equal(await status(startTwoFactorSetup('MFA-001', '000000')), 401); assert.equal(await status(startTwoFactorSetup('MFA-001', '123456')), 0)
+    useAuthStore.setState({ user: { ...mockUserFor('ADM-001') }, isAuthenticated: true }); const list = await fetchAdmins(); const mfa = list.find((a) => a.username === 'MFA-001')!; const self = list.find((a) => a.username === 'ADM-001')!; const boss = list.find((a) => a.superAdmin && a.username !== 'ADM-001')
+    assert.equal(mfa.twoFactorEnabled, true); assert.equal(await status(resetAdminTwoFactor(self.id)), 400, 'not your own account'); assert.equal((await resetAdminTwoFactor(mfa.id)).twoFactorEnabled, false); assert.equal(mockUserFor('MFA-001').twoFactorEnabled, false, 'and they now sign in without it')
+    useAuthStore.setState({ user: { ...mockUserFor('AD-001') }, isAuthenticated: true }); assert.equal(await status(resetAdminTwoFactor(self.id)), 403, 'only a super admin can reset a super admin'); useAuthStore.setState({ user: null, isAuthenticated: false }); setMockTwoFactor('MFA-001', true); void boss
   })
 }
 
