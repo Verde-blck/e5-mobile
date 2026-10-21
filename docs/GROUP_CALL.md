@@ -1,19 +1,26 @@
 # Group call and voice messages
 
-## Group call: calling a helmet
+## Group call: calling helmets
 
-The **Group call** module is where a helmet is called: choose a helmet, then **Audio call** or **Video call**. A video call
-sends the tablet's front camera as well as its microphone, shows it as a small self-view, and has a camera button (off sends
-black frames, so it is instant). A tablet with no camera carries on as an audio call and says so. The first video call asks
-Android for camera access; a refusal is reported before the helmet is touched. See `docs/CALLS.md` for how a call works and
-what can't be known without a real helmet.
+The **Group call** module is where helmets are called: tick one or up to 8, then **Video call** or **Audio call**.
 
-### Live calls with several helmets: not built
+- **One helmet** is the ordinary one-to-one call (`docs/CALLS.md`; needs `live:write`).
+- **Two or more** is a **group call** (needs `groupCall:write`, the backend's `GROUP_CALL`, as in the web). One request,
+  `POST /api/webrtc-group-call/start` with the helmet ids (at most 8), returns one call room: a `callId`, an `adminPushUrl` (where
+  this tablet's microphone and camera go, **once**, for every helmet to hear) and, per helmet, `delivered` and a `watchUrl`. Each
+  helmet that was reached is its own incoming connection, so one weak signal never affects the others, and each can be retried on
+  its own. A helmet that is offline comes back `delivered: false`: calls aren't queued, so it shows "not reachable" and won't join
+  later. `POST /api/webrtc-group-call/{callId}/stop` ends it on every helmet in one go; it is sent on every way out.
+- As on a call, the camera and microphone are asked for **before** any helmet is touched, so a refusal never leaves a helmet in
+  call mode, and a tablet with no camera carries on as voice.
+- A tablet can't keep a call in the background: out of sight for more than a few seconds ends it, for every helmet.
+- **A call left running.** If the app is killed mid-call it can't tell the helmets, which stay in call mode. The call's id is
+  remembered, and the next time the Group call page opens it checks (`GET /api/webrtc-group-call/{callId}`; 404 means it has
+  ended) and offers to end it. Rejoining a running call isn't offered.
 
-A call with up to 8 helmets at once is the one-helmet session several times over: `POST /api/webrtc-group-call/start` returns one
-call room and a watch address per helmet, with `GET` to rejoin and `POST .../{callId}/stop` to end it. The protocol is known (the
-web's live module was supplied); it is a separate piece of work (a tile per helmet, joining each and retrying, rejoining after
-the app restarts), and the web marks it beta because it hasn't been tried with several real helmets.
+**Beta.** This is the web dashboard's `GroupCallSession` ported, to the backend's guide of 13 Oct 2026. Whether the helmet app shows
+and plays several other participants hasn't been confirmed on real hardware (there is one test helmet), which is why the web
+calls it beta too. It needs `EXPO_PUBLIC_LIVE_ENABLED=true` like the other live features.
 
 ## Voice messages: one helmet, from its own screen
 

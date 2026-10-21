@@ -26,7 +26,7 @@ export default function TabsLayout() {
   const canAlarms = useCan('alarms:read')
   const canWall = useCan('live:read') && liveAvailable()
   const canTrack = useCan('trackPlayback:read')
-  const canGroupCall = useCan('live:write') && liveAvailable()
+  const canGroupCall = (useCan('live:write') || useCan('groupCall:read')) && liveAvailable()
   const canAdmins = useCan('users:read')
   const canWifi = useCan('wifi:read')
   const { active } = useAlarms()

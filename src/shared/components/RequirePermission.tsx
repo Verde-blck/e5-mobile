@@ -14,13 +14,17 @@ import { useCan } from '@/shared/lib/permissions'
  */
 export function RequirePermission({
   permission,
+  or,
   fallback,
   children,
 }: {
   permission: Permission
+  /** A second permission that is also enough (for a screen two different roles use). */
+  or?: Permission
   fallback: string
   children: ReactNode
 }) {
-  const allowed = useCan(permission)
-  return allowed ? <>{children}</> : <Redirect href={fallback} />
+  const first = useCan(permission)
+  const second = useCan(or ?? permission)
+  return first || second ? <>{children}</> : <Redirect href={fallback} />
 }

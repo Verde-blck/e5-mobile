@@ -91,8 +91,7 @@ never reported a position isn't drawn; the map says how many are missing.
   `EXPO_PUBLIC_MAP_ATTRIBUTION` to a provider E5 has an account with.
 - **Layout.** Landscape tablets get the map with a helmet panel on the right; portrait tablets and
   phones get the full map with a card over it.
-- **Not built yet.** Fences (drawing and managing them) and track playback. Both need endpoints
-  and types from the web app.
+- **Fences and track playback** are built: see "Fences" and "Track playback" below.
 
 ## Site Wi-Fi and helmet settings
 
@@ -116,10 +115,19 @@ Built from Cypher's 16 Oct backend update.
 
 ## Group call
 
-The **Group call** module in the side rail (More > Group call on a narrow screen; needs live management, `live:write`) is where a
-helmet is called. Choose a helmet, then **Audio call** or **Video call**. A video call also shows the wearer your camera: it
-shows your own picture as a small self-view, with a camera button beside mute, and carries on as an audio call if the tablet has
-no camera. Live calls with several helmets at once aren't available yet (see [docs/GROUP_CALL.md](docs/GROUP_CALL.md)).
+The **Group call** module in the side rail (More > Group call on a narrow screen) is where helmets are called. Tick the helmets
+(up to 8, with a counter, Select all and Clear, as in the web), then **Video call** or **Audio call**.
+
+- **One helmet** is an ordinary one-to-one call (needs live management, `live:write`).
+- **Two or more** is a **group call**: every helmet in one room. It needs the group call permission (the backend's `GROUP_CALL`).
+  Each helmet has its own tile and its own speaker button (everyone is audible, any one can be muted), your own tile sits beside
+  them, and there is one Hang up that ends it for every helmet. Each helmet is its own connection, so one weak signal never
+  affects the others, and a helmet that is offline shows "not reachable" and doesn't join later.
+- A video call also sends your camera, with a self-view and a camera button; with no camera it carries on as voice.
+- If the app is closed or killed mid-call the helmets stay in call mode, so the Group call page offers to **end** that call the next
+  time it opens.
+- **Beta:** it is built to the backend's protocol and the web's own design, but hasn't been tried with several real helmets (the web
+  marks it beta for the same reason). See [docs/GROUP_CALL.md](docs/GROUP_CALL.md).
 
 ## Voice messages with one helmet
 

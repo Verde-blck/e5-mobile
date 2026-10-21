@@ -67,8 +67,7 @@ reconnects the same ones. It needs live view (`SURVEILLANCE`) and the same switc
 Open More > **What's switched on**. It says, for each feature, whether the build's switch or the account's permission is what's
 hiding it. After changing `.env`, restart with `npx expo start --clear`; the switches are baked in when the app is bundled.
 
-## Not built: live group call
+## Group call
 
-The protocol is now known (`POST /api/webrtc-group-call/start` with up to 8 helmets, one call room, `GET` to rejoin,
-`POST .../{callId}/stop`), and the session code is the one-helmet session above, several times over. It is a separate piece
-of work: a tile per helmet, per-helmet joining and retry, and rejoining after the app restarts.
+A call with several helmets at once is built on the same session and media-server exchange as the one-helmet call, once per
+helmet, plus one outgoing connection for this tablet's microphone and camera. See `docs/GROUP_CALL.md`.

@@ -116,6 +116,7 @@ export default function RootLayout() {
             <Stack.Screen name="admin/[id]" options={{ headerShown: true, title: 'Administrator', ...HEADER }} />
             {/* A call covers the whole screen and can't be swiped away by accident. */}
             <Stack.Screen name="call/[deviceId]" options={{ headerShown: false, presentation: 'fullScreenModal', gestureEnabled: false, animation: 'fade' }} />
+            <Stack.Screen name="conference" options={{ headerShown: false, presentation: 'fullScreenModal', gestureEnabled: false, animation: 'fade' }} />
             <Stack.Screen
               name="fences"
               options={{ headerShown: true, title: 'Fences', ...HEADER }}

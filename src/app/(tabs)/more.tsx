@@ -63,7 +63,7 @@ export default function MoreScreen() {
   const canFences = useCan('fences:read')
   const canAdmins = useCan('users:read') && inMore
   // Only offered where it can work: a real build keeps it hidden until voice messages are switched on.
-  const canGroupCall = useCan('live:write') && liveAvailable() && inMore
+  const canGroupCall = (useCan('live:write') || useCan('groupCall:read')) && liveAvailable() && inMore
   const initial = (user?.name ?? '?').trim().charAt(0).toUpperCase()
 
   function signOut() {
@@ -119,7 +119,7 @@ export default function MoreScreen() {
         ) : null}
         {canGroupCall ? (
           <View className="mt-3">
-            <MenuRow icon="radio" label="Group call" hint="Call a helmet by voice or video" onPress={() => router.navigate('/group-call')} />
+            <MenuRow icon="radio" label="Group call" hint="Call one helmet, or several at once" onPress={() => router.navigate('/group-call')} />
           </View>
         ) : null}
         {canAdmins ? (

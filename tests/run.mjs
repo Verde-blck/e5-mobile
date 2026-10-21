@@ -15,6 +15,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const suites = [
   ['live', {}], // mocks off: exercises the real request code paths
   ['stream', {}], // the alarm stream client against a fake streaming server
+  ['groupsession', {}], // group call: who can start what, the API, one connection per helmet, hanging up on every one
   ['audio', {}], // WAV encoding, browser recording names, and honest upload errors
   ['wall', {}], // the live wall: who can be on it, one session per helmet, leaving and returning
   ['features', {}], // the switches' parser, and why a feature is missing (switch or permission)

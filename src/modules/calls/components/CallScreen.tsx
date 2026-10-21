@@ -8,6 +8,7 @@ import { Text } from '@/shared/components/Text'
 import { cn } from '@/shared/lib/cn'
 import { useNow } from '@/shared/lib/useNow'
 import { useDeviceViews } from '@/modules/devices/hooks/useDevices'
+import { RoundButton } from '@/modules/live/components/RoundButton'
 import { StreamView } from '@/modules/live/components/StreamView'
 import { SessionMessage, StatusPill } from '@/modules/live/components/SessionPanel'
 import { useHelmetSession } from '@/modules/live/hooks/useHelmetSession'
@@ -17,26 +18,6 @@ import { useCallAccess } from '../hooks/useCallAccess'
 function close() {
   if (router.canGoBack()) router.back()
   else router.replace('/')
-}
-
-function RoundButton({ icon, label, on, onPress, danger, size = 64, disabled }: { icon: React.ComponentProps<typeof Feather>['name']; label: string; on?: boolean; onPress: () => void; danger?: boolean; size?: number; disabled?: boolean }) {
-  return (
-    <View className="items-center gap-2">
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={label}
-        accessibilityState={{ selected: !!on, disabled }}
-        aria-pressed={on}
-        disabled={disabled}
-        onPress={onPress}
-        style={{ width: size, height: size, borderRadius: size / 2, opacity: disabled ? 0.4 : 1 }}
-        className={cn('items-center justify-center', danger ? 'bg-red-600 active:bg-red-700' : on ? 'bg-white active:bg-slate-200' : 'bg-white/15 active:bg-white/25')}
-      >
-        <Feather name={icon} size={size / 2.6} color={danger ? '#FFFFFF' : on ? '#0C352F' : '#FFFFFF'} />
-      </Pressable>
-      <Text className="text-xs text-white/80">{label}</Text>
-    </View>
-  )
 }
 
 /**

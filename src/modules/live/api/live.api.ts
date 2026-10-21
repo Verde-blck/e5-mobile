@@ -17,7 +17,7 @@ export const liveAvailable = () => env.useMocks || env.liveEnabled
 
 type LogEntry = { op: string; deviceId: string }
 const log: LogEntry[] = []
-function note(op: string, deviceId: string) {
+export function note(op: string, deviceId: string) {
   log.push({ op, deviceId })
   ;(globalThis as { __e5CallLog?: LogEntry[] }).__e5CallLog = log // lets the browser tests see what was sent
 }
@@ -25,7 +25,7 @@ function note(op: string, deviceId: string) {
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 /** Sample data: a helmet that is offline or deactivated doesn't receive the command, like the real thing. */
-function mockReachable(deviceId: string): boolean {
+export function mockReachable(deviceId: string): boolean {
   const device = getMockFleet().find((d) => d.id === deviceId)
   return !!device && device.active && derivePresence(device.lastSeenAt, Date.now()) !== 'offline'
 }
