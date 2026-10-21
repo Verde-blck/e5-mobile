@@ -1,9 +1,19 @@
 import type { StreamLike } from '../types'
 
-/** The browser preview's microphone. */
-export async function getLocalMedia(): Promise<StreamLike> {
+/** The browser preview's microphone, and camera for a video call (carrying on as audio if there is none). */
+export async function getLocalMedia(withCamera: boolean): Promise<{ stream: StreamLike; noCamera: boolean }> {
   if (!navigator.mediaDevices?.getUserMedia) {
     throw new Error('This browser can’t use the microphone here. It needs the page on https:// (or localhost).')
   }
-  return (await navigator.mediaDevices.getUserMedia({ audio: true, video: false })) as unknown as StreamLike
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: withCamera ? { width: { ideal: 640 }, height: { ideal: 480 } } : false })
+    return { stream: stream as unknown as StreamLike, noCamera: false }
+  } catch (error) {
+    const name = (error as DOMException)?.name
+    if (withCamera && (name === 'NotFoundError' || name === 'OverconstrainedError')) {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+      return { stream: stream as unknown as StreamLike, noCamera: true }
+    }
+    throw error
+  }
 }

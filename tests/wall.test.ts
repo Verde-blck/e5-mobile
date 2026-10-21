@@ -17,7 +17,7 @@ function wall(broken: string[] = []) {
     startCall: async () => { throw new Error('a wall never calls') },
     startLive: async (d) => { log.push(`start:${d}`); return { delivered: true, watchUrl: 'w' } },
     stopCall: async () => {},
-    getLocalMedia: async () => stream(),
+    getLocalMedia: async () => ({ stream: stream(), noCamera: false }),
     play: async (): Promise<MediaConnection> => { if (broken.includes(id)) throw new NotReadyError('no picture'); return { stream: stream(), close: () => {}, onLost: () => {} } },
     push: async () => { throw new Error('never') },
     watchBackground: (cb) => { background.push(cb); return () => {} },

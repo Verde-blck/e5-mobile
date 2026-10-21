@@ -70,7 +70,7 @@ using split-screen changes it live:
 
 On a tablet (600 dp and up, in portrait or landscape) the main navigation is a **side rail** down the left edge, like the web's
 sidebar, with every module the account may use: Dashboard, Monitoring, Live wall, Live Map, Track, Group call, Alarms, Admins, Wi-Fi,
-then More (fences, alerts, account, about). Each account sees only what it can use. On a short screen (an 8 inch tablet in
+then More (fences, alerts, account, about). Every module page has a back arrow to the initial page (the Dashboard). Each account sees only what it can use. On a short screen (an 8 inch tablet in
 landscape is only about 600 dp tall) the rail's items are squeezed so that all of them, More included, stay on it. A narrow
 screen has no room for ten, so it gets a bottom bar of five and the extra modules are reached from More, with a way back.
 
@@ -116,20 +116,21 @@ Built from Cypher's 16 Oct backend update.
 
 ## Group call
 
-The **Group call** module in the side rail (More > Group call on a narrow screen; needs `groupCall:read`). Choose a group and helmets, **record a voice message on the tablet**, listen back,
-and send it to every chosen helmet, with a result per helmet (played, queued for when it reconnects, not sent). Live group
-calls (video) are not in the app. In a real build the screen stays hidden until voice messages are switched on, because the
-upload request is unchecked: what is known, what is guessed and how to switch it on are in [docs/GROUP_CALL.md](docs/GROUP_CALL.md).
+The **Group call** module in the side rail (More > Group call on a narrow screen; needs live management, `live:write`) is where a
+helmet is called. Choose a helmet, then **Audio call** or **Video call**. A video call also shows the wearer your camera: it
+shows your own picture as a small self-view, with a camera button beside mute, and carries on as an audio call if the tablet has
+no camera. Live calls with several helmets at once aren't available yet (see [docs/GROUP_CALL.md](docs/GROUP_CALL.md)).
 
 ## Voice messages with one helmet
 
-On any helmet: **Voice messages** (needs `groupCall:read`). A conversation like the web's: what was sent to the helmet on the
-right, recordings from the wearer on the left, each with a player (one plays at a time). Before a recording is played its link
-is checked, because the links expire after about an hour; a dead one is reported as "no longer available" instead of playing
-silence. The list refreshes every few seconds while it is open. Reading works in a real build. **Sending** (record, listen
-back, send, then "Delivered" or "Queued" for an offline helmet) is off in a real build until
-`EXPO_PUBLIC_BROADCAST_ENABLED=true`, for the same reason as group messages: the web sends MP3 and a tablet can only record
-`.m4a`, which the backend must be willing to convert ([docs/GROUP_CALL.md](docs/GROUP_CALL.md)).
+On a helmet's own screen: **Voice messages** (needs `groupCall:read`). A voice message goes to **one helmet**, from that helmet's
+screen; there is no sending to several at once. It is a conversation like the web's: what was sent to the helmet on the right,
+recordings from the wearer on the left, each with a player (one plays at a time). A link is checked before it is played, because
+the links expire after about an hour; a dead one is reported as "no longer available". Reading works in a real build. **Sending**
+(record, listen back, send, then "Delivered" or "Queued" for an offline helmet) is off in a real build until
+`EXPO_PUBLIC_BROADCAST_ENABLED=true`. A browser records WebM, so the preview converts it to the WAV the web dashboard sends; a
+tablet records `.m4a`, which the backend must be willing to convert ([docs/GROUP_CALL.md](docs/GROUP_CALL.md)). If a send fails, the
+message says what the server actually answered (with its code), and says "check the connection" only when no answer came back.
 
 ## Administrators
 
@@ -175,12 +176,13 @@ alerts says so plainly. Full setup and turn-on steps: [docs/PUSH_SETUP.md](docs/
 
 ## Live view and calls with a helmet
 
-On a helmet: **Watch live**, **Call helmet**, and **Join SOS call** (also in the SOS banner and on an SOS alarm). Built on the
-web's own live module, so it uses the same protocol: the helmet's picture and sound over WebRTC from the media server, and
-voice back from the tablet (no camera, no camera permission). Who may: watching needs live view, calling needs live
-management, and anyone signed in can join an SOS. A call ends, and the helmet leaves call mode, when you hang up, leave the
-screen, or stay out of the app for more than a few seconds. **Not yet tried on a real helmet**, so a real build keeps it
-hidden until `EXPO_PUBLIC_LIVE_ENABLED=true`: what to try and what can't be known from here are in [docs/CALLS.md](docs/CALLS.md).
+**Watch live** and **Voice messages** are on a helmet's own screen; **Join SOS call** is in the SOS banner and on an SOS alarm;
+ordinary calls (audio or video) are made from the **Group call** module. Built on the web's own live module, so it uses the same
+protocol: the helmet's picture and sound over WebRTC from the media server, and the tablet's microphone (and camera, for a video
+call) back. Who may: watching needs live view, calling needs live management, and anyone signed in can join an SOS. A call ends,
+and the helmet leaves call mode, when you hang up, leave the screen, or stay out of the app for more than a few seconds. **Not yet
+tried on a real helmet**, so a real build keeps it hidden until `EXPO_PUBLIC_LIVE_ENABLED=true`: what to try and what can't be
+known from here are in [docs/CALLS.md](docs/CALLS.md).
 
 ## Live wall
 

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Platform } from 'react-native'
 import { useFocusEffect } from 'expo-router'
 import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from 'expo-audio'
+import { extensionFor, toWavFile } from '../lib/webAudio'
 
 /** What a recording produces: a file on the tablet, labelled with what it really is. */
 export interface RecordedAudio {
@@ -53,7 +55,19 @@ export function useRecorder({ maxSeconds, namePrefix, onFinished }: { maxSeconds
       setError("That recording didn't save. Try again.")
       return
     }
-    onFinished({ uri, name: `${namePrefix}-${stamp(new Date())}.m4a`, mimeType: 'audio/mp4' })
+    const base = `${namePrefix}-${stamp(new Date())}`
+    if (Platform.OS !== 'web') {
+      // A tablet records AAC in an .m4a file, and attaches it by its path.
+      onFinished({ uri, name: `${base}.m4a`, mimeType: 'audio/mp4' })
+      return
+    }
+    // In a browser the recording is a blob, which has to travel as a real file (an object with a uri attaches as the
+    // text "[object Object]"), and it isn't m4a: it is WebM. Send WAV, as the web dashboard does; if the browser can't
+    // convert it, send what it is, honestly labelled, so the server's own answer says why it was refused.
+    const raw = await (await fetch(uri)).blob()
+    const wav = await toWavFile(raw, `${base}.wav`)
+    const file = wav ?? new File([raw], `${base}.${extensionFor(raw.type)}`, { type: raw.type || 'application/octet-stream' })
+    onFinished({ uri: URL.createObjectURL(file), name: file.name, mimeType: file.type, size: file.size, file })
   }, [namePrefix, onFinished, recorder, release])
 
   const start = useCallback(async () => {

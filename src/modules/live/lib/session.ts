@@ -7,8 +7,8 @@ export interface SessionDeps {
   startCall(deviceId: string): Promise<CallStart>
   startLive(deviceId: string): Promise<LiveStart>
   stopCall(deviceId: string): Promise<void>
-  /** The microphone. Rejects with the platform's own permission error. */
-  getLocalMedia(): Promise<StreamLike>
+  /** The microphone, and the camera for a video call. Rejects with the platform's own permission error. With no camera on the device it carries on with the microphone alone and says so. */
+  getLocalMedia(withCamera: boolean): Promise<{ stream: StreamLike; noCamera: boolean }>
   play(url: string, signal: AbortSignal): Promise<MediaConnection>
   push(url: string, media: StreamLike, signal: AbortSignal): Promise<MediaConnection>
   /** Reports the app going to the background (true) and coming back (false); returns how to stop listening. */
@@ -29,6 +29,8 @@ const INITIAL: SessionState = {
   remoteStream: null,
   localStream: null,
   micOn: true,
+  cameraOn: false,
+  noCamera: false,
   outgoingFailed: false,
   liveSince: null,
   endReason: null,
@@ -61,9 +63,11 @@ export class HelmetSession {
   constructor(
     readonly deviceId: string,
     readonly mode: SessionMode,
-    private readonly deps: SessionDeps
+    private readonly deps: SessionDeps,
+    /** Call only: a video call. False is an audio call. */
+    private readonly withCamera = false
   ) {
-    this.state = { ...INITIAL, status: mode === 'call' ? 'requesting-media' : 'starting' }
+    this.state = { ...INITIAL, status: mode === 'call' ? 'requesting-media' : 'starting', cameraOn: mode === 'call' && withCamera }
     this.stopWatching = deps.watchBackground((inBackground) => this.onBackground(inBackground))
   }
 
@@ -92,13 +96,14 @@ export class HelmetSession {
     try {
       let local: StreamLike | null = null
       if (this.mode === 'call') {
-        // Ask for the microphone before touching the helmet: if it is refused, the helmet never gets put into call mode.
-        local = await this.deps.getLocalMedia()
+        // Ask for the microphone (and camera) before touching the helmet: if it is refused, the helmet never gets put into call mode.
+        const media = await this.deps.getLocalMedia(this.withCamera)
+        local = media.stream
         if (this.signal.aborted) {
           local.getTracks().forEach((t) => t.stop())
           return
         }
-        this.set({ localStream: local, status: 'starting' })
+        this.set({ localStream: local, status: 'starting', noCamera: media.noCamera, cameraOn: this.withCamera && !media.noCamera })
       }
 
       // Marked before the request goes out, so a call ended mid-request still takes the helmet out of call mode.
@@ -126,7 +131,7 @@ export class HelmetSession {
       await this.connectRemote()
     } catch (error) {
       if (this.signal.aborted) return
-      this.set({ status: 'failed', error: describe(error) })
+      this.set({ status: 'failed', error: describe(error, this.withCamera) })
     }
   }
 
@@ -216,21 +221,30 @@ export class HelmetSession {
     this.state.localStream?.getAudioTracks().forEach((t) => (t.enabled = next))
     this.set({ micOn: next })
   }
+
+  /** Off sends black frames rather than renegotiating, so it is instant both ways. */
+  toggleCamera(): void {
+    if (this.state.noCamera || !this.withCamera) return
+    const next = !this.state.cameraOn
+    this.state.localStream?.getVideoTracks().forEach((t) => (t.enabled = next))
+    this.set({ cameraOn: next })
+  }
 }
 
 /** A sentence an operator can act on, for anything that can go wrong. */
-export function describe(error: unknown): string {
+export function describe(error: unknown, withCamera = false): string {
   const name = (error as { name?: string })?.name
-  if (name === 'NotAllowedError' || name === 'SecurityError') return "The microphone is blocked. Allow it in the tablet's settings, then try again."
+  const blocked = `The microphone${withCamera ? ' or camera' : ''} is blocked. Allow ${withCamera ? 'them' : 'it'} in the tablet's settings, then try again.`
+  if (name === 'NotAllowedError' || name === 'SecurityError') return blocked
   if (name === 'NotFoundError') return 'No microphone was found on this tablet.'
-  if (name === 'NotReadableError') return 'The microphone is being used by another app. Close it and try again.'
+  if (name === 'NotReadableError') return `The microphone${withCamera ? ' or camera is' : ' is'} being used by another app. Close it and try again.`
   if (error instanceof NotReadyError) return 'The helmet didn’t start sending video within 30 seconds. It may have a weak signal.'
   // A 403 {"error":"forbidden"} refuses this action; it does not mean the sign-in has ended (a bare 401 or 403 does).
   if (isForbidden(error)) return 'You can’t do that with this helmet. Calls need the right permission, or an open SOS alarm for it.'
   const status = (error as { response?: { status?: number } })?.response?.status
   if (status === 401 || status === 403) return 'Your session has expired. Sign in again.'
   // react-native-webrtc reports a refused permission as a plain error whose message says so.
-  if (error instanceof Error && /permission/i.test(error.message)) return "The microphone is blocked. Allow it in the tablet's settings, then try again."
+  if (error instanceof Error && /permission/i.test(error.message)) return blocked
   if (error instanceof Error && error.message) return error.message
   return 'Something went wrong connecting to the helmet.'
 }

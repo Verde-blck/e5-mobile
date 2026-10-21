@@ -27,9 +27,13 @@ export interface SessionState {
   error: string | null
   /** The helmet's picture and sound. */
   remoteStream: StreamLike | null
-  /** Call only: our own microphone. */
+  /** Call only: our own microphone, and camera for a video call. */
   localStream: StreamLike | null
   micOn: boolean
+  /** Call only: whether our camera is sending (a video call, with the camera not switched off). */
+  cameraOn: boolean
+  /** Call only: a camera was wanted but none was found, so this is an audio call. */
+  noCamera: boolean
   /** Call only: our audio couldn't reach the helmet. */
   outgoingFailed: boolean
   /** When the picture first arrived, for the call timer. */

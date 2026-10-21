@@ -44,7 +44,7 @@ function RoundButton({ icon, label, on, onPress, danger, size = 64, disabled }: 
  * shows the helmet's camera and never uses its own. It starts by itself when this account is allowed to, and ends
  * when you leave, including leaving the app for more than a few seconds.
  */
-export function CallScreen({ deviceId }: { deviceId: string }) {
+export function CallScreen({ deviceId, video = false }: { deviceId: string; video?: boolean }) {
   const insets = useSafeAreaInsets()
   const { devices } = useDeviceViews()
   const name = devices.find((d) => d.id === deviceId)?.name ?? 'the helmet'
@@ -56,14 +56,15 @@ export function CallScreen({ deviceId }: { deviceId: string }) {
   // Started from a timer that an undo cancels, so a development double-run can't send the helmet start, stop, start.
   useEffect(() => {
     if (!canCall) return
-    const timer = setTimeout(() => begin('call'), 0)
+    const timer = setTimeout(() => begin('call', { withCamera: video }), 0)
     return () => clearTimeout(timer)
-  }, [canCall, begin])
+  }, [canCall, begin, video])
 
   const sos = access.allowed && access.basis === 'sos'
   const status = state?.status ?? 'requesting-media'
   const live = status === 'live' || status === 'reconnecting'
   const over = status === 'ended'
+  const hasVideo = (state?.localStream?.getVideoTracks().length ?? 0) > 0
   const lasted = state?.liveSince ? formatCallTime((over ? Date.now() : now) - state.liveSince) : null
 
   if (!canCall) {
@@ -98,7 +99,17 @@ export function CallScreen({ deviceId }: { deviceId: string }) {
         <StreamView stream={state?.remoteStream ?? null} muted={false} />
         {state && !live && !over ? (
           <View className="absolute inset-0 items-center justify-center p-6">
-            <SessionMessage state={state} name={name} onRetry={() => session?.retry()} onStartAgain={() => begin('call')} />
+            <SessionMessage state={state} name={name} onRetry={() => session?.retry()} onStartAgain={() => begin('call', { withCamera: video })} />
+          </View>
+        ) : null}
+        {hasVideo && !over ? (
+          <View accessibilityLabel="Your camera" className="absolute bottom-3 right-3 h-36 w-28 overflow-hidden rounded-xl border border-white/25 bg-slate-800">
+            <StreamView stream={state?.localStream ?? null} muted mirrored overlay />
+            {!state?.cameraOn ? (
+              <View className="absolute inset-0 items-center justify-center bg-slate-800">
+                <Text className="text-[11px] text-slate-400">Camera off</Text>
+              </View>
+            ) : null}
           </View>
         ) : null}
         {over ? (
@@ -115,6 +126,10 @@ export function CallScreen({ deviceId }: { deviceId: string }) {
         </Text>
       ) : null}
 
+      {state?.noCamera ? (
+        <Text className="mx-4 mt-3 rounded-xl bg-white/10 px-4 py-2.5 text-xs leading-5 text-white/80">No camera was found on this tablet, so this is an audio call.</Text>
+      ) : null}
+
       {over ? (
         <View className="mt-4 px-8">
           <Button title="Close" variant="secondary" onPress={close} />
@@ -122,6 +137,7 @@ export function CallScreen({ deviceId }: { deviceId: string }) {
       ) : (
         <View className="mt-4 flex-row items-end justify-center gap-10 px-6">
           <RoundButton icon={state?.micOn === false ? 'mic-off' : 'mic'} label={state?.micOn === false ? 'Muted' : 'Mute'} on={state?.micOn === false} disabled={!state?.localStream} onPress={() => session?.toggleMic()} />
+          {hasVideo ? <RoundButton icon={state?.cameraOn ? 'video' : 'video-off'} label={state?.cameraOn ? 'Camera' : 'Camera off'} on={!state?.cameraOn} onPress={() => session?.toggleCamera()} /> : null}
           <RoundButton icon="phone-off" label="Hang up" danger size={76} onPress={() => end()} />
         </View>
       )}

@@ -8,6 +8,7 @@ import { Container } from '@/shared/components/Container'
 import { Card, Row, SectionTitle } from '@/shared/components/Card'
 import { FeatureStatusCard } from '@/shared/components/FeatureStatusCard'
 import { CompanyLogo } from '@/shared/components/Logo'
+import { PageTitle } from '@/shared/components/PageTitle'
 import { Screen } from '@/shared/components/Screen'
 import { Text } from '@/shared/components/Text'
 import type { IconName } from '@/shared/constants/modules'
@@ -62,7 +63,7 @@ export default function MoreScreen() {
   const canFences = useCan('fences:read')
   const canAdmins = useCan('users:read') && inMore
   // Only offered where it can work: a real build keeps it hidden until voice messages are switched on.
-  const canGroupCall = useCan('groupCall:read') && broadcastAvailable() && inMore
+  const canGroupCall = useCan('live:write') && liveAvailable() && inMore
   const initial = (user?.name ?? '?').trim().charAt(0).toUpperCase()
 
   function signOut() {
@@ -80,7 +81,7 @@ export default function MoreScreen() {
     <Screen>
       <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
         <Container max={640}>
-        <Text className="mb-4 font-display-bold text-2xl">More</Text>
+        <PageTitle title="More" padded={false} />
 
         <Card className="mb-6 flex-row items-center gap-3">
           <View className="h-12 w-12 items-center justify-center rounded-full bg-brand-primary">
@@ -118,7 +119,7 @@ export default function MoreScreen() {
         ) : null}
         {canGroupCall ? (
           <View className="mt-3">
-            <MenuRow icon="radio" label="Group call" hint="Send a voice message to several helmets" onPress={() => router.navigate('/group-call')} />
+            <MenuRow icon="radio" label="Group call" hint="Call a helmet by voice or video" onPress={() => router.navigate('/group-call')} />
           </View>
         ) : null}
         {canAdmins ? (

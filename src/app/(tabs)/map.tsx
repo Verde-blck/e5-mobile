@@ -4,6 +4,7 @@ import { router } from 'expo-router'
 import Feather from '@expo/vector-icons/Feather'
 import { Button } from '@/shared/components/Button'
 import { RequirePermission } from '@/shared/components/RequirePermission'
+import { BackButton } from '@/shared/components/BackButton'
 import { Screen } from '@/shared/components/Screen'
 import { EmptyState, ErrorState, LoadingState } from '@/shared/components/States'
 import { Text } from '@/shared/components/Text'
@@ -122,7 +123,8 @@ function MapScreen() {
       />
 
       {/* filters */}
-      <View pointerEvents="box-none" className="absolute left-3 right-16 top-3 flex-row flex-wrap gap-2">
+      <BackButton floating />
+      <View pointerEvents="box-none" className="absolute left-16 right-16 top-3 flex-row flex-wrap gap-2">
         {FILTERS.map(({ key, label }) => {
           const on = filter === key
           return (

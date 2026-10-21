@@ -159,7 +159,7 @@ export function HelmetDetailView({ id, embedded = false }: { id: string; embedde
         ) : null}
 
         <LiveButton deviceId={device.id} active={device.active} className="mb-3" />
-        <CallButton deviceId={device.id} className="mb-3" />
+        <CallButton deviceId={device.id} sosOnly className="mb-3" />
         {canMessage ? (
           <Button
             title="Voice messages"

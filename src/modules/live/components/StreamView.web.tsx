@@ -2,8 +2,8 @@ import { createElement, useEffect, useRef } from 'react'
 import { View } from 'react-native'
 import type { StreamLike } from '../types'
 
-/** The helmet's picture in the browser preview: a <video> fed from the stream. */
-export function StreamView({ stream, muted }: { stream: StreamLike | null; muted: boolean }) {
+/** A picture from a stream in the browser preview: a <video> fed from the stream. */
+export function StreamView({ stream, muted, mirrored = false, overlay = false }: { stream: StreamLike | null; muted: boolean; mirrored?: boolean; overlay?: boolean }) {
   const ref = useRef<HTMLVideoElement>(null)
   useEffect(() => {
     const el = ref.current
@@ -14,7 +14,13 @@ export function StreamView({ stream, muted }: { stream: StreamLike | null; muted
 
   return (
     <View style={{ flex: 1 }}>
-      {createElement('video', { ref, autoPlay: true, playsInline: true, muted, style: { width: '100%', height: '100%', objectFit: 'contain', background: '#000' } })}
+      {createElement('video', {
+        ref,
+        autoPlay: true,
+        playsInline: true,
+        muted,
+        style: { width: '100%', height: '100%', objectFit: overlay ? 'cover' : 'contain', background: '#000', transform: mirrored ? 'scaleX(-1)' : undefined },
+      })}
     </View>
   )
 }

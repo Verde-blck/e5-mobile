@@ -21,9 +21,9 @@ export function useHelmetSession(deviceId: string) {
   const state = useSyncExternalStore(session ? session.subscribe : noopSubscribe, session ? session.getState : noState) as SessionState | null
 
   const begin = useCallback(
-    (mode: SessionMode) => {
+    (mode: SessionMode, options: { withCamera?: boolean } = {}) => {
       sessionRef.current?.end()
-      const next = new HelmetSession(deviceId, mode, defaultDeps)
+      const next = new HelmetSession(deviceId, mode, defaultDeps, options.withCamera ?? false)
       sessionRef.current = next
       setSession(next)
       void next.start()

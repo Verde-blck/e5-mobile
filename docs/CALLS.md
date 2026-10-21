@@ -12,10 +12,11 @@ not been tried on a real tablet with a real helmet and media server**, which is 
 - **Watch live** (needs live view, `live:read`): the helmet's camera and sound. The sound starts off, with one tap to turn
   it on. Closing only closes this tablet's connection (others may be watching, and the helmet stops by itself about 20
   seconds after the last viewer leaves). **End stream for everyone** is separate and asks first.
-- **Call helmet** (needs `live:write`) and **Join SOS call** (anyone signed in, for a helmet with an open SOS in the last 30
-  minutes): you hear and see the helmet and the wearer hears you. The tablet sends **voice only** and never uses its own
-  camera, so the app carries no camera permission. A refused microphone is reported **before** the helmet is touched, so a
-  helmet is never left in call mode by a call that couldn't start.
+- **Calls** (needs `live:write`), made from the **Group call** module as an **Audio call** or a **Video call**, and **Join SOS call**
+  (anyone signed in, for a helmet with an open SOS in the last 30 minutes, joined as an audio call): you hear and see the helmet
+  and the wearer hears you. A video call also sends the tablet's front camera, with a small self-view and a camera button; a
+  tablet with no camera carries on as an audio call. A refused microphone or camera is reported **before** the helmet is touched,
+  so a helmet is never left in call mode by a call that couldn't start.
 - A call ends, and takes the helmet out of call mode, whenever it ends: hang up, leave the screen, or leave the app for more
   than 4 seconds. A glance away (the notification shade, a permission dialog) doesn't end it.
 
@@ -37,7 +38,8 @@ sample-data mode the media addresses are fake and answered with a generated test
    APK the switch has to be in `eas.json`; for `npx expo start` put it in `.env` and restart with `--clear`.
 2. With the test helmet: **Watch live** (does the picture arrive within about 10 seconds? does the sound work?), then a second
    viewer, then close one and check the stream carries on.
-3. **Call helmet**: can you hear it and can it hear you? Hang up and confirm the helmet leaves call mode.
+3. **Group call** > an **Audio call**, then a **Video call**: can you hear it and can it hear you, and does the wearer see you on a
+   video call? Hang up and confirm the helmet leaves call mode. The first video call asks Android for camera access.
 4. **Join SOS call** from an SOS alarm, and from the banner.
 5. Leave the app mid-call for 5 seconds: the helmet should leave call mode.
 6. Try it on the connection the tablets will really use (site Wi-Fi, and mobile data).

@@ -10,9 +10,10 @@ import { EmptyState, ErrorState, LoadingState } from '@/shared/components/States
 import { Text } from '@/shared/components/Text'
 import { useRecorder, type RecordedAudio } from '@/shared/hooks/useRecorder'
 import { useCan } from '@/shared/lib/permissions'
+import { describeUploadError, type UploadProblem } from '@/shared/lib/uploadError'
 import { useDeviceViews } from '@/modules/devices/hooks/useDevices'
 import { broadcastAvailable } from '@/modules/group-call/api/broadcast.api'
-import { MAX_MESSAGE_SECONDS } from '@/modules/group-call/lib/roster'
+import { MAX_MESSAGE_SECONDS } from '@/modules/messaging/lib/limits'
 import { MessageBubble } from '@/modules/messaging/components/MessageBubble'
 import { useMessages, useSendVoiceMessage } from '@/modules/messaging/hooks/useMessages'
 
@@ -27,7 +28,7 @@ function MessagesScreen({ deviceId }: { deviceId: string }) {
   const scroller = useRef<ScrollViewInstance>(null)
   const [pending, setPending] = useState<RecordedAudio | null>(null)
   const [note, setNote] = useState<string | null>(null)
-  const [problem, setProblem] = useState<string | null>(null)
+  const [problem, setProblem] = useState<UploadProblem | null>(null)
   const [missing, setMissing] = useState(0)
   const staged = useCallback((audio: RecordedAudio) => {
     setNote(null)
@@ -44,8 +45,7 @@ function MessagesScreen({ deviceId }: { deviceId: string }) {
         setPending(null)
         setNote(result.delivered ? 'Delivered to the helmet.' : 'Queued. The helmet will play it when it next connects.')
       },
-      onError: (error) =>
-        setProblem(error instanceof Error && error.name === 'BroadcastUnavailable' ? error.message : "Couldn't send that message. Check the connection and try again."),
+      onError: (error) => setProblem(describeUploadError(error, 'that recording')),
     })
   }
 
@@ -96,7 +96,12 @@ function MessagesScreen({ deviceId }: { deviceId: string }) {
                   <Button title="Discard" variant="ghost" disabled={send.isPending} onPress={() => setPending(null)} />
                 </View>
               ) : null}
-              {problem ? <Text accessibilityRole="alert" className="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">{problem}</Text> : null}
+              {problem ? (
+                <View accessibilityRole="alert" className="mt-3 rounded-xl bg-red-50 p-3">
+                  <Text className="text-sm text-red-700">{problem.message}</Text>
+                  {problem.detail ? <Text className="mt-1 font-mono text-[11px] text-red-500">{problem.detail}</Text> : null}
+                </View>
+              ) : null}
               {note ? <Text className="mt-3 text-sm text-slate-600">{note}</Text> : null}
             </View>
           ) : null}

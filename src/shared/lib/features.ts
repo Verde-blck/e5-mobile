@@ -47,7 +47,9 @@ export function featureStatuses(input: FeatureInput): FeatureStatus[] {
   return [
     check('wall', 'Live wall', module('Live wall'), live, LIVE_SWITCH, 'live:read', "This account doesn't have live view. In the backend that is the SURVEILLANCE permission.", 'Available.'),
     check('watch', 'Watch live', 'A helmet\'s own screen', live, LIVE_SWITCH, 'live:read', "This account doesn't have live view. In the backend that is the SURVEILLANCE permission.", 'Available. Not shown on a deactivated helmet.'),
-    check('call', 'Call helmet', 'A helmet\'s own screen', live, LIVE_SWITCH, 'live:write', "This account can't place calls (backend permission SURVEILLANCE_MANAGE). It can still join a helmet's open SOS call.", 'Available.'),
-    check('groupcall', 'Group call (voice messages)', module('Group call'), broadcast, BROADCAST_SWITCH, 'groupCall:read', "This account doesn't have group call. In the backend that is the GROUP_CALL permission.", 'Available. Sending also needs the backend to accept .m4a (docs/GROUP_CALL.md).'),
+    check('call', 'Call a helmet (audio or video)', module('Group call'), live, LIVE_SWITCH, 'live:write', "This account can't place calls (backend permission SURVEILLANCE_MANAGE). It can still join a helmet's open SOS call.", 'Available.'),
+    // Reading a helmet's messages needs only the permission; the switch is about sending.
+    check('messages', 'Voice messages with a helmet', 'A helmet\'s own screen', true, '', 'groupCall:read', "This account doesn't have voice messages. In the backend that is the GROUP_CALL permission.", 'Available (reading).'),
+    check('send', 'Sending a voice message', 'A helmet\'s own screen', broadcast, BROADCAST_SWITCH, 'groupCall:write', "This account can't send voice messages (backend permission GROUP_CALL).", 'Available. On a tablet the backend must also accept .m4a (docs/GROUP_CALL.md).'),
   ]
 }

@@ -38,7 +38,7 @@ function fakeDeps(over: Partial<SessionDeps> = {}) {
     startCall: async (id) => { calls.push(`startCall:${id}`); return { delivered: true, watchUrl: 'https://media/watch', adminPushUrl: 'https://media/push' } },
     startLive: async (id) => { calls.push(`startLive:${id}`); return { delivered: true, watchUrl: 'https://media/watch' } },
     stopCall: async (id) => { calls.push(`stopCall:${id}`) },
-    getLocalMedia: async () => { calls.push('getLocalMedia'); return mic },
+    getLocalMedia: async (withCamera: boolean) => { calls.push(`getLocalMedia:${withCamera}`); return { stream: mic, noCamera: false } },
     play: async () => { calls.push('play'); const c = connection(); conns.remote.push(c); return c },
     push: async () => { calls.push('push'); const c = connection(); conns.outgoing.push(c); return c },
     watchBackground: (cb) => { background = cb; return () => { background = null } },
@@ -83,7 +83,7 @@ async function main() {
   await t('a call: the microphone is asked for BEFORE the helmet is touched, then start, then both directions connect', async () => {
     const deps = fakeDeps(); const s = new HelmetSession('dev1', 'call', deps); const seen = watchStatuses(s)
     assert.equal(s.getState().status, 'requesting-media'); await s.start(); await until(() => s.getState().status === 'live')
-    assert.deepEqual(deps.calls.slice(0, 2), ['getLocalMedia', 'startCall:dev1'], 'microphone first'); assert.ok(deps.calls.includes('push') && deps.calls.includes('play'))
+    assert.deepEqual(deps.calls.slice(0, 2), ['getLocalMedia:false', 'startCall:dev1'], 'microphone first, and an audio call asks for no camera'); assert.ok(deps.calls.includes('push') && deps.calls.includes('play'))
     assert.deepEqual(seen, ['requesting-media', 'starting', 'connecting', 'live']); const st = s.getState()
     assert.ok(st.remoteStream && st.localStream === deps.mic && st.liveSince && st.liveSince <= Date.now() && !st.outgoingFailed && st.micOn)
     s.end()
@@ -118,10 +118,32 @@ async function main() {
     await until(() => s.getState().outgoingFailed); assert.equal(s.getState().status, 'live', 'the helmet can still be heard'); s.end()
   })
 
+  // =============== a video call ===============
+  await t('a video call asks for the camera as well as the microphone, before the helmet is touched, and the camera starts on', async () => {
+    const deps = fakeDeps(); const s = new HelmetSession('dev1', 'call', deps, true); assert.equal(s.getState().cameraOn, true, 'on from the start, so the button is right while connecting')
+    await s.start(); await until(() => s.getState().status === 'live'); assert.deepEqual(deps.calls.slice(0, 2), ['getLocalMedia:true', 'startCall:dev1']); assert.deepEqual([s.getState().cameraOn, s.getState().noCamera], [true, false]); s.end()
+  })
+  await t('the camera can be switched off and on during a call (black frames, instant), independently of the microphone', async () => {
+    const cam = stream('audio', 'video'); const deps = fakeDeps({ getLocalMedia: async () => ({ stream: cam, noCamera: false }) }); const s = new HelmetSession('dev1', 'call', deps, true); await s.start(); await until(() => s.getState().status === 'live')
+    const video = cam.tracks.find((x) => x.kind === 'video')!; const audio = cam.tracks.find((x) => x.kind === 'audio')!
+    s.toggleCamera(); assert.deepEqual([s.getState().cameraOn, video.enabled, audio.enabled, s.getState().micOn], [false, false, true, true]); s.toggleCamera(); assert.deepEqual([s.getState().cameraOn, video.enabled], [true, true]); s.end(); assert.ok(video.stopped && audio.stopped, 'hanging up releases the camera and the microphone')
+  })
+  await t('a tablet with no camera carries on as an audio call and says so, rather than failing', async () => {
+    const deps = fakeDeps({ getLocalMedia: async () => ({ stream: stream('audio'), noCamera: true }) }); const s = new HelmetSession('dev1', 'call', deps, true); await s.start(); await until(() => s.getState().status === 'live')
+    assert.deepEqual([s.getState().noCamera, s.getState().cameraOn], [true, false]); s.toggleCamera(); assert.equal(s.getState().cameraOn, false, 'there is nothing to switch on'); s.end()
+  })
+  await t('an audio call has no camera to toggle', async () => {
+    const deps = fakeDeps(); const s = new HelmetSession('dev1', 'call', deps); await s.start(); await until(() => s.getState().status === 'live'); s.toggleCamera(); assert.equal(s.getState().cameraOn, false); s.end()
+  })
+  await t('if the camera or microphone is refused on a video call, the message names both and the helmet is never touched', async () => {
+    const deps = fakeDeps({ getLocalMedia: async () => { throw Object.assign(new Error('denied'), { name: 'NotAllowedError' }) } }); const s = new HelmetSession('dev1', 'call', deps, true); await s.start()
+    assert.equal(s.getState().status, 'failed'); assert.match(s.getState().error ?? '', /microphone or camera is blocked/); assert.ok(!deps.calls.some((c) => c.startsWith('startCall'))); s.end()
+  })
+
   // =============== live view, retries and drops ===============
   await t('live view needs no microphone, and closing it sends nothing to the helmet (others may be watching)', async () => {
     const deps = fakeDeps(); const s = new HelmetSession('dev1', 'watch', deps); await s.start(); await until(() => s.getState().status === 'live')
-    assert.ok(deps.calls.includes('startLive:dev1') && !deps.calls.includes('getLocalMedia') && !deps.calls.includes('push')); s.end()
+    assert.ok(deps.calls.includes('startLive:dev1') && !deps.calls.some((c) => c.startsWith('getLocalMedia')) && !deps.calls.includes('push')); s.end()
     assert.ok(deps.conns.remote[0].closed); assert.ok(!deps.calls.some((c) => c.startsWith('stopCall')), 'no stop for a viewer')
   })
   await t('joining a stream someone else started works the same', async () => {
@@ -150,14 +172,14 @@ async function main() {
     deps.setBackground(true); await sleep(80); assert.equal(s.getState().status, 'ended'); assert.ok(deps.calls.includes('stopCall:dev1'), 'the helmet was taken out of call mode')
   })
   await t('while the microphone permission dialog is up (the app is paused) a call is NOT ended: that is not leaving', async () => {
-    let release: () => void = () => {}; const gate = new Promise<StreamLike>((r) => (release = () => r(stream('audio')))); const deps = fakeDeps({ getLocalMedia: () => gate })
+    let release: () => void = () => {}; const gate = new Promise<{ stream: StreamLike; noCamera: boolean }>((r) => (release = () => r({ stream: stream('audio'), noCamera: false }))); const deps = fakeDeps({ getLocalMedia: () => gate })
     const s = new HelmetSession('dev1', 'call', deps); const started = s.start(); deps.setBackground(true); await sleep(100); assert.equal(s.getState().status, 'requesting-media', 'still waiting for the person'); deps.setBackground(false); release(); await started; await until(() => s.getState().status === 'live'); s.end()
   })
 
   // =============== wording, formatting, the API ===============
   await t('every failure comes out as a sentence an operator can act on', () => {
     const named = (name: string) => Object.assign(new Error(name), { name })
-    assert.match(describe(named('NotAllowedError')), /blocked.*settings/); assert.match(describe(named('NotFoundError')), /No microphone/); assert.match(describe(named('NotReadableError')), /another app/)
+    assert.match(describe(named('NotAllowedError')), /microphone is blocked.*settings/); assert.match(describe(named('NotAllowedError'), true), /microphone or camera is blocked/, 'a video call names the camera too'); assert.match(describe(named('NotFoundError')), /No microphone/); assert.match(describe(named('NotReadableError')), /another app/)
     assert.match(describe(new Error('Permission denied')), /microphone is blocked/, 'react-native-webrtc\'s plain permission error'); assert.match(describe(new NotReadyError('x')), /30 seconds/)
     assert.match(describe({ response: { status: 403, data: { error: 'forbidden' } } }), /open SOS alarm/, 'a refusal of this action'); assert.match(describe({ response: { status: 401 } }), /session has expired/)
     assert.equal(describe(new Error('The backend returned no stream address.')), 'The backend returned no stream address.'); assert.match(describe(null), /Something went wrong/)

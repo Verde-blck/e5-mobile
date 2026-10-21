@@ -2,10 +2,20 @@ import { mediaDevices } from 'react-native-webrtc'
 import type { StreamLike } from '../types'
 
 /**
- * The tablet's microphone, for talking to the helmet's wearer. Only the microphone: the tablet shows the helmet's
- * camera and never uses its own, so there is no camera permission in the app. Android asks the person for the
- * microphone the first time; a refusal rejects, and the session reports it before the helmet is touched.
+ * The tablet's microphone, and its front camera for a video call. Android asks the person for each the first time; a
+ * refusal rejects, and the session reports it before the helmet is touched. A tablet with no camera carries on as an
+ * audio call rather than failing, and says so.
  */
-export async function getLocalMedia(): Promise<StreamLike> {
-  return (await mediaDevices.getUserMedia({ audio: true, video: false })) as unknown as StreamLike
+export async function getLocalMedia(withCamera: boolean): Promise<{ stream: StreamLike; noCamera: boolean }> {
+  try {
+    const stream = await mediaDevices.getUserMedia({ audio: true, video: withCamera ? { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 15 }, facingMode: 'user' } : false })
+    return { stream: stream as unknown as StreamLike, noCamera: false }
+  } catch (error) {
+    const name = (error as { name?: string })?.name
+    if (withCamera && (name === 'NotFoundError' || name === 'OverconstrainedError')) {
+      const stream = await mediaDevices.getUserMedia({ audio: true, video: false })
+      return { stream: stream as unknown as StreamLike, noCamera: true }
+    }
+    throw error
+  }
 }

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { FlatList, Pressable, RefreshControl, TextInput, View } from 'react-native'
 import Feather from '@expo/vector-icons/Feather'
 import { RequirePermission } from '@/shared/components/RequirePermission'
+import { PageTitle } from '@/shared/components/PageTitle'
 import { Screen } from '@/shared/components/Screen'
 import { EmptyState, ErrorState, LoadingState } from '@/shared/components/States'
 import { Text } from '@/shared/components/Text'
@@ -58,7 +59,7 @@ function MonitoringScreen() {
   const list = (
     <>
       <View className="px-4 pb-2 pt-4" style={cap}>
-        <Text className="mb-4 font-display-bold text-2xl">Monitoring Center</Text>
+        <PageTitle title="Monitoring Center" padded={false} />
 
         <View className="h-11 flex-row items-center gap-2 rounded-xl border border-slate-300 bg-white px-3">
           <Feather name="search" size={16} color="#94A3B8" />

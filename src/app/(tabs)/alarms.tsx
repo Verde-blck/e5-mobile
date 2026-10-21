@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { FlatList, Pressable, RefreshControl, View } from 'react-native'
 import { RequirePermission } from '@/shared/components/RequirePermission'
+import { PageTitle } from '@/shared/components/PageTitle'
 import { Screen } from '@/shared/components/Screen'
 import { EmptyState, ErrorState, LoadingState } from '@/shared/components/States'
 import { Text } from '@/shared/components/Text'
@@ -34,7 +35,7 @@ function AlarmsScreen() {
   const list = (
     <>
       <View className="px-4 pb-2 pt-4" style={cap}>
-        <Text className="mb-4 font-display-bold text-2xl">Alarm Record</Text>
+        <PageTitle title="Alarm Record" padded={false} />
         <View className="flex-row rounded-xl bg-slate-200/70 p-1">
           {tabs.map(({ key, label, count }) => {
             const selected = view === key

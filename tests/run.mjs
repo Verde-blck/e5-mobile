@@ -15,13 +15,13 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const suites = [
   ['live', {}], // mocks off: exercises the real request code paths
   ['stream', {}], // the alarm stream client against a fake streaming server
+  ['audio', {}], // WAV encoding, browser recording names, and honest upload errors
   ['wall', {}], // the live wall: who can be on it, one session per helmet, leaving and returning
   ['features', {}], // the switches' parser, and why a feature is missing (switch or permission)
   ['layout', {}], // screen-size classes and the list/detail pane rules
   ['map', {}], // map data rules, the embedded map page, and events from it
   ['settings', {}], // site Wi-Fi, helmet settings and network switching against Cypher's documented requests
   ['fences', {}], // fence API shapes, geometry and validation (ported from the web app)
-  ['groupcall', { EXPO_PUBLIC_BROADCAST_ENABLED: 'true' }], // group voice message: roster, per-helmet results, the (unverified) request with the switch on
   ['messages', { EXPO_PUBLIC_BROADCAST_ENABLED: 'true' }], // a helmet's conversation: the web's exact requests, ordering, defaults
   ['groupcalloff', {}], // ...and refusing to send with the switch off
   ['users', {}], // administrators: grant rules, permission tree, who may edit or delete whom, endpoints
