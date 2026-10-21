@@ -160,7 +160,7 @@ export default function GroupCallRoute() {
       ) : (
         <Screen>
           <PageTitle title="Group call" />
-          <Text className="mx-4 rounded-xl bg-slate-100 p-4 text-sm leading-5 text-slate-600">Calls aren't switched on in this build yet. See "What's switched on" in More.</Text>
+          <Text className="mx-4 rounded-xl bg-slate-100 p-4 text-sm leading-5 text-slate-600">Calls aren't switched on in this build yet.</Text>
         </Screen>
       )}
     </RequirePermission>

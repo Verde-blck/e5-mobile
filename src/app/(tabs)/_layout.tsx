@@ -28,14 +28,13 @@ export default function TabsLayout() {
   const canTrack = useCan('trackPlayback:read')
   const canGroupCall = (useCan('live:write') || useCan('groupCall:read')) && liveAvailable()
   const canAdmins = useCan('users:read')
-  const canWifi = useCan('wifi:read')
   const { active } = useAlarms()
   // A tablet (600 dp and up, in portrait or landscape) gets a rail down the left edge, like the web's sidebar, which
   // has room for every module. A narrow screen gets a bottom bar, which doesn't: the extra modules stay in More.
   const { size, height } = useLayout()
   const rail = navigationPosition(size) === 'left'
   // Squeeze the rail's items on a short screen so that every one (More included) stays on it.
-  const railItems = [canDashboard, canDevices, rail && canWall, canMap, rail && canTrack, rail && canGroupCall, canAlarms, rail && canAdmins, rail && canWifi, true].filter(Boolean).length
+  const railItems = [canDashboard, canDevices, rail && canWall, canMap, rail && canTrack, rail && canGroupCall, canAlarms, rail && canAdmins, true].filter(Boolean).length
   const itemHeight = rail ? railItemHeight(height, railItems) : undefined
   // A squeezed item has no room to spare, so its icon gets smaller and its label a little more height (descenders
   // were being clipped).
@@ -142,14 +141,6 @@ export default function TabsLayout() {
           title: 'Admins',
           ...unlessShown(rail && canAdmins),
           tabBarIcon: ({ color, size }) => <Feather name="users" size={iconSize(size)} color={color as string} />,
-        }}
-      />
-      <Tabs.Screen
-        name="wifi"
-        options={{
-          title: 'Wi-Fi',
-          ...unlessShown(rail && canWifi),
-          tabBarIcon: ({ color, size }) => <Feather name="wifi" size={iconSize(size)} color={color as string} />,
         }}
       />
       <Tabs.Screen

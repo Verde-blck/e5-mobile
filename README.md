@@ -51,7 +51,7 @@ using split-screen changes it live:
 
 | Width | Typical device | Layout |
 | --- | --- | --- |
-| under 600 dp | a phone | one pane, bottom bar of five (Dashboard, Monitoring, Live Map, Alarms, More); Live wall, Track, Group call, Admins and Wi-Fi are in More |
+| under 600 dp | a phone | one pane, bottom bar of five (Dashboard, Monitoring, Live Map, Alarms, More); Live wall, Track, Group call and Admins are in More |
 | 600-839 dp | 8-10" tablet, portrait | one pane, the side rail with every module, content capped at 720 dp |
 | 840 dp and up | 8-10" tablet, landscape | the side rail; list and detail side by side |
 
@@ -69,10 +69,14 @@ using split-screen changes it live:
 ### Navigation
 
 On a tablet (600 dp and up, in portrait or landscape) the main navigation is a **side rail** down the left edge, like the web's
-sidebar, with every module the account may use: Dashboard, Monitoring, Live wall, Live Map, Track, Group call, Alarms, Admins, Wi-Fi,
-then More (fences, alerts, account, about). Every module page has a back arrow to the initial page (the Dashboard). Each account sees only what it can use. On a short screen (an 8 inch tablet in
-landscape is only about 600 dp tall) the rail's items are squeezed so that all of them, More included, stay on it. A narrow
-screen has no room for ten, so it gets a bottom bar of five and the extra modules are reached from More, with a way back.
+sidebar, with every module the account may use: Dashboard, Monitoring, Live wall, Live Map, Track, Group call, Alarms, Admins, then
+More. Every module in the rail has a back arrow to the initial page (the Dashboard). Each account sees only what it can use. On a
+short screen (an 8 inch tablet in landscape is only about 600 dp tall) the rail's items are squeezed so that all of them, More
+included, stay on it. A narrow screen has no room for nine, so it gets a bottom bar of five and the extra modules are reached from
+More, with a way back.
+
+**Under More** (on every screen size): Fences, Account security, **Site Wi-Fi**, **Photo Record** and **Video Record**. These open as
+screens with their own header, and their back arrow returns to More.
 
 ## Live Map
 
@@ -97,7 +101,7 @@ never reported a position isn't drawn; the map says how many are missing.
 
 Built from Cypher's 16 Oct backend update.
 
-- **Site Wi-Fi** (the **Wi-Fi** module in the side rail; More > Site Wi-Fi on a narrow screen). The network every helmet is told to join; each helmet gets it in its
+- **Site Wi-Fi** (More > Site Wi-Fi). The network every helmet is told to join; each helmet gets it in its
   start-up settings. The password is never returned by the backend, so editing with an empty password
   keeps the current one. Saving with no password on a network that has none asks first (an open network).
 - **Connection** (on a helmet). Switch one helmet between Wi-Fi and mobile data. Both directions are
@@ -203,13 +207,32 @@ reconnects the same ones; a tablet can't stream from the background, so leaving 
 for a second screen isn't ported: a tablet has no second window. Like the other live features it is hidden in a real build until
 `EXPO_PUBLIC_LIVE_ENABLED=true` ([docs/CALLS.md](docs/CALLS.md)).
 
-### Finding out why a module is missing
+### If a live module isn't there
 
-More has a **What's switched on** card: where the data comes from, each switch, this screen's width and navigation, the account
-and (on a tap) the backend permission codes it holds, then each live feature with where to find it and, if it's missing, the first
-thing stopping it: the build's switch, or the account's permission (`SURVEILLANCE` for live view, `SURVEILLANCE_MANAGE` for calls,
-`GROUP_CALL` for group call). Switches are read forgivingly (`true`, `True`, `1`, `yes`, `on`), but they are fixed at bundle time:
-after changing `.env`, restart with `npx expo start --clear`.
+The live features (live view, the live wall, calls, group calls, voice messages) are hidden in a real build until their switch is on, and an
+account sees one only if it holds the right permission: `SURVEILLANCE` for live view and the wall, `SURVEILLANCE_MANAGE` for calls,
+`GROUP_CALL` for group calls and voice messages. Switches are read forgivingly (`true`, `True`, `1`, `yes`, `on`), but they are fixed at
+bundle time: after changing `.env`, restart with `npx expo start --clear` (an APK needs the `live` profile in `eas.json`).
+
+## Photo Record and Video Record
+
+Both are under More (they need `photos:read` and `videos:read`) and are built from the web's media module.
+
+- **Photo Record.** Pictures taken by the helmets, newest first, in a grid; filter by helmet and by day (the capture date, not the upload
+  date). Tap one to see it large, with Previous and Next. A photo that hasn't arrived from the helmet yet says "Uploading from
+  helmet…" and can't be opened, rather than showing a broken picture.
+- **Video Record, Uploaded.** The recordings that have reached the server, as a file list with a status (Ready, Uploading, Failed),
+  the helmet, when, and the size; filter by helmet, day and file name. A **calendar** shows which days have clips and how many, by
+  the helmet's recording date (clips often upload days later); tap a day to list just that day. A Ready clip plays in a video player,
+  and nothing downloads until you press play (clips run to about 100 MB).
+- **Video Record, Videos on helmet.** Helmets record to a memory card and only some clips reach the server. Choose a helmet and how far
+  back, and Refresh asks the helmet what it has (5 to 10 seconds; an offline helmet is reported at once). You can ask it to upload one
+  clip or all of them. Nothing uploads without a tap, because uploads are large; the tab warns that a phone hotspot uses a lot of
+  data. Uploads can take several minutes, and the list checks every 10 seconds and refreshes Uploaded when one arrives.
+- **Not built:** deleting. The web hides delete on the live backend too, because E5 haven't decided who may delete.
+- Every photo and video link is signed and expires after about an hour, so the list refreshes well inside that, and the viewer reloads
+  it once if a link fails.
+- The backend has no fleet-wide photo or video list, so "all devices" asks each helmet in turn (fine at this fleet size).
 
 ## Fences
 

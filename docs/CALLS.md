@@ -64,8 +64,9 @@ reconnects the same ones. It needs live view (`SURVEILLANCE`) and the same switc
 
 ## If you can't find any of it
 
-Open More > **What's switched on**. It says, for each feature, whether the build's switch or the account's permission is what's
-hiding it. After changing `.env`, restart with `npx expo start --clear`; the switches are baked in when the app is bundled.
+The live features are hidden in a real build until their switch is on, and an account sees one only with the right permission
+(`SURVEILLANCE` for live view and the wall, `SURVEILLANCE_MANAGE` for calls, `GROUP_CALL` for group calls and voice messages).
+After changing `.env`, restart with `npx expo start --clear`; the switches are baked in when the app is bundled.
 
 ## Group call
 

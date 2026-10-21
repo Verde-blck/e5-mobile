@@ -143,7 +143,7 @@ export default function LiveWallRoute() {
       ) : (
         <Screen>
           <PageTitle title="Live wall" />
-          <Text className="mx-4 rounded-xl bg-slate-100 p-4 text-sm leading-5 text-slate-600">The live wall isn't switched on in this build yet. See "What's switched on" in More.</Text>
+          <Text className="mx-4 rounded-xl bg-slate-100 p-4 text-sm leading-5 text-slate-600">The live wall isn't switched on in this build yet.</Text>
         </Screen>
       )}
     </RequirePermission>

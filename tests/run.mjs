@@ -18,7 +18,8 @@ const suites = [
   ['groupsession', {}], // group call: who can start what, the API, one connection per helmet, hanging up on every one
   ['audio', {}], // WAV encoding, browser recording names, and honest upload errors
   ['wall', {}], // the live wall: who can be on it, one session per helmet, leaving and returning
-  ['features', {}], // the switches' parser, and why a feature is missing (switch or permission)
+  ['media', {}], // photo and video records: mapping, per-helmet fan-out, calendar, asking the helmet for clips
+  ['flags', {}], // how a switch in .env is read
   ['layout', {}], // screen-size classes and the list/detail pane rules
   ['map', {}], // map data rules, the embedded map page, and events from it
   ['settings', {}], // site Wi-Fi, helmet settings and network switching against Cypher's documented requests

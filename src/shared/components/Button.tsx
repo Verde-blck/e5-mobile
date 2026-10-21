@@ -14,6 +14,8 @@ interface ButtonProps {
   disabled?: boolean
   icon?: IconName
   className?: string
+  /** What a screen reader says, when the visible title alone is ambiguous (a list of identical "Play" buttons). */
+  accessibilityLabel?: string
 }
 
 const BOX: Record<Variant, string> = {
@@ -45,11 +47,13 @@ export function Button({
   disabled,
   icon,
   className,
+  accessibilityLabel,
 }: ButtonProps) {
   const inactive = disabled || loading
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled: !!inactive, busy: !!loading }}
       disabled={inactive}
       onPress={onPress}

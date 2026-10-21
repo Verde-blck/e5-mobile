@@ -6,7 +6,6 @@ import { env } from '@/config/env'
 import { Button } from '@/shared/components/Button'
 import { Container } from '@/shared/components/Container'
 import { Card, Row, SectionTitle } from '@/shared/components/Card'
-import { FeatureStatusCard } from '@/shared/components/FeatureStatusCard'
 import { CompanyLogo } from '@/shared/components/Logo'
 import { PageTitle } from '@/shared/components/PageTitle'
 import { Screen } from '@/shared/components/Screen'
@@ -57,10 +56,12 @@ export default function MoreScreen() {
   // On a tablet these are modules in the rail; the bottom bar of a narrow screen has no room, so they are here.
   const { size } = useLayout()
   const inMore = size === 'compact'
-  const canWifi = useCan('wifi:read') && inMore
+  const canWifi = useCan('wifi:read')
   const canTrack = useCan('trackPlayback:read') && inMore
   const canWall = useCan('live:read') && liveAvailable() && inMore
   const canFences = useCan('fences:read')
+  const canPhotos = useCan('photos:read')
+  const canVideos = useCan('videos:read')
   const canAdmins = useCan('users:read') && inMore
   // Only offered where it can work: a real build keeps it hidden until voice messages are switched on.
   const canGroupCall = (useCan('live:write') || useCan('groupCall:read')) && liveAvailable() && inMore
@@ -137,6 +138,16 @@ export default function MoreScreen() {
             <MenuRow icon="hexagon" label="Fences" hint="Work areas and no-entry zones" onPress={() => router.push('/fences')} />
           </View>
         ) : null}
+        {canPhotos ? (
+          <View className="mt-3">
+            <MenuRow icon="image" label="Photo Record" hint="Pictures taken by the helmets" onPress={() => router.navigate('/photos')} />
+          </View>
+        ) : null}
+        {canVideos ? (
+          <View className="mt-3">
+            <MenuRow icon="film" label="Video Record" hint="Recordings, and clips still on a helmet" onPress={() => router.navigate('/videos')} />
+          </View>
+        ) : null}
         {canWifi ? (
           <View className="mt-3">
             <MenuRow
@@ -147,9 +158,6 @@ export default function MoreScreen() {
             />
           </View>
         ) : null}
-
-        <SectionTitle className="mt-6">What's switched on</SectionTitle>
-        <FeatureStatusCard />
 
         <SectionTitle className="mt-6">About</SectionTitle>
         <Card className="py-1">
