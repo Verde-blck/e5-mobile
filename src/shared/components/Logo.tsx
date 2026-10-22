@@ -19,7 +19,7 @@ export function Logo({ size = 36 }: { size?: number }) {
 // anything with about the same proportions): the component reads the file's own size.
 const COMPANY_LOGO = require('../../../assets/brand/e5-energy-logo.png')
 const resolved = typeof Image.resolveAssetSource === 'function' ? Image.resolveAssetSource(COMPANY_LOGO) : undefined
-const ASPECT = resolved?.width && resolved.height ? resolved.height / resolved.width : 224 / 384
+const ASPECT = resolved?.width && resolved.height ? resolved.height / resolved.width : 132 / 236
 
 /**
  * The company logo, for light surfaces: the one the company uploaded, or the E5 ENERGY logo. The uploaded one is a signed link that

@@ -24,6 +24,24 @@ Expo Go is expected to work for now. Calls and live video (WebRTC) will need a
 development build: `npx expo run:android` / `run:ios`, or
 `eas build --profile development`.
 
+## The sign-in screen
+
+The sign-in screen is laid out as the web dashboard's sign-in page (its `AuthLayout.tsx`), so the two look like one product. Every
+measurement in `src/app/sign-in.tsx` is that page's, read from it in a browser (about 150 of them, compared at six screen sizes).
+
+| width | layout |
+|---|---|
+| under 640 | a 224 tall banner; the card overlaps its lower edge by 40 and is as wide as the screen allows; no subtitle in the banner |
+| 640 and up | a 256 tall banner, larger title, the subtitle shown, a 400 wide card |
+| 1024 and up | two panes: the panel on the left (5 parts of 12), the card centred in the rest (7 parts) |
+
+These are the web page's own widths, not the app's tablet widths (600 and 840), which are for the lists and detail screens. The fields,
+button and link are the sign-in screen's own (`modules/auth/components/AuthKit.tsx`); the rest of the app keeps its own.
+
+Like the web page, the button is always there and always full colour. Pressing it with something missing says what ("Enter your username.",
+"Enter your password.", "Enter the 6-digit code."), where the app used to grey it out until both fields were filled. Not on the web page,
+and kept: the sample-data note under the card (sample-data mode only), and a thin accent line under the logo when the company has set a second colour.
+
 ## The sign-in panel's animated network
 
 The dark panel at the top of the sign-in screen carries the web dashboard's animated network: nodes drifting slowly, links that fade in
@@ -32,7 +50,8 @@ ported as it is (`src/shared/brand/plexus.ts`), with the same node counts, speed
 
 A tablet has no browser canvas, so the animation is a small web page: drawn in a transparent web view on the tablet
 (`PlexusField.tsx`) and in an iframe in the browser preview (`PlexusField.web.tsx`). Both show exactly the same page, so the preview
-is what the tablet draws. The panel behind it (the gradient, fine grid, readings, route and geofence) is still drawn natively.
+is what the tablet draws. The panel behind it (a fine grid, contour lines, a dashed site boundary and a haul road, with a fade into the
+panel colour towards the bottom) is the web page's site plan, drawn natively.
 
 - It ignores taps and is hidden from screen readers, and it stops drawing when the panel is off screen.
 - If the device asks for reduced motion (Android's "remove animations"), it draws one still frame and nothing moves. The tablet checks

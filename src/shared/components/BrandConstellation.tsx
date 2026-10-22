@@ -1,52 +1,63 @@
 import { StyleSheet, View } from 'react-native'
-import Svg, { Defs, Path, Pattern, Polygon, RadialGradient, Rect, Stop } from 'react-native-svg'
-import { PlexusField } from '@/shared/components/PlexusField'
+import Svg, { Defs, G, LinearGradient, Path, Pattern, Rect, Stop } from 'react-native-svg'
 import { useBrandColours } from '@/modules/branding/hooks/useBranding'
-import { surfaceColours } from '@/modules/branding/lib/colour'
+import { PlexusField } from '@/shared/components/PlexusField'
 
-// The sign-in panel: a fine grid, flowing readings, a dashed geofence and a thick route, drawn in a 569 x 700 box and scaled to
-// fill whatever it is placed in (cropped rather than squashed), so it works as a banner or a full-height panel. Over it, the
-// animated network of helmets (PlexusField), as on the web dashboard.
-
-const WAVES = [
-  'M-20 120 C 120 70, 230 190, 360 140 S 520 80, 600 130',
-  'M-20 255 C 110 200, 220 330, 350 270 S 500 230, 600 300',
-  'M-20 330 C 120 385, 250 275, 380 345 S 520 425, 600 385',
-  'M-20 505 C 140 460, 260 565, 390 505 S 520 470, 600 525',
+/*
+ * The sign-in panel's artwork, as on the web dashboard's sign-in page: a stylised site plan (a fine grid, contour lines like
+ * elevation on a site survey, a dashed site boundary and a haul road) with the animated network of helmets drifting over it
+ * (PlexusField), and a fade into the panel colour towards the bottom so the heading stays easy to read.
+ *
+ * The plan is drawn in a 400 x 600 box and scaled to fill whatever it is placed in (cropped rather than squashed), so it works as a
+ * banner or as a full-height panel.
+ */
+const CONTOURS = [
+  'M-20 140C60 110 110 180 190 160S320 70 420 110',
+  'M-20 190C70 160 120 235 200 212S330 120 420 160',
+  'M-20 250C80 222 130 290 210 268S340 180 420 220',
+  'M-20 420C60 380 150 450 240 410S350 350 420 380',
+  'M-20 470C70 432 160 500 250 462S360 400 420 430',
 ]
-const ROUTE = 'M-30 690 C 120 610, 300 505, 385 335 S 485 190, 610 140'
 
 export function BrandConstellation() {
   const brand = useBrandColours()
-  const surface = surfaceColours(brand)
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Svg width="100%" height="100%" viewBox="0 0 569 700" preserveAspectRatio="xMidYMid slice">
+      <Svg width="100%" height="100%" viewBox="0 0 400 600" preserveAspectRatio="xMidYMid slice">
         <Defs>
-          <RadialGradient id="bc-glow" cx="50%" cy="46%" rx="75%" ry="70%">
-            <Stop offset="0" stopColor={surface.glow} stopOpacity="0.9" />
-            <Stop offset="1" stopColor={surface.panel} stopOpacity="0" />
-          </RadialGradient>
-          <Pattern id="bc-grid" width="44" height="44" patternUnits="userSpaceOnUse">
-            <Path d="M44 0H0V44" fill="none" stroke={surface.mint} strokeOpacity="0.05" strokeWidth="1" />
+          <Pattern id="plan-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+            <Path d="M24 0H0v24" fill="none" stroke={brand.mint} strokeOpacity="0.07" />
           </Pattern>
         </Defs>
+        <Rect width="400" height="600" fill="url(#plan-grid)" />
 
-        <Rect width="569" height="700" fill={surface.panel} />
-        <Rect width="569" height="700" fill="url(#bc-glow)" />
-        <Rect width="569" height="700" fill="url(#bc-grid)" />
+        {/* Contour lines, like elevation on a site survey. */}
+        <G fill="none" stroke={brand.mint} strokeOpacity="0.16" strokeWidth="1">
+          {CONTOURS.map((d) => (
+            <Path key={d} d={d} />
+          ))}
+        </G>
 
-        {/* readings */}
-        {WAVES.map((d) => (
-          <Path key={d} d={d} fill="none" stroke={surface.mint} strokeOpacity="0.16" strokeWidth="1.4" />
-        ))}
-        {/* a route */}
-        <Path d={ROUTE} fill="none" stroke={surface.mint} strokeOpacity="0.16" strokeWidth="30" strokeLinecap="round" />
-        <Path d={ROUTE} fill="none" stroke={surface.mint} strokeOpacity="0.22" strokeWidth="2" strokeLinecap="round" />
-        {/* a geofence */}
-        <Polygon points="100,93 441,60 500,390 408,548 140,525" fill={surface.mint} fillOpacity="0.03" stroke={surface.mint} strokeOpacity="0.32" strokeWidth="1.4" strokeDasharray="7 6" />
+        {/* Site boundary and a haul road. */}
+        <Path d="M70 120L310 96L352 330L268 470L96 436Z" fill={brand.primary} fillOpacity="0.18" stroke={brand.mint} strokeOpacity="0.35" strokeDasharray="4 6" />
+        <Path d="M-10 520C90 470 170 380 230 300S330 180 410 150" fill="none" stroke={brand.mint} strokeOpacity="0.22" strokeWidth="10" strokeLinecap="round" />
       </Svg>
+
       <PlexusField color={brand.mint} />
+
+      {/* The fade: clear at the top of the lower two thirds, the panel's own colour at the very bottom. */}
+      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '66.6667%' }}>
+        <Svg width="100%" height="100%">
+          <Defs>
+            <LinearGradient id="plan-fade" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor={brand.secondary} stopOpacity="0" />
+              <Stop offset="0.5" stopColor={brand.secondary} stopOpacity="0.7" />
+              <Stop offset="1" stopColor={brand.secondary} stopOpacity="1" />
+            </LinearGradient>
+          </Defs>
+          <Rect width="100%" height="100%" fill="url(#plan-fade)" />
+        </Svg>
+      </View>
     </View>
   )
 }

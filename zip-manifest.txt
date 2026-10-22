@@ -50,6 +50,7 @@ src/modules/alarms/lib/alert-policy.ts
 src/modules/alarms/store/alertStore.ts
 src/modules/alarms/types.ts
 src/modules/auth/api/auth.api.ts
+src/modules/auth/components/AuthKit.tsx
 src/modules/auth/components/SecurityScreen.tsx
 src/modules/auth/mock-data.ts
 src/modules/branding/api/branding.api.ts

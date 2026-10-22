@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { KeyboardAvoidingView, Platform, ScrollView, useWindowDimensions, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -8,24 +8,28 @@ import {
   verifyTwoFactorLogin,
   type TwoFactorChallenge,
 } from '@/modules/auth/api/auth.api'
+import { AuthButton, AuthField, AuthHelmetMark, AuthLink, INK, PAGE, ink, rgba } from '@/modules/auth/components/AuthKit'
 import { env } from '@/config/env'
-import { Button } from '@/shared/components/Button'
-import { Container } from '@/shared/components/Container'
-import { AppCanvas } from '@/shared/components/AppCanvas'
 import { BrandConstellation } from '@/shared/components/BrandConstellation'
-import { useBranding } from '@/modules/branding/hooks/useBranding'
-import { CompanyLogo, Logo } from '@/shared/components/Logo'
+import { useBrandColours, useBranding } from '@/modules/branding/hooks/useBranding'
+import { CompanyLogo } from '@/shared/components/Logo'
 import { Text } from '@/shared/components/Text'
-import { TextField } from '@/shared/components/TextField'
-import { cn } from '@/shared/lib/cn'
-import { useLayout } from '@/shared/lib/layout'
 import { useAuthStore } from '@/shared/store/authStore'
 
+/*
+ * The sign-in screen, laid out as the web dashboard's sign-in page (AuthLayout.tsx) so the two look like one product. Every measurement
+ * below is that page's, read from it in a browser.
+ *
+ *   Under 640 wide    a 224 tall banner with the card overlapping its lower edge by 40, the card as wide as the screen allows.
+ *   640 and up        the same, with a 256 tall banner, larger type, and a 400 wide card.
+ *   1024 and up       two panes: the panel on the left (5 parts of 12), the card centred in the rest (7 parts).
+ *
+ * (These are the web page's own widths, not the app's tablet breakpoints, which are for the lists and detail screens.)
+ */
 export default function SignInScreen() {
   const branding = useBranding()
+  const brand = useBrandColours()
   const insets = useSafeAreaInsets()
-  // A tablet in landscape splits the screen: the brand on one side, the form on the other.
-  const { twoPane } = useLayout()
   const setUser = useAuthStore((s) => s.setUser)
 
   const [username, setUsername] = useState('')
@@ -35,11 +39,20 @@ export default function SignInScreen() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [usernameError, setUsernameError] = useState<string | null>(null)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+
   const canSubmitCredentials = username.trim().length > 0 && password.length > 0
   const canSubmitCode = code.length === 6
 
   async function submitCredentials() {
-    if (!canSubmitCredentials || busy) return
+    if (busy) return
+    // Like the web page's form: the button is always there, and pressing it with something missing says what.
+    if (!canSubmitCredentials) {
+      setUsernameError(username.trim() ? null : 'Enter your username.')
+      setPasswordError(password ? null : 'Enter your password.')
+      return
+    }
     setBusy(true)
     setError(null)
     try {
@@ -60,7 +73,11 @@ export default function SignInScreen() {
   }
 
   async function submitCode() {
-    if (!challenge || !canSubmitCode || busy) return
+    if (!challenge || busy) return
+    if (!canSubmitCode) {
+      setError('Enter the 6-digit code.')
+      return
+    }
     setBusy(true)
     setError(null)
     try {
@@ -77,35 +94,54 @@ export default function SignInScreen() {
     setChallenge(null)
     setCode('')
     setError(null)
+    setUsernameError(null)
+    setPasswordError(null)
   }
 
-  const { width, height } = useWindowDimensions()
-  // A tablet in portrait has room for a taller banner and larger type than a phone.
-  const roomy = width >= 600
-  // Portrait: the hero is a banner and the card overlaps its lower edge. Wide (a large tablet, or the
-  // browser preview): the hero is a full-height panel beside the card.
-  const bannerHeight = Math.round(Math.min(Math.max(height * (roomy ? 0.4 : 0.34), 270), roomy ? 520 : 360))
+  const { width } = useWindowDimensions()
+  const sm = width >= 640
+  const split = width >= 1024
 
   const hero = (
-    <View style={twoPane ? { flex: 1, overflow: 'hidden' } : { height: bannerHeight, overflow: 'hidden' }}>
+    <View
+      testID="signin-hero"
+      style={[
+        { backgroundColor: brand.secondary, overflow: 'hidden' },
+        // A banner is tall enough for its content plus the status bar above it; the panel fills its half.
+        split ? { flex: 5 } : { height: (sm ? 256 : 224) + insets.top },
+      ]}
+    >
       <BrandConstellation />
       <View
         style={{
           flex: 1,
           justifyContent: 'space-between',
-          paddingHorizontal: twoPane ? 48 : roomy ? 40 : 24,
-          paddingTop: insets.top + (twoPane ? 40 : 18),
-          paddingBottom: twoPane ? 56 : 54,
+          paddingHorizontal: split ? 48 : sm ? 32 : 24,
+          paddingTop: insets.top + (split ? 40 : 20),
+          paddingBottom: split ? 40 : sm ? 80 : 72,
         }}
       >
-        <Logo />
-        <View>
-          <Text className={twoPane ? 'font-display-extrabold text-6xl leading-[64px] text-white' : roomy ? 'font-display-extrabold text-5xl leading-[56px] text-white' : 'font-display-extrabold text-4xl leading-[42px] text-white'}>
-            Command Centre
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <AuthHelmetMark colour={brand.secondary} />
+          <Text className="font-sans-medium" style={{ fontSize: 14, lineHeight: 20, color: 'rgba(255, 255, 255, 0.9)' }}>
+            {branding.companyName ?? 'E5 Energy'}
           </Text>
-          <Text className={twoPane ? 'mt-4 max-w-sm text-lg leading-7 text-brand-soft' : roomy ? 'mt-3 max-w-md text-lg leading-7 text-brand-soft' : 'mt-2 text-[15px] leading-6 text-brand-soft'}>
-            Live location, alarms and gas readings for every helmet in the fleet.
-          </Text>
+        </View>
+
+        <View style={{ maxWidth: 448 }}>
+          {(() => {
+            const size = split ? 52 : sm ? 40 : 32
+            return (
+              <Text testID="signin-title" className="font-display" style={{ fontSize: size, lineHeight: size * 1.05, letterSpacing: -0.02 * size, color: '#FFFFFF' }}>
+                Command Centre
+              </Text>
+            )
+          })()}
+          {sm ? (
+            <Text style={{ marginTop: 12, maxWidth: 384, fontSize: 15, lineHeight: 24.375, color: brand.mint }}>
+              Live location, alarms and gas readings for every helmet in the fleet.
+            </Text>
+          ) : null}
         </View>
       </View>
     </View>
@@ -113,22 +149,20 @@ export default function SignInScreen() {
 
   const card = (
     <>
-      <CompanyLogo width={92} />
-      {branding.secondaryColor ? <View accessibilityLabel="Company accent" style={{ marginTop: 8, height: 3, width: 44, borderRadius: 2, backgroundColor: branding.secondaryColor }} /> : null}
-      <View className="h-5" />
+      <View style={{ marginBottom: 24 }}>
+        <CompanyLogo width={sm ? 86 : 79} />
+        {branding.secondaryColor ? <View accessibilityLabel="Company accent" style={{ marginTop: 8, height: 3, width: 44, borderRadius: 2, backgroundColor: branding.secondaryColor }} /> : null}
+      </View>
       {challenge ? (
         <>
-          <Text className="font-display-bold text-2xl">Two-step verification</Text>
-          <Text className="mb-6 mt-1.5 text-sm leading-5 text-slate-600">
-            Enter the 6-digit code from your authenticator app for {challenge.username}.
-          </Text>
-          <TextField
+          <Heading>Two-step verification</Heading>
+          <Subheading>Enter the 6-digit code from your authenticator app for {challenge.username}.</Subheading>
+          <AuthField
             label="Authentication code"
             value={code}
             onChangeText={(v) => setCode(v.replace(/\D/g, '').slice(0, 6))}
             keyboardType="number-pad"
             maxLength={6}
-            mono
             autoComplete="one-time-code"
             textContentType="oneTimeCode"
             placeholder="000000"
@@ -136,41 +170,38 @@ export default function SignInScreen() {
             onSubmitEditing={submitCode}
             error={error}
           />
-          <Button
-            title="Verify and sign in"
-            className="mt-5"
-            loading={busy}
-            disabled={!canSubmitCode}
-            onPress={submitCode}
-          />
-          <Button
-            title="Use a different account"
-            variant="ghost"
-            className="mt-2"
-            onPress={backToCredentials}
-          />
+          <AuthButton title="Verify and sign in" busy={busy} onPress={submitCode} />
+          <View style={{ marginTop: 8 }}>
+            <AuthLink title="Use a different account" onPress={backToCredentials} />
+          </View>
         </>
       ) : (
         <>
-          <Text className="font-display-bold text-2xl">Sign in</Text>
-          <Text className="mb-6 mt-1.5 text-sm leading-5 text-slate-600">
-            Use the username and password your administrator gave you.
-          </Text>
-          <TextField
+          <Heading>Sign in</Heading>
+          <Subheading>Use the username and password your administrator gave you.</Subheading>
+          <AuthField
             label="Username"
+            icon="user"
             value={username}
-            onChangeText={setUsername}
+            error={usernameError}
+            onChangeText={(v) => {
+              setUsername(v)
+              setUsernameError(null)
+            }}
             autoCapitalize="none"
             autoCorrect={false}
             autoComplete="username"
             textContentType="username"
             returnKeyType="next"
           />
-          <TextField
-            className="mt-4"
+          <AuthField
             label="Password"
+            icon="lock"
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(v) => {
+              setPassword(v)
+              setPasswordError(null)
+            }}
             secret
             autoCapitalize="none"
             autoCorrect={false}
@@ -178,57 +209,66 @@ export default function SignInScreen() {
             textContentType="password"
             returnKeyType="go"
             onSubmitEditing={submitCredentials}
-            error={error}
+            error={passwordError ?? error}
           />
-          <Button
-            title="Sign in"
-            className="mt-6"
-            loading={busy}
-            disabled={!canSubmitCredentials}
-            onPress={submitCredentials}
-          />
+          <AuthButton title="Sign in" busy={busy} onPress={submitCredentials} />
         </>
       )}
-
     </>
   )
 
   const footer = (
     <>
       {env.useMocks ? (
-        <View className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-3.5">
-          <Text className="font-sans-semibold text-xs text-amber-900">
-            Sample data mode — no server needed
+        <View style={{ marginTop: 20, borderRadius: 12, borderWidth: 1, borderColor: '#FDE68A', backgroundColor: '#FFFBEB', padding: 14 }}>
+          <Text className="font-sans-semibold" style={{ fontSize: 12, color: '#78350F' }}>
+            Sample data mode - no server needed
           </Text>
-          <Text className="mt-1 text-xs leading-5 text-amber-800">
+          <Text style={{ marginTop: 4, fontSize: 12, lineHeight: 20, color: '#92400E' }}>
             ADM-001 (full access), AD-001 (administers, not a super admin), OP-014 (restricted),
             RO-001 (view-only settings), MFA-001 (two-step; code 123456), SETUP-001 (must set up two-step). Any password works.
           </Text>
         </View>
       ) : null}
 
-      <Text className="mt-6 px-4 text-center text-sm leading-5 text-slate-500">
-        {challenge
-          ? 'Lost access to your authenticator app? Your administrator can reset it.'
-          : 'Accounts are issued by your administrator.'}
+      <Text style={{ marginTop: 20, paddingHorizontal: 4, textAlign: 'center', fontSize: 13, lineHeight: 21.125, color: ink(0.7) }}>
+        {challenge ? 'Lost access to your authenticator app? Your administrator can reset it.' : 'Accounts are issued by your administrator.'}
       </Text>
     </>
   )
 
-  const cardBox = 'rounded-3xl bg-white p-7 shadow-lg shadow-slate-900/10'
+  const cardBox = (
+    <View
+      testID="signin-card"
+      style={{
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: ink(0.06),
+        backgroundColor: '#FFFFFF',
+        padding: sm ? 32 : 24,
+        // The web page's shadow: a hairline, and a soft one that falls away to the bottom.
+        boxShadow: `0 1px 2px ${rgba(brand.secondary, 0.06)}, 0 12px 32px -12px ${rgba(brand.secondary, 0.18)}`,
+      }}
+    >
+      {card}
+    </View>
+  )
 
-  if (twoPane) {
+  const column = (
+    <View style={{ alignSelf: 'center', width: '100%', maxWidth: 400 }}>
+      {cardBox}
+      {footer}
+    </View>
+  )
+
+  if (split) {
     return (
-      <View className="flex-1 flex-row" style={{ backgroundColor: '#F2F8F8' }}>
+      <View style={{ flex: 1, flexDirection: 'row', backgroundColor: PAGE }}>
         <StatusBar style="light" />
-        <View style={{ flex: 1 }}>{hero}</View>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <AppCanvas />
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerClassName="flex-grow justify-center px-12 py-10">
-            <Container max={420}>
-              <View className={cardBox}>{card}</View>
-              {footer}
-            </Container>
+        {hero}
+        <KeyboardAvoidingView style={{ flex: 7 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 48 }}>
+            {column}
           </ScrollView>
         </KeyboardAvoidingView>
       </View>
@@ -236,20 +276,28 @@ export default function SignInScreen() {
   }
 
   return (
-    <View className="flex-1" style={{ backgroundColor: '#F2F8F8' }}>
+    <View style={{ flex: 1, backgroundColor: PAGE }}>
       <StatusBar style="light" />
-      <AppCanvas />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
-        <ScrollView keyboardShouldPersistTaps="handled" bounces={false} contentContainerClassName="flex-grow">
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        <ScrollView keyboardShouldPersistTaps="handled" bounces={false} contentContainerStyle={{ flexGrow: 1 }}>
           {hero}
-          <View className="-mt-9 px-4 pb-10">
-            <Container max={480}>
-              <View className={cardBox}>{card}</View>
-              {footer}
-            </Container>
-          </View>
+          {/* The card overlaps the banner by 40. */}
+          <View style={{ marginTop: -40, paddingHorizontal: sm ? 24 : 16, paddingBottom: 48 }}>{column}</View>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
   )
+}
+
+function Heading({ children }: { children: ReactNode }) {
+  return (
+    <Text testID="signin-heading" accessibilityRole="header" className="font-display" style={{ fontSize: 26, lineHeight: 32.5, letterSpacing: -0.26, color: INK }}>
+      {children}
+    </Text>
+  )
+}
+
+function Subheading({ children }: { children: ReactNode }) {
+  // 28 below it, to the first field: the web page's mt-7.
+  return <Text style={{ marginTop: 6, marginBottom: 28, fontSize: 14, lineHeight: 22.75, color: ink(0.7) }}>{children}</Text>
 }
