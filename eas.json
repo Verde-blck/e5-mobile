@@ -12,7 +12,8 @@
       },
       "env": {
         "EXPO_PUBLIC_USE_MOCKS": "false"
-      }
+      },
+      "environment": "preview"
     },
     "production": {
       "autoIncrement": true,
@@ -21,14 +22,16 @@
       },
       "env": {
         "EXPO_PUBLIC_USE_MOCKS": "false"
-      }
+      },
+      "environment": "production"
     },
     "live": {
       "extends": "preview",
       "env": {
         "EXPO_PUBLIC_USE_MOCKS": "false",
         "EXPO_PUBLIC_LIVE_ENABLED": "true"
-      }
+      },
+      "environment": "preview"
     }
   }
 }

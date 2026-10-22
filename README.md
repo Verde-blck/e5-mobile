@@ -24,6 +24,36 @@ Expo Go is expected to work for now. Calls and live video (WebRTC) will need a
 development build: `npx expo run:android` / `run:ios`, or
 `eas build --profile development`.
 
+## The sign-in panel's animated network
+
+The dark panel at the top of the sign-in screen carries the web dashboard's animated network: nodes drifting slowly, links that fade in
+and out with distance, small packets travelling along live links, and larger "helmet" nodes that pulse. It is the web's `PlexusField`,
+ported as it is (`src/shared/brand/plexus.ts`), with the same node counts, speeds and link distances.
+
+A tablet has no browser canvas, so the animation is a small web page: drawn in a transparent web view on the tablet
+(`PlexusField.tsx`) and in an iframe in the browser preview (`PlexusField.web.tsx`). Both show exactly the same page, so the preview
+is what the tablet draws. The panel behind it (the gradient, fine grid, readings, route and geofence) is still drawn natively.
+
+- It ignores taps and is hidden from screen readers, and it stops drawing when the panel is off screen.
+- If the device asks for reduced motion (Android's "remove animations"), it draws one still frame and nothing moves. The tablet checks
+  this before it starts, so someone who asked for no motion never sees any.
+- The nodes and links use the company's colour when it has set one (worked out from its main colour), and E5's mint otherwise.
+- It exists only on the sign-in screen, so nothing is animating once someone is signed in.
+
+## After unpacking a new zip
+
+Unpacking a zip over the project folder adds and replaces files but never deletes ones that were removed or moved, so old copies pile
+up (a screen that moved into the tab bar is left behind in its old place, and the router then sees both). Every zip carries
+`zip-manifest.txt`, the list of files that belong. After unpacking, run:
+
+```
+npm run prune              shows the leftover files, deletes nothing
+npm run prune -- --apply   deletes them
+```
+
+It only looks inside `src`, `tests` and `docs`, never touches `node_modules`, `assets`, `.env` or `e5.local.json`, and refuses to run
+if the manifest is missing or looks damaged. Then `npm install` and `npx expo start --clear` as usual.
+
 ## Scripts
 
 | Command | What it does |
@@ -75,7 +105,7 @@ short screen (an 8 inch tablet in landscape is only about 600 dp tall) the rail'
 included, stay on it. A narrow screen has no room for nine, so it gets a bottom bar of five and the extra modules are reached from
 More, with a way back.
 
-**Under More** (on every screen size): Fences, Account security, **Company profile**, **Site Wi-Fi**, **Photo Record** and **Video Record**. These open as
+**Under More** (on every screen size): Fences, Account security, **Site Wi-Fi**, **Photo Record** and **Video Record**. These open as
 screens with their own header, and their back arrow returns to More.
 
 ## Live Map
@@ -169,22 +199,22 @@ moving to a **new phone** needs a code from the current one first (the old phone
 - **Lost or changed phone.** An administrator with administrator settings can **Reset 2FA** on an account (Administrators). Not
   your own account, and only a super admin can reset a super admin. The person sets it up again at their next sign-in.
 
-## Company profile and branding
+## Company branding
 
-**Company profile** (More; anyone signed in can see it, changing it needs administrator settings): the company's name, support
-email, logo and two colours. The public branding is fetched while the app starts and on the sign-in screen, so the company's name,
-logo and colours show before anyone signs in; with no signal the E5 look is used. The logo link expires after an hour, so it is
-fetched fresh and never stored.
+The company profile (name, support email, logo and colours) is edited in the web app; this app only **reads** it, from the public
+`GET /api/branding`, which works before anyone signs in. It is fetched while the app starts and on the sign-in screen, so the
+company's name, logo and colours show straight away; with no signal, or a backend that doesn't have it yet, the app stays on the E5
+look. The logo link expires after an hour, so it is fetched fresh and never stored, and if it can't be loaded the E5 logo is shown
+rather than a gap. The company's name and support email also show in About (More).
 
 - **The main colour** colours buttons, the active tab, links, switches, the dot-grid backdrop, and the sign-in panel and helmet mark.
   Everything else (alarm red and amber, status colours) is never themed. The other four shades are worked out from it.
 - **Two safeguards**, because this is a safety app: a main colour that white text can't be read on is not applied, and neither is
-  one that looks like the alarm colours (red, orange, amber), which must stay the most noticeable things on screen. The screen says
-  so where the colour is chosen, and the app keeps the E5 look.
+  one that looks like the alarm colours (red, orange, amber), which must stay the most noticeable things on screen. The app then
+  keeps the E5 look.
 - **The accent colour** is only a thin line on the sign-in screen. E5's own orange is deliberately not a UI colour.
-- **The logo** must be PNG, JPEG or WebP, up to 512 KB and 1024 px on each side (checked before it is sent; the backend checks the
-  real image). If an uploaded logo can't be loaded the E5 logo is shown rather than a gap.
 - With no company colour the app is exactly the E5 look: the five brand colours are variables whose defaults are E5's.
+- To check that a backend has it, open `https://<backend>/api/branding` in a browser: it should answer with JSON without signing in.
 
 ## Administrators
 
@@ -275,6 +305,12 @@ Both are under More (they need `photos:read` and `videos:read`) and are built fr
 - Every photo and video link is signed and expires after about an hour, so the list refreshes well inside that, and the viewer reloads
   it once if a link fails.
 - The backend has no fleet-wide photo or video list, so "all devices" asks each helmet in turn (fine at this fleet size).
+
+## The Google map
+
+On an Android tablet the Live Map, the fence editor and track playback use Google's own map when the build was made with a Google Maps key, and the
+OpenStreetMap map otherwise (and always in the browser preview). The key and the optional Map ID are set on EAS, never in the repository. How to set
+them up, what to do if the map is grey, and what it costs: [docs/GOOGLE_MAPS.md](docs/GOOGLE_MAPS.md). It has not yet been run on a tablet.
 
 ## Fences
 

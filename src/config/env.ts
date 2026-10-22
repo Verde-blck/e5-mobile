@@ -14,6 +14,15 @@ export function parseFlag(value: string | undefined): boolean {
   return /^(true|1|yes|on)$/i.test((value ?? '').trim().replace(/^["']|["']$/g, '').trim())
 }
 
+/**
+ * A Google Map ID from the environment, or undefined. Map IDs are hexadecimal; the value is trimmed first, because a stray space at
+ * the end of a pasted setting (easy to do, invisible to see) would otherwise make Google quietly ignore the ID.
+ */
+export function cleanMapId(value: string | undefined): string | undefined {
+  const id = (value ?? '').trim().replace(/^["']|["']$/g, '').trim()
+  return /^[0-9a-f]{16,40}$/i.test(id) ? id : undefined
+}
+
 export const env = {
   // Includes the /api prefix. The web dashboard gets that from the vercel.json
   // rewrite; a phone talks to the backend directly.
@@ -27,6 +36,11 @@ export const env = {
     process.env.EXPO_PUBLIC_MAP_TILE_URL ?? 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
   mapAttribution:
     process.env.EXPO_PUBLIC_MAP_ATTRIBUTION ?? '© OpenStreetMap contributors',
+  // The Google map on the tablet (docs/GOOGLE_MAPS.md). The key itself is a build setting (GOOGLE_MAPS_ANDROID_API_KEY, see
+  // app.config.js); the Map ID, which gives the map the dashboard's style, is optional, and with none the map is Google's standard one.
+  googleMapId: cleanMapId(process.env.EXPO_PUBLIC_GOOGLE_MAPS_MAP_ID),
+  // Set to "osm" to use the OpenStreetMap map even in a build that has a Google key: the way back if the Google map ever misbehaves.
+  mapEngine: process.env.EXPO_PUBLIC_MAP_ENGINE,
   // Push alerts for a locked tablet. Off until the backend can register tablets and send the push
   // (see docs/PUSH_SETUP.md); while off, the app says plainly that alerts need the app to be open.
   pushEnabled: parseFlag(process.env.EXPO_PUBLIC_PUSH_ENABLED),

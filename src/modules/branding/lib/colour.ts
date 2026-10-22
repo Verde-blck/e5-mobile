@@ -85,11 +85,6 @@ export function primaryProblem(hex: string | null | undefined): PrimaryProblem |
   return null
 }
 
-export const PRIMARY_PROBLEM_TEXT: Record<PrimaryProblem, string> = {
-  unreadable: 'White text would be hard to read on this colour, so the app keeps its default colour. Choose a darker one.',
-  'alarm-like': 'This is close to the alarm colours (red, orange and amber), which must stay the most noticeable thing on screen, so the app keeps its default colour.',
-}
-
 /** The five colours for a company primary, or the E5 look if there is none or it can't be used. */
 export function brandFor(primary: string | null | undefined): BrandColours {
   const hex = primary ? normaliseColour(primary) : null

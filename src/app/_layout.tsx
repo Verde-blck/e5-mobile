@@ -126,7 +126,6 @@ export default function RootLayout() {
             <Stack.Screen name="admin/[id]" options={{ headerShown: true, title: 'Administrator', ...HEADER }} />
             {/* A call covers the whole screen and can't be swiped away by accident. */}
             <Stack.Screen name="call/[deviceId]" options={{ headerShown: false, presentation: 'fullScreenModal', gestureEnabled: false, animation: 'fade' }} />
-            <Stack.Screen name="company" options={{ headerShown: true, title: 'Company profile', ...HEADER }} />
             <Stack.Screen name="photos" options={{ headerShown: true, title: 'Photo Record', ...HEADER }} />
             <Stack.Screen name="videos" options={{ headerShown: true, title: 'Video Record', ...HEADER }} />
             <Stack.Screen name="wifi" options={{ headerShown: true, title: 'Site Wi-Fi', ...HEADER }} />

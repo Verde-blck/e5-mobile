@@ -185,26 +185,44 @@ async function main() {
     process.env.GOOGLE_SERVICES_JSON = '/eas/secret/google-services.json'; assert.equal(cfg().android.googleServicesFile, '/eas/secret/google-services.json'); assert.equal(cfg().android.package, 'com.e5energy.smarthelmet', 'the rest of the config is untouched')
     if (saved === undefined) delete process.env.GOOGLE_SERVICES_JSON; else process.env.GOOGLE_SERVICES_JSON = saved
   })
-  await t('the Expo project link survives unpacking a new zip: it lives in e5.local.json (never in a zip), with app.json and the environment as the other sources', () => {
+  await t('the Expo project link survives unpacking a new zip (it lives in e5.local.json), and only a real project ID (a UUID) is ever passed on to EAS', () => {
     const load = createRequire(`${process.cwd()}/`)
-    type Out = { owner?: string; extra?: { eas?: { projectId?: string } } }
+    type Out = { owner?: string; extra?: { other?: number; eas?: { projectId?: string; other?: number } } }
     const cfg = (config: object = {}) => (load('./app.config.js') as (a: { config: object }) => Out)({ config: { android: {}, ...config } })
+    const id = (c: object = {}) => cfg(c).extra?.eas?.projectId
+    const [A, B, C] = ['11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222', '33333333-3333-4333-8333-333333333333']
     const file = 'e5.local.json'
     const hadFile = fs.existsSync(file), kept = hadFile ? fs.readFileSync(file, 'utf8') : ''
     const savedEnv = process.env.EAS_PROJECT_ID; delete process.env.EAS_PROJECT_ID
+    const savedWarn = console.warn; const warnings: string[] = []; console.warn = (m: string) => { warnings.push(String(m)) }
     try {
       if (hadFile) fs.rmSync(file)
-      assert.equal(cfg().extra?.eas?.projectId, undefined, 'nothing anywhere: nothing invented'); assert.equal(cfg().owner, undefined)
-      process.env.EAS_PROJECT_ID = 'env-id'; assert.equal(cfg().extra?.eas?.projectId, 'env-id', 'the environment is the last resort')
-      fs.writeFileSync(file, JSON.stringify({ projectId: 'file-id', owner: 'acme' }))
-      assert.deepEqual([cfg().extra?.eas?.projectId, cfg().owner], ['file-id', 'acme'], 'the local file beats the environment')
-      assert.deepEqual([cfg({ extra: { eas: { projectId: 'app-json-id' } }, owner: 'json-owner' }).extra?.eas?.projectId, cfg({ owner: 'json-owner' }).owner], ['app-json-id', 'json-owner'], 'app.json, where eas init may have put it, beats both')
-      assert.equal(cfg({ extra: { other: 1 } }).extra?.eas?.projectId, 'file-id'); assert.equal((cfg({ extra: { other: 1 } }).extra as { other?: number }).other, 1, 'the rest of extra is kept')
-      fs.writeFileSync(file, JSON.stringify({ projectId: '00000000-0000-0000-0000-000000000000', owner: 'your-expo-username-or-organisation'.slice(0, 0) }))
-      assert.equal(cfg().extra?.eas?.projectId, 'env-id', 'the placeholder from the example file is ignored, not used as a real id')
-      fs.writeFileSync(file, '{ this is not json')
-      assert.equal(cfg().extra?.eas?.projectId, 'env-id', 'a damaged file must never break the build')
+      assert.equal(id(), undefined, 'nothing anywhere: nothing invented'); assert.equal(cfg().owner, undefined)
+      process.env.EAS_PROJECT_ID = C; assert.equal(id(), C, 'the environment is the last resort')
+      fs.writeFileSync(file, JSON.stringify({ projectId: B, owner: 'acme' }))
+      assert.deepEqual([id(), cfg().owner], [B, 'acme'], 'the local file beats the environment')
+      assert.deepEqual([id({ extra: { eas: { projectId: A } }, owner: 'json-owner' }), cfg({ owner: 'json-owner' }).owner], [A, 'json-owner'], 'app.json, where eas init may have put it, beats both')
+      assert.equal(id({ extra: { other: 1 } }), B); assert.equal(cfg({ extra: { other: 1 } }).extra?.other, 1, 'the rest of extra is kept'); assert.equal(cfg({ extra: { eas: { other: 2 } } }).extra?.eas?.other, 2, 'and the rest of eas')
+      fs.writeFileSync(file, JSON.stringify({ projectId: ` ${A.toUpperCase()} ` })); assert.equal(id(), A.toUpperCase(), 'upper case and surrounding spaces are fine')
+      assert.equal(warnings.length, 0, 'nothing wrong, nothing said')
+
+      // The wrong things people put there: each is ignored (falling through to the next source) and named in a warning.
+      for (const wrong of ['file-id', 'e5-smart-helmet', 'acme/e5-smart-helmet', 'https://expo.dev/accounts/acme/projects/e5', '1234', '<the id from expo.dev>', '11111111-1111-4111-8111-11111111111', '11111111111141118111111111111111']) {
+        warnings.length = 0; fs.writeFileSync(file, JSON.stringify({ projectId: wrong }))
+        assert.equal(id(), C, `"${wrong}" is not a project ID, so it falls through to the environment`)
+        assert.ok(warnings.some((w) => w.includes('e5.local.json') && w.includes(wrong)), `"${wrong}" is named in a warning`)
+      }
+      warnings.length = 0; fs.writeFileSync(file, JSON.stringify({ projectId: '00000000-0000-0000-0000-000000000000', owner: 'your-expo-username-or-organisation' }))
+      assert.equal(id(), C, 'the placeholder from the example file is ignored'); assert.equal(cfg().owner, undefined, 'and so is its owner placeholder'); assert.equal(warnings.length, 0, 'an untouched example file is not a mistake worth warning about')
+      fs.writeFileSync(file, JSON.stringify({ owner: 'two words' })); assert.equal(cfg().owner, undefined, 'an owner with spaces is not an Expo account')
+      process.env.EAS_PROJECT_ID = 'not-a-uuid'; fs.rmSync(file); warnings.length = 0
+      assert.equal(id(), undefined, 'a bad environment value is ignored too'); assert.ok(warnings.some((w) => w.includes('EAS_PROJECT_ID')), 'and named')
+      warnings.length = 0; fs.writeFileSync(file, JSON.stringify({ projectId: B }))
+      assert.equal(id({ extra: { eas: { projectId: 'e5-smart-helmet' } } }), B, 'a bad ID already in app.json is replaced by the good one in e5.local.json'); assert.ok(warnings.some((w) => w.includes('app.json')))
+      fs.rmSync(file); assert.equal(cfg({ extra: { eas: { projectId: 'e5-smart-helmet' } } }).extra?.eas?.projectId, undefined, 'and with nothing to replace it, it is removed rather than left to reach EAS')
+      fs.writeFileSync(file, '{ this is not json'); process.env.EAS_PROJECT_ID = C; assert.equal(id(), C, 'a damaged file must never break the build')
     } finally {
+      console.warn = savedWarn
       if (fs.existsSync(file)) fs.rmSync(file)
       if (hadFile) fs.writeFileSync(file, kept)
       if (savedEnv === undefined) delete process.env.EAS_PROJECT_ID; else process.env.EAS_PROJECT_ID = savedEnv

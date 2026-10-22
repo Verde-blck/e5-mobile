@@ -23,13 +23,18 @@ to the battery setting that decides whether a locked tablet can really be woken.
 ## What has to exist (all in E5's name)
 
 1. **The backend deploy** (Cypher). He'll say when it's live.
-2. **An Expo/EAS project, linked in `e5.local.json`.** Expo issues push tokens per project, and `eas build` needs the
-   link too. Without it the tablet reports "can't receive alerts". Find the project's ID on its page at expo.dev (or run
-   `npx eas-cli init` and, if it offers to link the existing project, say yes: it writes the id into `app.json`).
-   Then copy `e5.local.example.json` to **`e5.local.json`** and put in the real `projectId` (and `owner` if the project
-   belongs to an organisation; leave `owner` out for a personal account). **Commit it.** This file is deliberately not in
-   `app.json`: unpacking a new zip replaces `app.json`, which used to wipe these lines. No zip contains `e5.local.json`,
-   so it is never touched. (The `EAS_PROJECT_ID` environment variable still works as a last resort.)
+2. **An Expo/EAS project, linked in `e5.local.json`.** Expo issues push tokens per project, and every `eas` command needs the link.
+   Without it the tablet reports "can't receive alerts". The link is the project's **ID**, a UUID that looks like
+   `4b8e1a52-7c3d-4f6e-9a21-0d5c8b7e3f10`: find it on the project's page at expo.dev, or run `npx eas-cli init` (if it offers to link the
+   existing project, say yes; it writes the ID into `app.json`). It is **not** the project's name (`e5-smart-helmet`) or the account name.
+   Then copy `e5.local.example.json` to **`e5.local.json`** and put in the real `projectId` (and `owner` if the project belongs to an
+   organisation; leave `owner` out for a personal account). **Commit it.** This file is deliberately not in `app.json`: unpacking a new
+   zip replaces `app.json`, which used to wipe these lines. No zip contains `e5.local.json`, so it is never touched. (The `EAS_PROJECT_ID`
+   environment variable still works as a last resort.)
+
+   Only a real project ID is passed on. Anything else (the name, an account name, text left from the example) is ignored, and any `expo`
+   or `eas` command prints a line starting `[e5]` saying which value was ignored and why, instead of EAS failing with "Invalid UUID
+   appId". To see what EAS is being given: `npx expo config --type introspect` (on Windows add `| findstr /i "projectId owner"`).
 3. **A Firebase project** (console.firebase.google.com): add an Android app with package name
    `com.e5energy.smarthelmet`, download `google-services.json` and put it at the project root (or, on EAS, add it as
    a *file* environment variable named `GOOGLE_SERVICES_JSON`). The tablet still needs it to receive from Google.

@@ -60,7 +60,6 @@ export default function MoreScreen() {
   const canTrack = useCan('trackPlayback:read') && inMore
   const canWall = useCan('live:read') && liveAvailable() && inMore
   const canFences = useCan('fences:read')
-  const canCompany = useCan('profile:read')
   const company = useBranding()
   const canPhotos = useCan('photos:read')
   const canVideos = useCan('videos:read')
@@ -138,11 +137,6 @@ export default function MoreScreen() {
         {canFences ? (
           <View className="mt-3">
             <MenuRow icon="hexagon" label="Fences" hint="Work areas and no-entry zones" onPress={() => router.push('/fences')} />
-          </View>
-        ) : null}
-        {canCompany ? (
-          <View className="mt-3">
-            <MenuRow icon="briefcase" label="Company profile" hint="Name, logo and colours" onPress={() => router.navigate('/company')} />
           </View>
         ) : null}
         {canPhotos ? (
