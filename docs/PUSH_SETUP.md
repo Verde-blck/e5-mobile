@@ -32,6 +32,10 @@ to the battery setting that decides whether a locked tablet can really be woken.
    zip replaces `app.json`, which used to wipe these lines. No zip contains `e5.local.json`, so it is never touched. (The `EAS_PROJECT_ID`
    environment variable still works as a last resort.)
 
+   The label that expo.dev prints next to the ID ("ID: ") is accepted if it is copied along with the code, but leave it out. A file that
+   can't be read as JSON (most often a comma after the last line) is ignored so that it can never break a build, but `expo` and `eas`
+   commands then print a line starting `[e5]` saying so, with the reason.
+
    Only a real project ID is passed on. Anything else (the name, an account name, text left from the example) is ignored, and any `expo`
    or `eas` command prints a line starting `[e5]` saying which value was ignored and why, instead of EAS failing with "Invalid UUID
    appId". To see what EAS is being given: `npx expo config --type introspect` (on Windows add `| findstr /i "projectId owner"`).

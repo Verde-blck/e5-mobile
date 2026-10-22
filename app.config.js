@@ -25,7 +25,9 @@ function warn(message) {
  */
 function projectIdFrom(value, where) {
   if (typeof value !== 'string' || !value.trim()) return undefined
-  const id = value.trim()
+  // expo.dev shows the ID with a label ("ID: 12345678-..."), which is easy to copy along with the code: the label and any quotes or
+  // spaces round the code are not part of it.
+  const id = value.trim().replace(/^(?:project\s*id|id)\s*[:=]\s*/i, '').replace(/^["']|["']$/g, '').trim()
   if (NIL_UUID.test(id)) return undefined // the placeholder in e5.local.example.json
   if (!UUID.test(id)) {
     warn(`${where}: "${id}" is not an Expo project ID, so it was ignored. It looks like 12345678-1234-4234-8234-123456789abc: copy it from the project's page on expo.dev, or run "npx eas-cli init".`)
@@ -65,12 +67,22 @@ function ownerFrom(value) {
  * EAS builds only see what is committed. A missing, unreadable or still-placeholder file is simply ignored.
  */
 function readLocal() {
+  let text
   try {
-    const raw = JSON.parse(fs.readFileSync(path.join(__dirname, 'e5.local.json'), 'utf8'))
-    return { projectId: projectIdFrom(raw.projectId, 'e5.local.json'), owner: ownerFrom(raw.owner) }
+    text = fs.readFileSync(path.join(__dirname, 'e5.local.json'), 'utf8')
   } catch {
+    return {} // no file: that is fine, the link can come from app.json or the environment
+  }
+  let raw
+  try {
+    raw = JSON.parse(text)
+  } catch (error) {
+    // A file that can't be read is ignored (it must never break a build), but not silently: a stray comma after the last line, or a
+    // missing quote, would otherwise leave the project unlinked with no hint why.
+    warn(`e5.local.json could not be read as JSON (${error.message}), so it was ignored. A common cause is a comma after the last line. It should look like: { "projectId": "12345678-1234-4234-8234-123456789abc" }`)
     return {}
   }
+  return { projectId: projectIdFrom(raw?.projectId, 'e5.local.json'), owner: ownerFrom(raw?.owner) }
 }
 
 module.exports = ({ config }) => {

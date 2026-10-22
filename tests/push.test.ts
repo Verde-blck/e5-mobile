@@ -220,6 +220,16 @@ async function main() {
       warnings.length = 0; fs.writeFileSync(file, JSON.stringify({ projectId: B }))
       assert.equal(id({ extra: { eas: { projectId: 'e5-smart-helmet' } } }), B, 'a bad ID already in app.json is replaced by the good one in e5.local.json'); assert.ok(warnings.some((w) => w.includes('app.json')))
       fs.rmSync(file); assert.equal(cfg({ extra: { eas: { projectId: 'e5-smart-helmet' } } }).extra?.eas?.projectId, undefined, 'and with nothing to replace it, it is removed rather than left to reach EAS')
+      // The label that expo.dev shows next to the ID is not part of it, and neither are quotes or spaces round it.
+      process.env.EAS_PROJECT_ID = C; warnings.length = 0
+      for (const labelled of [`ID: ${A}`, `id: ${A}`, `Project ID: ${A}`, `ID:${A}`, ` ID : ${A} `, `"${A}"`]) { fs.writeFileSync(file, JSON.stringify({ projectId: labelled })); assert.equal(id(), A, `"${labelled}" is the ID with a label on it`) }
+      assert.equal(warnings.length, 0, 'a labelled ID is accepted without fuss')
+      fs.writeFileSync(file, JSON.stringify({ projectId: 'ID: not-an-id' })); assert.equal(id(), C, 'but a label in front of something that is not an ID is still not an ID')
+      // A file that is not valid JSON is ignored, and says so: a comma after the last line is the usual cause.
+      for (const damaged of ['{ this is not json', '{\r\n  "projectId": "' + A + '",\r\n \r\n}', '{ "projectId": "' + A + '" ', '{ "projectId": ' + A + ' }']) {
+        warnings.length = 0; fs.writeFileSync(file, damaged); assert.equal(id(), C, 'a damaged file must never break the build, and the next source is used')
+        assert.ok(warnings.length === 1 && /e5\.local\.json could not be read as JSON/.test(warnings[0]) && /comma after the last line/.test(warnings[0]), `a damaged file is named, not skipped in silence: ${damaged.slice(0, 30)}`)
+      }
       fs.writeFileSync(file, '{ this is not json'); process.env.EAS_PROJECT_ID = C; assert.equal(id(), C, 'a damaged file must never break the build')
     } finally {
       console.warn = savedWarn
