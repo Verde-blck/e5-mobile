@@ -428,7 +428,8 @@ app store involved. Expo builds it in the cloud.
 ```bash
 npm install -g eas-cli
 eas login                      # an Expo account; ideally E5's
-eas init                       # once: links the project and writes its id into app.json
+eas init                       # once: links the project. Then copy its id into e5.local.json (docs/PUSH_SETUP.md):
+                               # unpacking a zip replaces app.json, which would lose it
 npm run apk                    # eas build --platform android --profile preview
 ```
 
@@ -442,6 +443,20 @@ Play Protect may warn the first time.
 - **Version numbers.** `autoIncrement` in `eas.json` raises `versionCode` on every
   build, so a tablet accepts the new file as an update.
 - **Two profiles.** `preview` produces an installable link for testing; `production`
-  produces the same kind of APK without the internal-distribution page.
+  produces the same kind of APK without the internal-distribution page. A third, `live`,
+  is `preview` with live view and calls switched on. Each names the EAS environment whose
+  variables it uses (`eas.json`), which is where the Google Maps key comes from.
+- **Code shrinking is off.** Android's release shrinker (R8) is switched off in `app.json`
+  (the `expo-build-properties` plugin). With it on, the build failed in the `minifyReleaseWithR8`
+  step with `Missing class org.webrtc.Dav1dDecoder$Natives`: WebRTC's library refers to a piece of
+  an optional video codec that isn't packaged in it. The shrinker also removes and renames code it
+  thinks is unused, and WebRTC's native code finds its classes by name, so a mistake would only
+  show as a crash during a call. The cost is an APK a few megabytes larger. The rule that silences
+  the warning (`-dontwarn org.webrtc.Dav1dDecoder$Natives`) is kept in the same plugin, so turning
+  shrinking back on later (`enableMinifyInReleaseBuilds`) means changing one value, and then testing
+  a call on a tablet.
+- **If a build fails.** Open the build's link, and in the red phase search the log for
+  `What went wrong`; the reason is printed under it. "Gradle build failed with unknown error" is
+  only Expo's label for a failure it couldn't classify.
 - **Native code.** Calls and live video (WebRTC) will need native modules and a new APK
   installed again; small JavaScript fixes can go over the air once `expo-updates` is set up.
