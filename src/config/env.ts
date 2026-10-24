@@ -14,6 +14,13 @@ export function parseFlag(value: string | undefined): boolean {
   return /^(true|1|yes|on)$/i.test((value ?? '').trim().replace(/^["']|["']$/g, '').trim())
 }
 
+/** A switch that is ON when it isn't set: only the words that mean off (false, 0, no, off) turn it off. */
+export function flagOr(value: string | undefined, fallback: boolean): boolean {
+  const v = (value ?? '').trim().replace(/^["']|["']$/g, '').trim().toLowerCase()
+  if (v === '') return fallback
+  return !['false', '0', 'no', 'off'].includes(v)
+}
+
 /**
  * A Google Map ID from the environment, or undefined. Map IDs are hexadecimal; the value is trimmed first, because a stray space at
  * the end of a pasted setting (easy to do, invisible to see) would otherwise make Google quietly ignore the ID.
@@ -36,6 +43,9 @@ export const env = {
     process.env.EXPO_PUBLIC_MAP_TILE_URL ?? 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
   mapAttribution:
     process.env.EXPO_PUBLIC_MAP_ATTRIBUTION ?? '© OpenStreetMap contributors',
+  // Phones are kept out: the app shows only "This app is for tablets" on an Android screen under 600 dp. On unless this is set to
+  // false (for testing on a phone). Only an Android build is affected; the browser preview never is (docs/TABLETS_ONLY.md).
+  tabletOnly: flagOr(process.env.EXPO_PUBLIC_TABLET_ONLY, true),
   // The Google map on the tablet (docs/GOOGLE_MAPS.md). The key itself is a build setting (GOOGLE_MAPS_ANDROID_API_KEY, see
   // app.config.js); the Map ID, which gives the map the dashboard's style, is optional, and with none the map is Google's standard one.
   googleMapId: cleanMapId(process.env.EXPO_PUBLIC_GOOGLE_MAPS_MAP_ID),

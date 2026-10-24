@@ -3,6 +3,7 @@ docs/CALLS.md
 docs/GOOGLE_MAPS.md
 docs/GROUP_CALL.md
 docs/PUSH_SETUP.md
+docs/TABLETS_ONLY.md
 src/app/(tabs)/_layout.tsx
 src/app/(tabs)/admins.tsx
 src/app/(tabs)/alarms.tsx
@@ -212,6 +213,7 @@ src/shared/components/Chip.tsx
 src/shared/components/Container.tsx
 src/shared/components/Logo.tsx
 src/shared/components/PageTitle.tsx
+src/shared/components/PhoneBlockedScreen.tsx
 src/shared/components/PlexusField.tsx
 src/shared/components/PlexusField.web.tsx
 src/shared/components/RequirePermission.tsx
@@ -233,10 +235,12 @@ src/shared/lib/permissions.ts
 src/shared/lib/query-client.ts
 src/shared/lib/session.ts
 src/shared/lib/storage.ts
+src/shared/lib/tabletGate.ts
 src/shared/lib/token.ts
 src/shared/lib/unauthorized.ts
 src/shared/lib/uploadError.ts
 src/shared/lib/useNow.ts
+src/shared/lib/useTabletGate.ts
 src/shared/lib/wav.ts
 src/shared/lib/webAudio.ts
 src/shared/lib/withTimeout.ts
@@ -268,6 +272,7 @@ tests/stream.test.ts
 tests/stubs/expo-asset.ts
 tests/stubs/expo-secure-store.ts
 tests/stubs/react-native.ts
+tests/tabletgate.test.ts
 tests/track.test.ts
 tests/tsconfig.json
 tests/twofactor.test.ts

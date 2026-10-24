@@ -22,6 +22,7 @@ const suites = [
   ['worker', {}], // worn (the new field, not the raw code) and who a helmet is assigned to
   ['branding', {}], // company colours (with their safeguards), the form's rules, and the profile requests
   ['media', {}], // photo and video records: mapping, per-helmet fan-out, calendar, asking the helmet for clips
+  ['tabletgate', {}], // keeping phones out: the 600 dp rule, run against real device sizes
   ['nativemap', {}], // the Google map's drawing, framing, tap and engine-choice rules
   ['mapkey', {}], // the Google key: validated, put in the Android build, and never printed
   ['plexus', {}], // the sign-in panel's animated network: the web's animation, run against a stand-in canvas

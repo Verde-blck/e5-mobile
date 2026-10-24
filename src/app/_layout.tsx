@@ -26,6 +26,8 @@ import { AlarmChrome } from '@/modules/alarms/components/AlarmChrome'
 import { LiveAlarms } from '@/modules/alarms/components/LiveAlarms'
 import { PushRuntime } from '@/modules/push/components/PushRuntime'
 import { BrandTheme } from '@/modules/branding/components/BrandTheme'
+import { PhoneBlockedScreen } from '@/shared/components/PhoneBlockedScreen'
+import { useTabletGate } from '@/shared/lib/useTabletGate'
 import { prefetchBranding } from '@/modules/branding/hooks/useBranding'
 import { queryClient } from '@/shared/lib/query-client'
 import { endSession } from '@/shared/lib/session'
@@ -63,6 +65,8 @@ const FONT_ASSETS = {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(FONT_ASSETS)
+  // On a phone the app shows one message and does nothing else: no session is restored, no alarm stream or push alert starts.
+  const gate = useTabletGate()
   const isBootstrapping = useAuthStore((s) => s.isBootstrapping)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   // The company requires two-step verification and this account hasn't set it up: the backend refuses everything but sign-in and the
@@ -70,8 +74,12 @@ export default function RootLayout() {
   const mustSetup = useAuthStore((s) => s.user?.mustSetup2fa === true)
   const usable = isAuthenticated && !mustSetup
 
-  // Restore the saved session once, on launch.
+  // Restore the saved session once, on launch (not on a phone, which is only shown the message).
   useEffect(() => {
+    if (gate.blocked) {
+      useAuthStore.getState().setBootstrapping(false)
+      return
+    }
     let alive = true
     void (async () => {
       try {
@@ -84,7 +92,8 @@ export default function RootLayout() {
     return () => {
       alive = false
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gate.blocked])
 
   // A 401/403 from anywhere in the app means the token is dead.
   useEffect(() => onUnauthorized(() => void endSession()), [])
@@ -99,6 +108,7 @@ export default function RootLayout() {
   }, [ready])
 
   if (!ready) return null
+  if (gate.blocked) return <PhoneBlockedScreen smallestDp={gate.smallestDp} />
 
   return (
     <SafeAreaProvider>

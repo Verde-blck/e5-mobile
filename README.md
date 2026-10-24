@@ -59,6 +59,12 @@ panel colour towards the bottom) is the web page's site plan, drawn natively.
 - The nodes and links use the company's colour when it has set one (worked out from its main colour), and E5's mint otherwise.
 - It exists only on the sign-in screen, so nothing is animating once someone is signed in.
 
+## Tablets only
+
+On an Android screen under 600 dp (every phone) the app shows only "This app is for tablets", with no sign-in and no way past it; nothing
+runs behind it. It cannot stop a phone installing the APK, only stop it being used. Turn it off for testing with `EXPO_PUBLIC_TABLET_ONLY=false`.
+The rule, its edge cases (foldables, a large Display size) and how to test it: [docs/TABLETS_ONLY.md](docs/TABLETS_ONLY.md).
+
 ## After unpacking a new zip
 
 Unpacking a zip over the project folder adds and replaces files but never deletes ones that were removed or moved, so old copies pile
