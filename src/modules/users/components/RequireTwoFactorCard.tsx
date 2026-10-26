@@ -3,11 +3,6 @@ import { Switch, View } from 'react-native'
 import { Text } from '@/shared/components/Text'
 import { useSecurityPolicy, useSetSecurityPolicy } from '../hooks/useAdmins'
 
-/**
- * The company policy: must everyone use two-step verification? When it is on, anyone without it can still sign in but is taken
- * straight to set it up, and nobody can turn it off. It changes everyone's sign-in, so it is changed deliberately, with the
- * result shown.
- */
 export function RequireTwoFactorCard({ canEdit }: { canEdit: boolean }) {
   const { require2fa, isLoading, isError } = useSecurityPolicy()
   const set = useSetSecurityPolicy()

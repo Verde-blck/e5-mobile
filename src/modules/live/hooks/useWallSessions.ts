@@ -5,11 +5,8 @@ import { defaultDeps } from '../lib/defaultDeps'
 import { HelmetSession } from '../lib/session'
 import { WallSessions } from '../lib/wall'
 
-/**
- * The wall's sessions for the screen that uses it. Leaving the screen (another tab) disconnects every helmet; coming
- * back reconnects the same ones. Reconnecting is started from a timer that an undo cancels, never straight from an
- * effect, so React running an effect twice in development can't send a helmet start, stop, start.
- */
+// Reconnecting is started from a timer that an undo cancels, never straight from an effect, so
+// React running an effect twice in development can't send a helmet start, stop, start.
 export function useWallSessions(): WallSessions {
   const [wall] = useState(
     () =>

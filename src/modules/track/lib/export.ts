@@ -1,9 +1,5 @@
 import { Platform, Share } from 'react-native'
 
-/**
- * Hands the CSV to whoever asked for it: a file download in the browser preview, the system share
- * sheet on a tablet (mail, Drive, WhatsApp, "copy"...).
- */
 export async function exportCsv(filename: string, csv: string): Promise<'downloaded' | 'shared' | 'cancelled'> {
   if (Platform.OS === 'web') {
     // Byte-order mark so Excel reads it as UTF-8 rather than mangling accents.

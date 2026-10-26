@@ -3,11 +3,8 @@ import { AccessibilityInfo, StyleSheet, View } from 'react-native'
 import { WebView } from 'react-native-webview'
 import { plexusHtml } from '@/shared/brand/plexus'
 
-/**
- * The sign-in panel's animated network (see brand/plexus.ts), drawn in a transparent web view that touches pass straight through.
- * If the device asks for reduced motion it draws one still frame. It waits to find that out first, so a person who has asked for
- * no motion never sees any.
- */
+// Waits to learn the device's reduced-motion setting before
+// drawing, so someone who asked for no motion never sees any.
 export function PlexusField({ color }: { color: string }) {
   const [reduce, setReduce] = useState<boolean | null>(null)
   useEffect(() => {

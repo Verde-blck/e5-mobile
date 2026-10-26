@@ -53,7 +53,6 @@ function MenuRow({
 
 export default function MoreScreen() {
   const user = useAuthStore((s) => s.user)
-  // On a tablet these are modules in the rail; the bottom bar of a narrow screen has no room, so they are here.
   const { size } = useLayout()
   const inMore = size === 'compact'
   const canWifi = useCan('wifi:read')
@@ -64,7 +63,6 @@ export default function MoreScreen() {
   const canPhotos = useCan('photos:read')
   const canVideos = useCan('videos:read')
   const canAdmins = useCan('users:read') && inMore
-  // Only offered where it can work: a real build keeps it hidden until voice messages are switched on.
   const canGroupCall = (useCan('live:write') || useCan('groupCall:read')) && liveAvailable() && inMore
   const initial = (user?.name ?? '?').trim().charAt(0).toUpperCase()
 
@@ -74,7 +72,6 @@ export default function MoreScreen() {
       message: 'You will need your username and password to sign back in.',
       confirmLabel: 'Sign out',
       destructive: true,
-      // The tablet stops getting this account's alarms first, while the sign-in still works.
       onConfirm: () => void unregisterThisTablet().then(() => endSession()),
     })
   }

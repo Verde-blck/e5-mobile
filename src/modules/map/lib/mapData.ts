@@ -4,11 +4,8 @@ import type { DeviceView, Presence } from '@/modules/devices/types'
 import type { Fence } from '@/modules/fences/types'
 import type { MapAlarm, MapDraft, MapFence, MapHelmet } from '../types'
 
-/**
- * A usable position: a finite number inside the world's range, and not (0, 0).
- * A helmet with no GPS fix can report 0, 0 ("null island", in the Atlantic off
- * West Africa); drawing that would put a helmet in the sea.
- */
+// A usable position is finite, in the world's range and not (0, 0): a helmet with no
+// fix can report 0, 0 ("null island"), which would draw it in the Atlantic.
 export function hasPosition(lat: number | undefined, lng: number | undefined): boolean {
   if (lat === undefined || lng === undefined) return false
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false
@@ -16,15 +13,10 @@ export function hasPosition(lat: number | undefined, lng: number | undefined): b
   return !(lat === 0 && lng === 0)
 }
 
-/**
- * Splits the fleet into helmets that can be drawn and helmets that can't yet,
- * and flags helmets that have an unresolved alarm.
- */
 export function buildMapHelmets(
   devices: readonly DeviceView[],
   activeAlarms: readonly Alarm[]
 ): { placed: MapHelmet[]; unplaced: DeviceView[] } {
-  // The worst unresolved alarm per helmet: critical beats warning.
   const worst = new Map<string, 'critical' | 'warning'>()
   for (const alarm of activeAlarms) {
     if (alarm.status !== 'active') continue
@@ -54,7 +46,6 @@ export function buildMapHelmets(
   return { placed, unplaced }
 }
 
-/** Unresolved alarms that carry a position. */
 export function buildMapAlarms(alarms: readonly Alarm[]): MapAlarm[] {
   return alarms
     .filter((a) => a.status === 'active' && hasPosition(a.lat, a.lng))

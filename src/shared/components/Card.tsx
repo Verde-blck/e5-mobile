@@ -19,7 +19,6 @@ export function SectionTitle({ children, className }: { children: string; classN
   )
 }
 
-/** A label on the left, a value on the right. The workhorse of detail screens. */
 export function Row({
   label,
   value,

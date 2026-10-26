@@ -8,7 +8,6 @@ import { createRunner } from './harness'
 const { t, report } = createRunner()
 const script = join(process.cwd(), 'scripts', 'prune-stale.mjs')
 
-/** A folder shaped like the project, with ten files that belong and the given extras that don't. */
 function project(extras: string[], manifest: 'good' | 'none' | 'tiny' = 'good') {
   const root = mkdtempSync(join(tmpdir(), 'e5-prune-'))
   const put = (file: string) => { mkdirSync(dirname(join(root, file)), { recursive: true }); writeFileSync(join(root, file), 'x') }

@@ -10,7 +10,6 @@ function FencesScreen() {
   return (
     <Screen top={false}>
       <Container max={640}>
-        {/* Choosing a fence shows it on the Live Map. */}
         <FenceListPanel
           onSelect={(id) => {
             selectFence(id)

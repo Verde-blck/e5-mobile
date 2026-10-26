@@ -19,17 +19,12 @@ import type { MediaQuery } from '@/modules/media/types'
 
 type Tab = 'uploaded' | 'helmet'
 
-/**
- * Video Record: the recordings that have reached the server, with a calendar of when they were made, and a second tab for
- * the clips still on a helmet's memory card (which you can ask it to upload).
- */
 function VideosScreen() {
   const queryClient = useQueryClient()
   const { devices } = useDeviceViews()
   const [tab, setTab] = useState<Tab>('uploaded')
   const [query, setQuery] = useState<MediaQuery>({ kind: 'video' })
   const { media, isLoading, isFetching, isError, refetch } = useMediaList(query)
-  // Recordings the helmet has flagged but not yet delivered. Worth surfacing, rather than leaving an operator to wonder why the list looks short.
   const pending = media.filter((m) => m.status === 'uploading').length
   const filtered = !!(query.deviceId || query.date || query.search)
 

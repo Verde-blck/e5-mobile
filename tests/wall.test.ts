@@ -10,7 +10,6 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const until = async (cond: () => boolean, ms = 1500) => { const end = Date.now() + ms; while (!cond() && Date.now() < end) await sleep(5); assert.ok(cond(), 'timed out waiting') }
 const stream = (): StreamLike => ({ getTracks: () => [], getAudioTracks: () => [], getVideoTracks: () => [] })
 
-/** A wall wired to fake helmets: `broken` ones never produce a picture. */
 function wall(broken: string[] = []) {
   const log: string[] = []; const background: Array<(b: boolean) => void> = []; let appWatcher: ((b: boolean) => void) | null = null
   const deps = (id: string): SessionDeps => ({

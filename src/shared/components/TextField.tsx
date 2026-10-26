@@ -8,10 +8,8 @@ import { Text } from './Text'
 interface TextFieldProps extends Omit<TextInputProps, 'className'> {
   label: string
   error?: string | null
-  /** Password-style field with a show/hide toggle. */
   secret?: boolean
   mono?: boolean
-  /** A tall, centred, letter-spaced field for a one-time code. */
   code?: boolean
   className?: string
 }
@@ -43,7 +41,6 @@ export function TextField({ label, error, secret, mono, code, className, ...inpu
             input.onBlur?.(e)
           }}
           placeholderTextColor="#94A3B8"
-          // The typing cursor and selection in the brand teal (Android; the browser ignores these).
           cursorColor={brand.primary}
           selectionColor={`${brand.primary}40`}
           accessibilityLabel={label}

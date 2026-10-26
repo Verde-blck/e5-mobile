@@ -65,6 +65,13 @@ On an Android screen under 600 dp (every phone) the app shows only "This app is 
 runs behind it. It cannot stop a phone installing the APK, only stop it being used. Turn it off for testing with `EXPO_PUBLIC_TABLET_ONLY=false`.
 The rule, its edge cases (foldables, a large Display size) and how to test it: [docs/TABLETS_ONLY.md](docs/TABLETS_ONLY.md).
 
+## Known gaps
+
+- **The alarm sounds are generated tones.** `assets/sounds/sos.wav` and `chime.wav` stand in for E5's own recordings; replace the files and
+  nothing else needs to change.
+- **Not yet run on a real tablet or helmet:** live view, calls and group calls, the Google map, and the sign-in animation in the tablet's
+  web view. Each is described in its own guide under `docs/`.
+
 ## After unpacking a new zip
 
 Unpacking a zip over the project folder adds and replaces files but never deletes ones that were removed or moved, so old copies pile

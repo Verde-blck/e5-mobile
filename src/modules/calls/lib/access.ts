@@ -1,6 +1,5 @@
 import { isSos, type Alarm } from '@/modules/alarms/types'
 
-/** How long after an SOS alarm anyone signed in may join its call (the backend's rule). */
 export const SOS_CALL_WINDOW_MS = 30 * 60_000
 
 export type CallAccess =
@@ -8,13 +7,6 @@ export type CallAccess =
   | { allowed: true; basis: 'permission' }
   | { allowed: false }
 
-/**
- * Whether this account may call this helmet, by the backend's rule (the tablet only decides what to
- * offer; the backend decides what is allowed):
- *  - anyone signed in may join a call for a helmet with an OPEN SOS alarm raised in the last 30 minutes;
- *  - any other call needs the live-view management permission (SURVEILLANCE_MANAGE, `live:write`).
- * An SOS wins when both hold, so the screen can say why the call is being made.
- */
 export function callAccess({
   deviceId,
   alarms,

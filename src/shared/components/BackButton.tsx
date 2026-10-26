@@ -4,10 +4,6 @@ import Feather from '@expo/vector-icons/Feather'
 import { useBrandColours } from '@/modules/branding/hooks/useBranding'
 import { cn } from '@/shared/lib/cn'
 
-/**
- * The back arrow on every module page: it takes you to the initial page (the Dashboard, or the first page the account
- * may use). `floating` is the round button that sits over the map.
- */
 export function BackButton({ floating = false, className }: { floating?: boolean; className?: string }) {
   const brand = useBrandColours()
   return (

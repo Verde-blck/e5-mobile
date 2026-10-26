@@ -33,16 +33,11 @@ function dayLabel(ts: number): string {
   return new Date(ts).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
 }
 
-/**
- * Uptime rather than location: was this helmet switched on and reporting? It sits beside the route
- * because the two answer different questions: the route is for incidents, this is for compliance.
- */
 export function AvailabilityChart({ summary }: { summary: AvailabilitySummary }) {
   const { days } = summary
   if (days.length === 0) return null
 
   const peak = Math.max(...days.map((d) => d.availableMs), 60_000)
-  // Round the axis up to a whole hour so the scale reads cleanly.
   const axisMax = Math.ceil(peak / 3_600_000) * 3_600_000
   const ratio = summary.rangeMs > 0 ? summary.totalAvailableMs / summary.rangeMs : 0
   const tone = ratio >= 0.5 ? 'bg-emerald-500' : ratio >= 0.2 ? 'bg-amber-500' : 'bg-red-500'

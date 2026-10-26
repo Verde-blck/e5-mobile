@@ -9,11 +9,8 @@ import { Scrubber } from './Scrubber'
 
 export const SPEEDS = [1, 4, 16, 64] as const
 
-/**
- * How fast to advance. Fixes are irregularly spaced, so playback steps point to point (every
- * position shown is a real reading, never a guess between two). 1x is two points a second; faster
- * speeds skip points rather than redrawing the map dozens of times a second.
- */
+// Fixes are irregularly spaced, so playback steps point to point (every
+// position shown is a real reading, never a guess between two).
 export function playbackPace(speed: number): { tickMs: number; step: number } {
   const pointsPerSecond = Math.min(speed * 2, 120)
   const tickMs = Math.max(66, 1000 / pointsPerSecond)
@@ -64,7 +61,6 @@ export function PlaybackBar({
           icon={playing ? 'pause' : 'play'}
           className="h-11 px-5"
           onPress={() => {
-            // Restart from the beginning if it's sitting at the end.
             if (cursor >= last) setCursor(0)
             setPlaying(!playing)
           }}

@@ -12,16 +12,6 @@ import { alarmLabel, isSos, type Alarm } from '../types'
 import { useAlertStore } from '../store/alertStore'
 import { openAlarm } from './AlarmCard'
 
-/**
- * The persistent red banner, on every screen, for as long as a critical alarm
- * is unresolved and inside its 30-minute window.
- *
- * "Silence" stops the siren on this phone only; the banner stays until someone
- * resolves the alarm (which every open phone and dashboard hears about).
- * Opening an alarm silences it too, since that is what acknowledging means.
- *
- * A "Join call" button belongs here for SOS alarms; it arrives with calling.
- */
 function JoinCall({ deviceId, onJoin }: { deviceId: string; onJoin: () => void }) {
   const { supported, access } = useCallAccess(deviceId)
   if (!supported || !access.allowed) return null
@@ -42,7 +32,6 @@ function JoinCall({ deviceId, onJoin }: { deviceId: string; onJoin: () => void }
 
 export function SosBanner({ alarms }: { alarms: Alarm[] }) {
   const insets = useSafeAreaInsets()
-  // On a wide screen the text and buttons share one row, which keeps the banner short.
   const { wide } = useLayout()
   const now = useNow(10_000)
   const silenced = useAlertStore((s) => s.silenced)

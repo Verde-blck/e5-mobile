@@ -1,17 +1,5 @@
 import type { StreamLike } from '../types'
 
-/*
- * WebRTC with the media server (ZLMediaKit), as in the backend's guide and the web dashboard.
- *
- * The exchange is one HTTP request: our SDP offer is POSTed as plain text and the answer comes back as
- * { code, sdp }. code 0 means connected; anything else usually means the helmet hasn't started sending video yet,
- * which is normal for the first 5 to 10 seconds, so callers retry. There are no STUN or TURN servers: the media
- * server's answer carries its own address.
- *
- * Nothing in this file touches a platform: it works with anything shaped like a peer connection, so it is tested
- * with fakes and shared by the browser preview and the tablet.
- */
-
 export interface PeerLike {
   createOffer(): Promise<{ sdp?: string }>
   setLocalDescription(description: { sdp?: string }): Promise<void>
@@ -19,10 +7,8 @@ export interface PeerLike {
 }
 
 export interface MediaConnection {
-  /** Incoming audio and video. Empty for a send-only connection. */
   stream: StreamLike
   close: () => void
-  /** Called once if the connection drops after it was established. */
   onLost: (callback: () => void) => void
 }
 
@@ -33,7 +19,7 @@ export class NotReadyError extends Error {
   }
 }
 
-/** The session was ended while this was in progress. (Hermes has no DOMException, so it is our own.) */
+// (Hermes has no DOMException, so it is our own.)
 export class SessionEndedError extends Error {
   constructor() {
     super('Session ended')
@@ -41,7 +27,7 @@ export class SessionEndedError extends Error {
   }
 }
 
-/** Each attempt gives up after this long, so a stalled request can't hang a retry loop. */
+// Each attempt gives up after this long, so a stalled request can't hang a retry loop.
 export const ATTEMPT_TIMEOUT_MS = 8_000
 
 export async function exchange(url: string, pc: PeerLike, signal: AbortSignal, fetchImpl: typeof fetch = fetch, timeoutMs: number = ATTEMPT_TIMEOUT_MS): Promise<void> {
@@ -69,10 +55,6 @@ export async function exchange(url: string, pc: PeerLike, signal: AbortSignal, f
   }
 }
 
-/**
- * Repeats an attempt every couple of seconds until it works, the deadline passes, or the session ends. The
- * guide's timing: the stream is ready 5 to 10 seconds after start, so retry every 2 seconds.
- */
 export async function connectWithRetry(
   attempt: () => Promise<MediaConnection>,
   signal: AbortSignal,
@@ -94,5 +76,4 @@ export async function connectWithRetry(
   throw lastError ?? new Error('Could not connect')
 }
 
-/** Mock addresses (sample data mode), answered by a generated stream instead of a media server. */
 export const MOCK_URL_PREFIX = 'mock:'

@@ -39,10 +39,6 @@ function Note({ children, tone = 'slate' }: { children: string; tone?: 'slate' |
   )
 }
 
-/**
- * One alarm in full. Used as its own screen on a phone or portrait tablet, and in
- * the right-hand pane on a wide screen (`embedded`, where the screen's header isn't ours to set).
- */
 export function AlarmDetailView({ id, embedded = false }: { id: string; embedded?: boolean }) {
   const { alarms, now, isLoading } = useAlarms()
   const detail = useAlarmDetail(id)
@@ -51,13 +47,12 @@ export function AlarmDetailView({ id, embedded = false }: { id: string; embedded
   const resolve = useResolveAlarm()
   const silence = useAlertStore((s) => s.silence)
 
-  // Opening an alarm is acknowledging it: that's what stops the siren.
   useEffect(() => {
     if (id) silence([id])
   }, [id, silence])
 
-  // The live list is the source of truth for status (the stream keeps it
-  // current); the detail request is the fallback for an alarm not in it.
+  // The live list is the source of truth for status because the stream keeps it current;
+  // the detail request is only the fallback for an alarm that isn't in the list.
   const fromList = alarms.find((a) => a.id === id)
   const alarm: Alarm | undefined =
     fromList ??

@@ -30,10 +30,6 @@ import { HelmetSettingsSection } from '@/modules/settings/components/HelmetSetti
 import { lastSeenLabel } from '@/modules/devices/lib/presence'
 import { wornLabel } from '@/modules/devices/lib/worker'
 
-/**
- * One helmet in full. Its own screen on a phone or portrait tablet; the right-hand
- * pane of the Monitoring tab on a wide screen (`embedded`).
- */
 export function HelmetDetailView({ id, embedded = false }: { id: string; embedded?: boolean }) {
   const { devices, now, isLoading, isError, refetch } = useDeviceViews()
   const device = devices.find((d) => d.id === id)

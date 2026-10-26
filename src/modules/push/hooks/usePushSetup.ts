@@ -16,10 +16,8 @@ const appVersion = Constants.expoConfig?.version ?? '0.0.0'
 let running = false
 let handledLaunchTap = false
 
-/**
- * Brings this tablet's alarm alerts up to date. `ask` is true only when the person has pressed
- * "Turn on" (or Try again), so the system permission prompt never appears out of the blue.
- */
+// `ask` is true only when the person has pressed "Turn on" (or Try again),
+// so the system permission prompt never appears out of the blue.
 export async function runPushSetup(ask: boolean): Promise<void> {
   const { setStatus } = usePushStore.getState()
   if (!env.pushEnabled) {
@@ -42,7 +40,6 @@ function refreshAlarms() {
   void queryClient.invalidateQueries({ queryKey: ALARMS_KEY })
 }
 
-/** A push that arrived (or was tapped) is acted on only if it parses as one of ours. */
 function onPush(data: unknown, tapped: boolean) {
   const message = parsePushData(data)
   if (!message) return
@@ -55,16 +52,10 @@ function onPush(data: unknown, tapped: boolean) {
   if (tapped) openAlarm(message.alarmId)
 }
 
-/**
- * Mounted while signed in. Keeps alerts set up, re-registers when Google rotates the token, opens
- * the alarm when its notification is tapped (including the tap that launched the app), and
- * refreshes the alarm list when a push arrives.
- */
 export function usePushSetup(): void {
   useEffect(() => {
     void runPushSetup(false)
 
-    // Coming back from the tablet's settings after allowing notifications: pick it up.
     const appState = AppState.addEventListener('change', (state) => {
       if (state === 'active' && usePushStore.getState().status === 'blocked') void runPushSetup(false)
     })
@@ -81,7 +72,6 @@ export function usePushSetup(): void {
     const stopReceive = notifications.onReceive((data) => onPush(data, false))
     const stopTap = notifications.onTap((data) => onPush(data, true))
 
-    // The notification that launched the app, handled once per run, after navigation is ready.
     if (!handledLaunchTap) {
       handledLaunchTap = true
       const launch = notifications.initialTap()

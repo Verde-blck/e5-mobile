@@ -12,7 +12,6 @@ const page = (content: unknown[], last = true) => ({ content, last, totalElement
 const local = (y: number, mo: number, d: number, h = 12, mi = 0, s = 0) => new Date(y, mo - 1, d, h, mi, s).getTime()
 
 async function main() {
-  // =============== what the backend sends, turned into items ===============
   await t('a photo with a real link is available; the placeholder text the backend stores before the upload is "uploading", never a broken picture', () => {
     const ok = toPhoto({ id: 5, deviceId: '866652022956404', imageUrl: 'https://r2.example/p5.jpg', latitude: '6.45', longitude: '3.39', capturedAt: '2026-10-20T10:00:00' })
     assert.deepEqual([ok.status, ok.url, ok.thumbnailUrl, ok.id, ok.kind, ok.lat, ok.lng, ok.deviceName], ['available', 'https://r2.example/p5.jpg', 'https://r2.example/p5.jpg', '5', 'photo', 6.45, 3.39, '…56404'])
@@ -36,7 +35,6 @@ async function main() {
     const b = dayBounds('2026-10-20'); assert.deepEqual([b.from, b.to], [local(2026, 10, 20, 0, 0, 0), new Date('2026-10-20T23:59:59.999').getTime()])
   })
 
-  // =============== listing: one request per helmet ===============
   await t('"all devices" asks every helmet separately (there is no fleet-wide list), for photos and videos, and puts the newest first', async () => {
     http.calls.length = 0
     http.routes = {
@@ -71,7 +69,6 @@ async function main() {
     await fetchMedia({ kind: 'video', deviceId: 'a' }); assert.equal(http.calls.length, 5, 'stops at five pages however many there are')
   })
 
-  // =============== the calendar ===============
   await t('the calendar adds up every helmet\'s days, and a helmet that fails just leaves its days out', async () => {
     http.routes = {
       'GET /devices': () => ({ status: 200, data: [{ deviceId: 'a' }, { deviceId: 'b' }, { deviceId: 'c' }] }),
@@ -88,7 +85,6 @@ async function main() {
     assert.deepEqual([shiftMonth('2026-01', -1), shiftMonth('2026-12', 1), shiftMonth('2026-10', 0), shiftMonth('2026-03', -14)], ['2025-12', '2027-01', '2026-10', '2025-01']); assert.equal(dayKey('2026-10', 5), '2026-10-05'); assert.equal(monthKey(new Date(2026, 9, 21)), '2026-10')
   })
 
-  // =============== recordings still on the helmet ===============
   await t('the helmet\'s report is read safely: files without a name are dropped, and only an explicit "uploaded: true" counts', () => {
     const r = toReport({ reportedAt: '2026-10-20T10:00:00', files: [{ fileName: 'a.mp4', recordedAt: '2026-10-20T09:00:00', uploaded: true }, { fileName: 'b.mp4', uploaded: 'yes' as never, uploadRequestedAt: '2026-10-20T09:30:00' }, { recordedAt: '2026-10-20T08:00:00' }] })
     assert.deepEqual(r.files.map((f) => [f.fileName, f.uploaded, f.uploadRequestedAt !== null]), [['a.mp4', true, false], ['b.mp4', false, true]]); assert.deepEqual(toReport(null), { reportedAt: null, files: [] })

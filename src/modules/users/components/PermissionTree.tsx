@@ -13,7 +13,6 @@ function Box({ on, disabled, label, onPress, size = 22 }: { on: boolean; disable
       accessibilityRole="checkbox"
       accessibilityLabel={label}
       accessibilityState={{ checked: on, disabled }}
-      // react-native-web doesn't write aria-checked from accessibilityState.
       aria-checked={on}
       onPress={onPress}
       style={{ width: size, height: size }}
@@ -24,11 +23,8 @@ function Box({ on, disabled, label, onPress, size = 22 }: { on: boolean; disable
   )
 }
 
-/**
- * Permissions for one administrator. An area that splits view from change shows two boxes: View grants the
- * plain code, Can change grants the _MANAGE code (which includes view), so only one of the two is ever stored.
- * What can be ticked is limited to what the signed-in person holds themselves.
- */
+// "View" grants the plain code and "Can change" the _MANAGE code,
+// which includes view, so only one of the two is ever stored.
 export function PermissionTree({
   granted,
   available,

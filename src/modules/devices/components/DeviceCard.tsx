@@ -11,10 +11,6 @@ import { lastSeenLabel } from '../lib/presence'
 import { BatteryChip } from './BatteryChip'
 import { PresenceBadge } from './PresenceBadge'
 
-/**
- * Opens a helmet from anywhere. On a wide screen it opens in the Monitoring
- * tab's right-hand pane; on a narrow one, as a full screen.
- */
 export function openHelmet(id: string) {
   const canUseTab = useAuthStore.getState().user?.permissions.includes('devices:read') ?? false
   if (detailGoesInPane(isTwoPaneNow(), canUseTab)) {

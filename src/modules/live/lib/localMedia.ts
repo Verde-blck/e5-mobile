@@ -1,11 +1,7 @@
 import { mediaDevices } from 'react-native-webrtc'
 import type { StreamLike } from '../types'
 
-/**
- * The tablet's microphone, and its front camera for a video call. Android asks the person for each the first time; a
- * refusal rejects, and the session reports it before the helmet is touched. A tablet with no camera carries on as an
- * audio call rather than failing, and says so.
- */
+// A tablet with no camera carries on as an audio call rather than failing, and says so.
 export async function getLocalMedia(withCamera: boolean): Promise<{ stream: StreamLike; noCamera: boolean }> {
   try {
     const stream = await mediaDevices.getUserMedia({ audio: true, video: withCamera ? { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 15 }, facingMode: 'user' } : false })

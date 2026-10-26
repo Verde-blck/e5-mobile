@@ -4,7 +4,6 @@ import { MIN_FENCE_ACROSS_M } from '../types'
 const EARTH_M = 6_371_000
 const rad = (d: number) => (d * Math.PI) / 180
 
-/** Metres between two points (haversine; plenty for fences of a few km). */
 export function distanceM(a: LatLng, b: LatLng): number {
   const dLat = rad(b.lat - a.lat)
   const dLng = rad(b.lng - a.lng)
@@ -13,10 +12,6 @@ export function distanceM(a: LatLng, b: LatLng): number {
   return 2 * EARTH_M * Math.asin(Math.sqrt(h))
 }
 
-/**
- * Smallest width of the shape, in metres: a circle's diameter, or the
- * narrower side of a polygon's bounding box. What the 50 m guidance is about.
- */
 export function narrowestAcrossM(draft: Pick<FenceDraft, 'type' | 'radiusMeters' | 'points'>): number | null {
   if (draft.type === 'ROUND') return draft.radiusMeters > 0 ? draft.radiusMeters * 2 : null
   if (draft.points.length < 3) return null
@@ -38,7 +33,6 @@ export function isTooSmall(draft: Pick<FenceDraft, 'type' | 'radiusMeters' | 'po
 
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/
 
-/** Problems that stop a save, in the order a person would fix them. */
 export function validateDraft(draft: FenceDraft): string[] {
   const problems: string[] = []
   if (!draft.name.trim()) problems.push('Give the fence a name.')
@@ -55,7 +49,6 @@ export function validateDraft(draft: FenceDraft): string[] {
   return problems
 }
 
-/** "22:00 to 06:00 (overnight)" for a period that wraps past midnight. */
 export function describePeriod(p: ValidPeriod): string {
   return `${p.start} to ${p.end}${p.end < p.start ? ' (overnight)' : ''}`
 }

@@ -10,15 +10,14 @@ import {
 import { getMockDevice, getMockFleet, getMockSummary } from './devices.mock'
 import type { Device, FixType, FleetSummary, SimStatus } from '../types'
 
-/** Exactly what GET /api/devices returns — every value a string. */
 interface ApiDevice {
   deviceId: string
-  /** Display name, e.g. "Test Helmet". Empty until someone names it. */
   name?: string | null
   lastBatteryLevel?: string | null
   lastLatitude?: string | null
   lastLongitude?: string | null
-  /** Whether it is on someone's head. null when the helmet is offline or hasn't reported, so a disconnected helmet never shows "Yes". */
+  // Whether it is on someone's head. null when the helmet is offline or
+  // hasn't reported, so a disconnected helmet never shows "Yes".
   worn?: boolean | null
   wearState?: 'worn' | 'not_worn' | 'unknown' | null
   workerName?: string | null
@@ -30,18 +29,14 @@ interface ApiDevice {
   accountId?: string | null
   active?: boolean
   online?: boolean
-  /** Same "GAS--value;GAS--value" format as telemetry. Null until a sensor reports. */
   lastRawGasData?: string | null
   lastGasAt?: string | null
-  // Location accuracy and SIM, live since 16 Oct. All null for a helmet that
-  // is offline until its next report.
   lastFixType?: string | null
   lastGpsLevel?: string | null
   lastAccuracyMeters?: number | string | null
   simStatus?: number | null
   simPhoneNumber?: string | null
   simDataUsedMb?: number | string | null
-  /** "wifi" or "4g". */
   networkType?: string | null
 }
 
@@ -56,17 +51,12 @@ function toSimStatus(value: unknown): SimStatus | undefined {
 
 function toDevice(api: ApiDevice): Device {
   return {
-    // The deviceId stays the key for every API call; the name is display
-    // only. A helmet without one shows its shortened ID instead.
     id: api.deviceId,
     name: api.name?.trim() || shortDeviceName(api.deviceId),
     named: Boolean(api.name?.trim()),
-    // site, assignedTo and activeAlarm have no source in the API yet.
     active: api.active ?? true,
-    // networkType says which link the helmet is on right now.
     connectivity: api.networkType === 'wifi' ? 'wifi' : 'sim',
-    // Presence is derived from this timestamp rather than from the API's
-    // `online` flag, so every screen agrees. See lib/presence.ts.
+    // Presence is derived from this timestamp rather than from the API's `online` flag, so every screen agrees.
     lastSeenAt: ts(api.lastSeenAt) ?? 0,
     worker: api.workerName?.trim() ? { name: api.workerName.trim(), staffId: api.workerStaffId?.trim() || undefined, phone: api.workerPhone?.trim() || undefined } : undefined,
     activeAlarm: null,

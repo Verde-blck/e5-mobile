@@ -3,11 +3,8 @@ import Svg, { Circle, Defs, Pattern, RadialGradient, Rect, Stop } from 'react-na
 import { BRAND } from '@/shared/brand/mark'
 import { useBrandColours } from '@/modules/branding/hooks/useBranding'
 
-/**
- * The app's backdrop, from the web's `.app-canvas`: a fine dot grid for texture and two wide washes
- * tinted with the brand (teal from the top-left, deep green from the top-right). Kept deliberately
- * faint: this is a safety app, and an alarm's red and amber must stay the most salient thing on screen.
- */
+// Kept deliberately faint: this is a safety app, and an alarm's
+// red and amber must stay the most salient thing on screen.
 export function AppCanvas() {
   const { width, height } = useWindowDimensions()
   const brand = useBrandColours()

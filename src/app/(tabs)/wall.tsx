@@ -18,11 +18,6 @@ import { WALL_DATA_NOTE, WALL_MAX, toggleSelection, wallColumns } from '@/module
 const DOT = { online: 'bg-emerald-500', degraded: 'bg-amber-400', offline: 'bg-slate-300' } as const
 const GAP = 12
 
-/**
- * Up to six helmets live at once, side by side. Every tile is muted; enlarge one to hear it, so there is never more
- * than one helmet talking. Each tile is its own connection, so one weak signal never affects the others. Leaving this
- * screen disconnects from every helmet, and coming back reconnects the same ones.
- */
 function LiveWallScreen() {
   const wall = useWallSessions()
   const { devices } = useDeviceViews()

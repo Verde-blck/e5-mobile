@@ -54,14 +54,13 @@ async function main() {
     assert.ok(!('id' in draft) && !('hasWarningAudio' in draft)); assert.equal(draft.name, '  Site A  ')
   })
 
-  // ---- the web's geometry and validation rules, ported unchanged ----
   await t('distance: one degree of latitude is about 111 km', () => assert.ok(Math.abs(distanceM({ lat: 0, lng: 0 }, { lat: 1, lng: 0 }) - 111_195) < 300))
   await t('a fence under 50 m across is flagged (GPS drifts 10-50 m): circle = its diameter, polygon = its narrower side', () => {
     assert.equal(MIN_FENCE_ACROSS_M, 50)
     assert.equal(narrowestAcrossM({ type: 'ROUND', radiusMeters: 100, points: [] }), 200)
     assert.equal(isTooSmall({ type: 'ROUND', radiusMeters: 24, points: [] }), true); assert.equal(isTooSmall({ type: 'ROUND', radiusMeters: 25, points: [] }), false, 'exactly 50 m is fine')
     assert.equal(narrowestAcrossM({ type: 'POLYGON', radiusMeters: 0, points: [{ lat: 6, lng: 3 }, { lat: 6, lng: 3.001 }] }), null, 'fewer than 3 corners: nothing to measure')
-    const thin = [{ lat: 6.5, lng: 3.5 }, { lat: 6.5, lng: 3.5004 }, { lat: 6.5009, lng: 3.5004 }, { lat: 6.5009, lng: 3.5 }]   // about 44 m wide, 100 m tall
+    const thin = [{ lat: 6.5, lng: 3.5 }, { lat: 6.5, lng: 3.5004 }, { lat: 6.5009, lng: 3.5004 }, { lat: 6.5009, lng: 3.5 }]
     assert.equal(isTooSmall({ type: 'POLYGON', radiusMeters: 0, points: thin }), true)
   })
   await t('what stops a save, in the order a person fixes it', () => {
@@ -75,7 +74,6 @@ async function main() {
   })
   await t('an overnight period says so', () => { assert.equal(describePeriod({ start: '22:00', end: '06:00' }), '22:00 to 06:00 (overnight)'); assert.equal(describePeriod({ start: '08:00', end: '17:00' }), '08:00 to 17:00') })
 
-  // ---- sample-data twin ----
   await t('sample fences: a helmet stands inside the no-entry yard; the store refuses what the backend refuses; delete works', async () => {
     const all = await getMockFences(); assert.equal(all.length, 2); assert.ok(all.some((f) => f.behavior === 'NO_ENTRY') && all.some((f) => f.type === 'ROUND'))
     await assert.rejects(saveMockFence({ ...ROUND, name: ' ' }), /needs a name/); await assert.rejects(saveMockFence({ ...ROUND, center: null }), /centre/); await assert.rejects(saveMockFence({ ...POLY, points: [] }), /3 points/)
@@ -84,7 +82,6 @@ async function main() {
     await deleteMockFence(created.id); assert.equal((await getMockFences()).length, 2)
   })
 
-  // ---- warning clip: attach, replace, remove ----
   const mp3 = (bytes = 2000, name = 'left-area.mp3'): ClipFile => ({ uri: 'file:///cache/' + name, name, mimeType: 'audio/mpeg', size: bytes, file: new Blob([new Uint8Array(bytes)], { type: 'audio/mpeg' }) })
 
   await t('which files can be a clip: MP3, WAV, M4A, AAC or 3GP by name or type, not empty, up to 5 MB', () => {

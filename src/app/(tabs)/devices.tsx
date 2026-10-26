@@ -50,7 +50,6 @@ function MonitoringScreen() {
       .sort(
         (a, b) =>
           PRESENCE_ORDER[a.presence] - PRESENCE_ORDER[b.presence] ||
-          // "…57881" sorts before any letter; named helmets are what people look for.
           Number(a.named === false) - Number(b.named === false) ||
           a.name.localeCompare(b.name)
       )

@@ -5,10 +5,8 @@ import Svg, { Path } from 'react-native-svg'
 import { Text } from '@/shared/components/Text'
 import { TABLET_MIN_DP } from '@/shared/lib/tabletGate'
 
-/*
- * What a phone is shown instead of the app. It is drawn with fixed colours and nothing that needs the app's providers, because it is
- * shown before they exist. There is nothing to press: no sign-in, no way round it.
- */
+// What a phone is shown instead of the app. It is drawn with fixed colours and
+// nothing that needs the app's providers, because it is shown before they exist.
 function Message({ smallestDp }: { smallestDp: number }) {
   const insets = useSafeAreaInsets()
   return (

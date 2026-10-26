@@ -14,14 +14,13 @@ const MIN = 60_000
 const T0 = Date.parse('2026-10-19T08:00:00+01:00')
 const at = (min: number, lat: number, lng: number, extra: Partial<TelemetrySample> = {}): TelemetrySample => ({ ts: T0 + min * MIN, lat, lng, ...extra })
 const build = (s: TelemetrySample[], opts?: { includeApproximate?: boolean }) => buildTrack('dev', s, T0 - MIN, T0 + 24 * 60 * MIN, false, opts)
-const M = 1 / 111_195   // one metre of latitude, in degrees
+const M = 1 / 111_195
 
 async function main() {
   await t('haversine: a degree of latitude is about 111 km, zero between identical points', () => {
     assert.ok(Math.abs(haversine({ lat: 0, lng: 0 }, { lat: 1, lng: 0 }) - 111_195) < 300); assert.equal(haversine({ lat: 6.5, lng: 3.4 }, { lat: 6.5, lng: 3.4 }), 0)
   })
 
-  // ---- the rules your web page learned the hard way ----
   await t('GPS noise: a helmet standing still doesn\'t "walk" (under 3 m between fixes counts as none)', () => {
     const s = Array.from({ length: 60 }, (_, i) => at(i, 6.5 + (i % 2) * 2 * M, 3.4))
     const track = build(s); assert.equal(track.stats.distanceMetres, 0); assert.equal(track.stats.movingMs, 0); assert.equal(track.stats.segments, 1)
@@ -51,7 +50,6 @@ async function main() {
     assert.deepEqual(track.points.map((p) => p.ts), [T0 + MIN, T0 + 5 * MIN]); assert.equal(track.truncated, true)
   })
 
-  // ---- new since the web code: Cypher's 16 Oct fix type ----
   await t('indoor "network" and "wifi" positions are left out by default (they can be hundreds of metres off), and counted', () => {
     const walk = [at(0, 6.5, 3.4, { fixType: 'gps' }), at(1, 6.5 + 60 * M, 3.4, { fixType: 'gps' }), at(2, 6.5 + 400 * M, 3.4, { fixType: 'network', accuracyMeters: 300 }), at(3, 6.5 + 120 * M, 3.4, { fixType: 'gps' })]
     const lean = build(walk), all = build(walk, { includeApproximate: true })
@@ -72,11 +70,10 @@ async function main() {
     assert.ok(header.endsWith(',segment,position_source')); assert.ok(row1.includes('"Rig, ""North"""') && row1.endsWith(',gps')); assert.ok(row2.endsWith(',approximate'))
   })
 
-  // ---- availability: "was it switched on and reporting?" ----
   await t('availability: counts time between reports, not samples; silences longer than the tolerance are offline', () => {
     const base = Date.parse('2026-10-19T08:00:00+01:00'), s: TelemetrySample[] = []
-    for (let i = 0; i <= 60; i++) s.push({ ts: base + i * 30_000 })               // 30 minutes of reports every 30 s, no position at all
-    for (let i = 0; i <= 20; i++) s.push({ ts: base + 3 * 3_600_000 + i * 30_000 }) // then a silence of 2.5 h, then 10 more minutes
+    for (let i = 0; i <= 60; i++) s.push({ ts: base + i * 30_000 })
+    for (let i = 0; i <= 20; i++) s.push({ ts: base + 3 * 3_600_000 + i * 30_000 })
     const a = buildAvailability(s, base - MIN, base + 4 * 3_600_000)
     assert.equal(a.medianIntervalMs, 30_000); assert.equal(a.toleranceMs, 120_000, 'never below the backend\'s own two minutes')
     assert.ok(Math.abs(a.totalAvailableMs - 40 * MIN) < 1, String(a.totalAvailableMs / MIN)); assert.equal(formatUptime(a.totalAvailableMs), '40m')
@@ -90,7 +87,6 @@ async function main() {
     assert.equal(formatUptime(3 * 3_600_000 + 51 * MIN), '3h 51m'); assert.equal(formatUptime(3 * 3_600_000), '3h')
   })
 
-  // ---- dates (the tablet's own time zone; the run sets TZ=Africa/Lagos) ----
   await t('"today" is today in Lagos, even in the first hour after midnight (toISOString would say yesterday)', () => {
     const justAfterMidnight = Date.parse('2026-10-19T00:30:00+01:00')
     assert.equal(justAfterMidnight, Date.parse('2026-10-18T23:30:00Z')); assert.equal(new Date(justAfterMidnight).toISOString().slice(0, 10), '2026-10-18', 'the bug this avoids')
@@ -110,7 +106,6 @@ async function main() {
     assert.match((rangeFromDates('2026-10-20', '2026-10-19') as { error: string }).error, /after/); assert.match((rangeFromDates('nope', '2026-10-19') as { error: string }).error, /YYYY-MM-DD/)
   })
 
-  // ---- the endpoint (Cypher's from / to, 20 Oct) ----
   const row = (i: number, extra = {}) => ({ id: i, deviceId: 'd', latitude: '6.5', longitude: '3.4', recordedAt: new Date(T0 + i * MIN).toISOString(), batteryLevel: '80', netStrength: '4', ...extra })
   const pageOf = (rows: object[], totalPages: number) => ({ content: rows, totalPages, totalElements: rows.length, last: true })
   await t('telemetry: asks for exactly the range, newest first, 10,000 a page, with Z times; rows map to samples including fix type and accuracy', async () => {
@@ -143,7 +138,6 @@ async function main() {
     http.routes = { 'GET /devices/d/telemetry': () => ({ status: 500 }) }; await assert.rejects(fetchTrackSamples('d', T0, T0 + MIN))
   })
 
-  // ---- the sample data shows each wrinkle ----
   await t('the sample route has a gap, a far-away reading and indoor fixes, so each can be seen working; it is repeatable', () => {
     const now = Date.now(), s = getMockTrackSamples('866652022956404', now - 24 * 60 * MIN, now)
     assert.deepEqual(s, getMockTrackSamples('866652022956404', now - 24 * 60 * MIN, now).map((x, i) => ({ ...x, ts: s[i].ts })), 'same helmet, same walk')

@@ -1,21 +1,15 @@
-/** @type {import('tailwindcss').Config} */
 module.exports = {
-  // The app is light-only (app.json forces it) and uses no `dark:` styles. This setting is
-  // here for one reason: on web, when the dev server delivers the stylesheet after the
-  // JavaScript has run, NativeWind calls colorScheme.set() once at startup, and with the
-  // default ('media') that throws "Cannot manually set color scheme". 'class' allows the call.
+  // Light-only, with no `dark:` styles. 'class' is here because on web, when the dev server
+  // delivers the stylesheet after the JavaScript has run, NativeWind calls colorScheme.set()
+  // once at startup and the default ('media') throws "Cannot manually set color scheme".
   darkMode: 'class',
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
       colors: {
-        // E5 Energy: the teal from their logo and the deep green of their
-        // website hero — the same two values as globals.css on the web app.
-        // Their orange is deliberately not a UI colour: red and amber have to
-        // stay the most salient things on screen for alarm states.
-        // The five brand colours are variables, so a company's own colour can be applied at runtime (src/modules/branding). Their
-        // defaults are the E5 look, set in global.css and again on the app's root view, so nothing changes without a company colour.
+        // Their orange is deliberately not a UI colour: red and amber have
+        // to stay the most salient things on screen for alarm states.
         brand: {
           primary: 'var(--brand-primary)',
           secondary: 'var(--brand-secondary)',
@@ -24,12 +18,8 @@ module.exports = {
           mint: 'var(--brand-mint)',
         },
       },
-      /*
-       * React Native can't use font stacks or font-weight with custom fonts:
-       * each weight is its own family, registered in src/app/_layout.tsx. So
-       * `font-bold` does nothing here — use font-sans-bold, font-display-bold
-       * and so on. The names on the right must match the keys given to useFonts.
-       */
+      // React Native can't use font stacks or font-weight with custom fonts:
+      // each weight is its own family, registered in src/app/_layout.tsx.
       fontFamily: {
         sans: ['Inter_400Regular'],
         'sans-medium': ['Inter_500Medium'],

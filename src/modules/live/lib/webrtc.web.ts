@@ -1,9 +1,6 @@
 import type { StreamLike } from '../types'
 import { MOCK_URL_PREFIX, SessionEndedError, exchange, type MediaConnection } from './signalling'
 
-// The browser preview's WebRTC: the same exchange as the tablet's, on the browser's own RTCPeerConnection.
-// A development convenience; the product is the tablet app (webrtc.ts).
-
 function wrap(pc: RTCPeerConnection, stream: MediaStream): MediaConnection {
   let lost: (() => void) | null = null
   let fired = false
@@ -47,7 +44,6 @@ export async function push(pushUrl: string, media: StreamLike, signal: AbortSign
   }
 }
 
-/** A generated test picture, so the player and controls can be exercised without a helmet. Connects after a short delay. */
 async function mockPlay(signal: AbortSignal): Promise<MediaConnection> {
   await new Promise((resolve) => setTimeout(resolve, 1_500))
   if (signal.aborted) throw new SessionEndedError()

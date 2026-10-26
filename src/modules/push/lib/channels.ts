@@ -1,9 +1,7 @@
-// The two Android notification channels. The ids are a contract with the backend: it names one in
-// every push (android.notification.channel_id), and the tablet only plays the siren for a channel
-// that exists here. Keep them in step with the request to Cypher.
+// Channel ids are a contract with the backend, which names one in every
+// push; the tablet only plays the siren for a channel that exists here.
 export const SOS_CHANNEL = 'sos'
 export const ALARM_CHANNEL = 'alarm'
-/** The siren file bundled into the app (assets/sounds/sos.wav, added by the expo-notifications plugin). */
 export const SIREN_SOUND = 'sos.wav'
 
 export interface ChannelSpec {
@@ -11,12 +9,10 @@ export interface ChannelSpec {
   name: string
   description: string
   importance: 'max' | 'high'
-  /** A bundled sound file name, or 'default'. */
   sound: string
   vibrationPattern: number[]
-  /** Sound through Do Not Disturb (the person still has to allow it in the tablet's settings). */
   bypassDnd: boolean
-  /** Play on the alarm volume, not the notification volume, so a quiet tablet is still loud. */
+  // Play on the alarm volume, not the notification volume, so a quiet tablet is still loud.
   alarmVolume: boolean
   lightColor: string
 }
@@ -46,7 +42,6 @@ export const CHANNELS: ChannelSpec[] = [
   },
 ]
 
-/** The channel a push of this severity should use. */
 export function channelFor(severity: string | undefined): string {
   return severity === 'critical' ? SOS_CHANNEL : ALARM_CHANNEL
 }

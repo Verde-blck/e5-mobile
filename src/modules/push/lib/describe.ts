@@ -4,11 +4,9 @@ export interface StatusCopy {
   title: string
   detail: string
   tone: 'ok' | 'warn' | 'info'
-  /** What the button should do, if there is one. */
   action?: 'enable' | 'settings' | 'retry'
 }
 
-/** What to tell the person about alarm alerts, for each state. */
 export function describeStatus(status: PushStatus): StatusCopy {
   switch (status) {
     case 'on':

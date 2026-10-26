@@ -28,7 +28,6 @@ function WifiScreen() {
   const [note, setNote] = useState<string | null>(null)
 
   const current = wifi.data ?? null
-  // With nothing set yet, the form is the page; otherwise it opens on "Change".
   const showForm = canEdit && (editing || (!wifi.isLoading && !current))
 
   useEffect(() => {
@@ -59,7 +58,6 @@ function WifiScreen() {
         }
       )
 
-    // Leaving the password empty on a network with none yet means an open network. Worth being sure.
     if (!password && !current?.passwordSet) {
       confirmAction({
         title: 'Save without a password?',

@@ -11,11 +11,6 @@ import { useHelmetSession } from '../hooks/useHelmetSession'
 import { SessionMessage, StatusPill } from './SessionPanel'
 import { StreamView } from './StreamView'
 
-/**
- * Watching one helmet's camera. Closing it only closes this tablet's connection: others may be watching, and the
- * helmet stops by itself about 20 seconds after the last viewer leaves. Ending it for everyone is a separate,
- * confirmed choice. The sound starts off; one tap turns it on.
- */
 export function LiveViewScreen({ deviceId }: { deviceId: string }) {
   const { devices } = useDeviceViews()
   const name = devices.find((d) => d.id === deviceId)?.name ?? 'the helmet'

@@ -5,15 +5,13 @@ import { createRunner } from './harness'
 
 const { t, report } = createRunner()
 
-// ---------- a fake streaming server ----------
 const enc = new TextEncoder()
 
-/** One open HTTP response whose body the test writes to, chunk by chunk. */
 function openStream() {
   let controller!: ReadableStreamDefaultController<Uint8Array>
   const body = new ReadableStream<Uint8Array>({ start: (c) => { controller = c } })
-  // Like a real fetch, aborting the request errors the body so a pending
-  // read() rejects. Without this, nothing could ever interrupt a stalled read.
+  // Like a real fetch, aborting the request errors the body so a pending read()
+  // rejects. Without this, nothing could ever interrupt a stalled read.
   const bind = (signal?: AbortSignal | null) => {
     const abort = () => { try { controller.error(new DOMException('The operation was aborted.', 'AbortError')) } catch { /* already closed */ } }
     if (signal?.aborted) abort(); else signal?.addEventListener('abort', abort)
@@ -60,7 +58,6 @@ const until = async (cond: () => boolean, ms = 1500) => {
 }
 
 async function main() {
-  // ---------- the parser ----------
   await t('parseSse: Cypher\'s documented frame, with a ping before it', () => {
     const { events, rest } = parseSse(': ping\n\nid:77\nevent:alarm\ndata:{"id":77}\n\n')
     assert.deepEqual(events, [{ event: 'alarm', data: '{"id":77}', id: '77' }]); assert.equal(rest, '')
@@ -87,7 +84,6 @@ async function main() {
     assert.ok(backoffMs(2, 0.999) < 4500 && backoffMs(2, 0.999) > 4000)
   })
 
-  // ---------- the connection ----------
   await t('delivers alarm and alarm-update events, ignores pings, tracks the last alarm id', async () => {
     const s = openStream(); const reqs: Array<{ url: string; headers: Record<string, string> }> = []
     const { seen, connection, cursor } = harnessFor(async (url, init) => { reqs.push({ url, headers: init.headers as Record<string, string> }); return s.response })

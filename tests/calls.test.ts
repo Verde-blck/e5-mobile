@@ -11,7 +11,6 @@ const ONLINE = '866652022956404', OFFLINE = '866652022959544'
 const alarm = (over: Partial<Alarm> = {}): Alarm => ({ id: 'a1', deviceId: ONLINE, deviceName: 'Test Helmet', type: 'sos' as AlarmType, severity: 'critical', status: 'active', raisedAt: NOW - 5 * MIN, ...over })
 
 async function main() {
-  // ---- who may call (the backend's rule; the tablet decides only what to offer) ----
   await t('an open SOS for the helmet lets ANYONE signed in call it, for 30 minutes', () => {
     const a = (raisedAgo: number) => callAccess({ deviceId: ONLINE, alarms: [alarm({ raisedAt: NOW - raisedAgo })], canManage: false, now: NOW })
     assert.deepEqual(a(5 * MIN), { allowed: true, basis: 'sos', alarmId: 'a1' })

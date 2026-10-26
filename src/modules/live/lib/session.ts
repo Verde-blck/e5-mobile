@@ -2,25 +2,19 @@ import { isForbidden } from '@/shared/lib/errors'
 import type { CallStart, LiveStart, SessionMode, SessionState, StreamLike } from '../types'
 import { NotReadyError, connectWithRetry, type MediaConnection } from './signalling'
 
-/** Everything platform-specific, handed in so the session can be tested with fakes. */
 export interface SessionDeps {
   startCall(deviceId: string): Promise<CallStart>
   startLive(deviceId: string): Promise<LiveStart>
   stopCall(deviceId: string): Promise<void>
-  /** The microphone, and the camera for a video call. Rejects with the platform's own permission error. With no camera on the device it carries on with the microphone alone and says so. */
   getLocalMedia(withCamera: boolean): Promise<{ stream: StreamLike; noCamera: boolean }>
   play(url: string, signal: AbortSignal): Promise<MediaConnection>
   push(url: string, media: StreamLike, signal: AbortSignal): Promise<MediaConnection>
-  /** Reports the app going to the background (true) and coming back (false); returns how to stop listening. */
   watchBackground(callback: (inBackground: boolean) => void): () => void
-  /** Tests only: shorter timings than the real ones (2 s between tries, 30 s to give up, 4 s out of sight). */
   timing?: { intervalMs?: number; deadlineMs?: number; outgoingDeadlineMs?: number; leaveGraceMs?: number }
 }
 
-/**
- * How long the app may be out of sight before the session ends. Android briefly pauses the app for its own
- * dialogs (the microphone permission) and for the notification shade, so a glance away mustn't end a call.
- */
+// Android briefly pauses the app for its own dialogs (the microphone permission)
+// and for the notification shade, so a glance away mustn't end a call.
 export const LEAVE_GRACE_MS = 4_000
 
 const INITIAL: SessionState = {
@@ -36,19 +30,7 @@ const INITIAL: SessionState = {
   endReason: null,
 }
 
-/**
- * One live view or one call with one helmet, from start to hang-up. (Ported from the web dashboard's HelmetSession.)
- *
- * A plain object rather than React state, because its lifetime is the session's, not a component's.
- *
- * Ending works differently for the two modes, as the backend specifies:
- * - Live view: end() only closes this tablet's connection. Others may be watching the same helmet, and the media
- *   server stops the helmet itself about 20 seconds after the last viewer leaves.
- * - Call: end() also takes the helmet out of call mode, on every way out.
- *
- * Unlike the browser, a tablet app can't be left running in the background and keep a call: a call or live view
- * ends if the app stays out of sight for LEAVE_GRACE_MS.
- */
+// A plain object rather than React state: its lifetime is the session's, not a component's.
 export class HelmetSession {
   private state: SessionState
   private readonly listeners = new Set<() => void>()
@@ -64,14 +46,11 @@ export class HelmetSession {
     readonly deviceId: string,
     readonly mode: SessionMode,
     private readonly deps: SessionDeps,
-    /** Call only: a video call. False is an audio call. */
     private readonly withCamera = false
   ) {
     this.state = { ...INITIAL, status: mode === 'call' ? 'requesting-media' : 'starting', cameraOn: mode === 'call' && withCamera }
     this.stopWatching = deps.watchBackground((inBackground) => this.onBackground(inBackground))
   }
-
-  // --- For useSyncExternalStore -----------------------------------------
 
   getState = (): SessionState => this.state
 
@@ -90,13 +69,12 @@ export class HelmetSession {
     return this.controller.signal
   }
 
-  // --- Lifecycle --------------------------------------------------------
-
   async start(): Promise<void> {
     try {
       let local: StreamLike | null = null
       if (this.mode === 'call') {
-        // Ask for the microphone (and camera) before touching the helmet: if it is refused, the helmet never gets put into call mode.
+        // Ask for the microphone (and camera) before touching the helmet: if
+        // it is refused, the helmet never gets put into call mode.
         const media = await this.deps.getLocalMedia(this.withCamera)
         local = media.stream
         if (this.signal.aborted) {
@@ -112,12 +90,10 @@ export class HelmetSession {
       const started = call ?? (await this.deps.startLive(this.deviceId))
 
       if (this.signal.aborted) {
-        // Ended while the start request was in flight; make sure the stop lands after the start.
         if (this.mode === 'call') void this.deps.stopCall(this.deviceId)
         return
       }
       if (!started.delivered) {
-        // Offline. Live view and call commands aren't queued, so nothing will happen later.
         this.set({ status: 'offline' })
         return
       }
@@ -135,7 +111,6 @@ export class HelmetSession {
     }
   }
 
-  /** After a failed connection: try to get the picture again without re-sending start. */
   retry(): void {
     if (this.state.status !== 'failed' || !this.watchUrl) return
     this.set({ error: null })
@@ -153,10 +128,8 @@ export class HelmetSession {
 
     this.remote?.close()
     this.outgoing?.close()
-    // Turns the microphone off: leaving tracks running keeps it on.
     this.state.localStream?.getTracks().forEach((t) => t.stop())
 
-    // Live view sends nothing: see the class comment.
     if (this.mode === 'call' && this.startSent) void this.deps.stopCall(this.deviceId)
 
     this.state = { ...this.state, status: 'ended', remoteStream: null, localStream: null, endReason: reason }
@@ -166,12 +139,9 @@ export class HelmetSession {
   private onBackground(inBackground: boolean) {
     if (this.leaveTimer) clearTimeout(this.leaveTimer)
     this.leaveTimer = null
-    // While the permission dialog is up the app is paused too: that is not leaving.
     if (!inBackground || this.state.status === 'requesting-media' || this.state.status === 'ended') return
     this.leaveTimer = setTimeout(() => this.end('left-app'), this.deps.timing?.leaveGraceMs ?? LEAVE_GRACE_MS)
   }
-
-  // --- Connections ------------------------------------------------------
 
   private async connectRemote(): Promise<void> {
     const reconnecting = this.state.liveSince !== null
@@ -214,15 +184,13 @@ export class HelmetSession {
     }
   }
 
-  // --- Call controls ----------------------------------------------------
-
   toggleMic(): void {
     const next = !this.state.micOn
     this.state.localStream?.getAudioTracks().forEach((t) => (t.enabled = next))
     this.set({ micOn: next })
   }
 
-  /** Off sends black frames rather than renegotiating, so it is instant both ways. */
+  // Off sends black frames rather than renegotiating, so it is instant both ways.
   toggleCamera(): void {
     if (this.state.noCamera || !this.withCamera) return
     const next = !this.state.cameraOn
@@ -231,7 +199,6 @@ export class HelmetSession {
   }
 }
 
-/** A sentence an operator can act on, for anything that can go wrong. */
 export function describe(error: unknown, withCamera = false): string {
   const name = (error as { name?: string })?.name
   const blocked = `The microphone${withCamera ? ' or camera' : ''} is blocked. Allow ${withCamera ? 'them' : 'it'} in the tablet's settings, then try again.`

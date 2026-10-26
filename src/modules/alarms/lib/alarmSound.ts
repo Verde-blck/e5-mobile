@@ -1,11 +1,7 @@
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio'
 
-// Two sounds: a siren that loops for critical alarms, and a short chime for
-// the rest. Both are placeholders generated for this project; swap in the
-// client's own tones by replacing the files in assets/sounds.
-//
-// Every call is wrapped so a sound failure can never take the alert UI with
-// it — the banner is the alert; the sound is the extra.
+// sos.wav and chime.wav are generated tones: replace them in assets/sounds with E5's own recordings. Every call is
+// wrapped so a sound failure can never take the alert UI with it: the banner is the alert, the sound is the extra.
 
 let siren: AudioPlayer | null = null
 let chime: AudioPlayer | null = null
@@ -13,9 +9,7 @@ let modeReady = false
 
 async function prepare(): Promise<void> {
   if (modeReady) return
-  // An SOS has to be audible with the ringer switch off, which is the whole
-  // point of it. Foreground only: a phone that's locked or in another app
-  // can't be reached this way — that needs push notifications.
+  // Foreground only: a locked phone, or one in another app, can't be reached this way. That needs push notifications.
   await setAudioModeAsync({
     playsInSilentMode: true,
     interruptionMode: 'duckOthers',

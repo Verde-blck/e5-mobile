@@ -1,7 +1,6 @@
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
 import { Button } from '@/shared/components/Button'
 
-/** Plays a chosen or recorded clip so the person can check it is the right one before it is used. */
 export function AudioPreview({ uri }: { uri: string }) {
   const player = useAudioPlayer(uri)
   const status = useAudioPlayerStatus(player)

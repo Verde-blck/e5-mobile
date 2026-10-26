@@ -5,15 +5,8 @@ import { MOCK_URL_PREFIX } from '../lib/signalling'
 import { GROUP_CALL_MAX } from '../lib/groupPlan'
 import { mockReachable, note } from './live.api'
 
-/*
- * Group video calls (beta): several helmets and this tablet in one call room. From the backend's guide of 13 Oct 2026
- * and the web dashboard. Built to the same protocol as the one-to-one call; whether the helmet app shows and plays
- * several other participants hasn't been confirmed on real hardware (there is one test helmet), hence "beta".
- */
-
 export interface GroupCallHelmet {
   deviceId: string
-  /** false: offline. Calls aren't queued, so it won't join later. */
   delivered: boolean
   watchUrl: string
 }
@@ -21,7 +14,6 @@ export interface GroupCallHelmet {
 export interface GroupCall {
   callId: string
   helmets: GroupCallHelmet[]
-  /** Where our microphone (and camera) goes, for every helmet to play. */
   adminPushUrl: string
 }
 
@@ -40,14 +32,12 @@ export function toGroupCall(data: ApiGroupCall | null | undefined): GroupCall {
   }
 }
 
-// Sample calls live as long as the app; the last one is reported back on GET.
 const mockCalls = new Map<string, GroupCall>()
 
 export async function startGroupCall(deviceIds: readonly string[]): Promise<GroupCall> {
   if (env.useMocks) {
     await new Promise((resolve) => setTimeout(resolve, 500))
     const callId = `mock${Date.now().toString(36)}`
-    // A helmet that is offline or deactivated doesn't join, like the real thing.
     const call: GroupCall = {
       callId,
       helmets: deviceIds.map((deviceId) => ({ deviceId, delivered: mockReachable(deviceId), watchUrl: `${MOCK_URL_PREFIX}watch/${deviceId}` })),
@@ -61,10 +51,8 @@ export async function startGroupCall(deviceIds: readonly string[]): Promise<Grou
   return toGroupCall(data)
 }
 
-/** The call's details again, to offer ending it after the app was closed mid-call. Null when it no longer exists (404). */
 export async function getGroupCall(callId: string): Promise<GroupCall | null> {
   if (env.useMocks) {
-    // test hook: a call left running by an app that was closed
     if (callId === (globalThis as { __e5StaleCall?: string }).__e5StaleCall) return { callId, helmets: [{ deviceId: 'a', delivered: true, watchUrl: '' }, { deviceId: 'b', delivered: true, watchUrl: '' }], adminPushUrl: '' }
     return mockCalls.get(callId) ?? null
   }
@@ -77,12 +65,12 @@ export async function getGroupCall(callId: string): Promise<GroupCall | null> {
   }
 }
 
-/** Ends the call on every helmet. Never throws: a call that ends on a bad connection must still end on this side. */
+// Never throws: a call that ends on a bad connection must still end on this side.
 export function stopGroupCall(callId: string): Promise<void> {
   if (env.useMocks) {
     mockCalls.delete(callId)
     const g = globalThis as { __e5StaleCall?: string }
-    if (g.__e5StaleCall === callId) g.__e5StaleCall = undefined // the test hook's left-over call has been ended
+    if (g.__e5StaleCall === callId) g.__e5StaleCall = undefined
     note('group-stop', callId)
     return Promise.resolve()
   }
@@ -92,10 +80,8 @@ export function stopGroupCall(callId: string): Promise<void> {
   )
 }
 
-/**
- * The call this tablet started, remembered so that if the app is closed or killed mid-call the Group call screen can
- * offer to end it. Helmets stay in call mode until told otherwise, and an app that is gone can't tell them.
- */
+// Remembered so that if the app is killed mid-call the Group call screen can
+// offer to end it: helmets stay in call mode until told otherwise.
 const ACTIVE_KEY = 'e5.groupCall'
 
 export const activeGroupCall = {

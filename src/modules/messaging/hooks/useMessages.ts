@@ -7,10 +7,8 @@ import { fetchMessages, sendVoiceMessage } from '../api/messages.api'
 
 const key = (deviceId: string) => ['messages', deviceId] as const
 
-/**
- * A helmet's conversation. Re-read every few seconds while the screen is open (and the app is in front), which
- * also swaps in fresh links: the recordings' links expire after about an hour.
- */
+// Re-read every few seconds while the screen is open (and the app is in front), which
+// also swaps in fresh links: the recordings' links expire after about an hour.
 export function useMessages(deviceId: string) {
   const signedIn = useAuthStore((s) => s.isAuthenticated)
   const q = useQuery({

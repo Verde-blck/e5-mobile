@@ -2,10 +2,6 @@ import { createElement, useMemo } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { plexusHtml } from '@/shared/brand/plexus'
 
-/**
- * The browser preview of the sign-in panel's animated network: the same page the tablet draws, in a frame, so the preview is what
- * the tablet shows. The page asks the browser about reduced motion itself.
- */
 export function PlexusField({ color }: { color: string }) {
   const html = useMemo(() => plexusHtml(color, null), [color])
   return (

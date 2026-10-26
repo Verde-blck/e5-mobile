@@ -1,12 +1,6 @@
 import type { LatLng } from '@/modules/fences/types'
 import type { MapFence, MapFitTarget, MapHelmet, MapTrack, MapDraft, MapAlarm } from '../types'
 
-/*
- * What the native Google map draws and how it frames it, as plain functions with no map in them, so each rule can be tested without
- * a tablet. They are the Leaflet page's rules (mapHtml.ts) written down once more for the native map: same colours, same
- * priorities, same fitting behaviour.
- */
-
 export interface Coordinate {
   latitude: number
   longitude: number
@@ -21,8 +15,8 @@ export const COLOURS = {
   offline: '#94A3B8',
   critical: '#DC2626',
   warning: '#D97706',
-  work: '#0A6659', // a work area: the brand teal
-  noEntry: '#D97706', // a no-entry zone: amber (red stays for alarms)
+  work: '#0A6659',
+  noEntry: '#D97706',
   inactive: '#94A3B8',
   deep: '#0C352F',
   route: '#0F766E',
@@ -32,28 +26,18 @@ export const COLOURS = {
   cursorRing: '#B45309',
 } as const
 
-/** "#0A6659" and 0.5 as "rgba(10, 102, 89, 0.5)", the form the map's stroke and fill colours take. */
 export function withAlpha(hex: string, alpha: number): string {
   const v = hex.replace('#', '')
   return `rgba(${parseInt(v.slice(0, 2), 16)}, ${parseInt(v.slice(2, 4), 16)}, ${parseInt(v.slice(4, 6), 16)}, ${alpha})`
 }
 
-// --- Which engine ----------------------------------------------------------
-
 export type MapEngine = 'google' | 'leaflet'
 
-/**
- * Google only on an Android build that was made with a Google Maps key, and not if someone has asked for the OpenStreetMap map
- * (EXPO_PUBLIC_MAP_ENGINE=osm), which is the way back if the Google map ever misbehaves on the tablets. The browser preview and iOS
- * always use the Leaflet map, and so does an Android build with no key, so nothing is ever left without a map.
- */
 export function chooseMapEngine(options: { platform: string; hasKey: boolean; preference?: string }): MapEngine {
   if (options.platform !== 'android' || !options.hasKey) return 'leaflet'
   const preference = (options.preference ?? '').trim().toLowerCase()
   return preference === 'osm' || preference === 'leaflet' ? 'leaflet' : 'google'
 }
-
-// --- Drawing rules -----------------------------------------------------------
 
 export interface FenceStyle {
   stroke: string
@@ -61,7 +45,6 @@ export interface FenceStyle {
   width: number
 }
 
-/** A saved fence: work areas teal, no-entry zones amber, switched-off fences grey; the selected one is thicker; fences fade while another is being drawn. */
 export function fenceStyle(fence: Pick<MapFence, 'active' | 'behavior'>, selected: boolean, dim: boolean): FenceStyle {
   if (!fence.active) return { stroke: withAlpha(COLOURS.inactive, 0.7), fill: withAlpha(COLOURS.inactive, 0.06), width: 1.5 }
   const colour = fence.behavior === 'NO_ENTRY' ? COLOURS.noEntry : COLOURS.work
@@ -79,7 +62,6 @@ export interface DraftStyle {
   width: number
 }
 
-/** The fence being drawn. */
 export function draftStyle(draft: Pick<MapDraft, 'active' | 'behavior'>): DraftStyle {
   const colour = draft.behavior === 'NO_ENTRY' ? COLOURS.noEntry : COLOURS.work
   return draft.active
@@ -95,10 +77,6 @@ export interface AccuracyStyle {
   dash?: number[]
 }
 
-/**
- * The circle around a helmet showing how sure its position is: always for an approximate position (it is the honest picture of
- * where the helmet could be), and for the selected helmet whatever its source.
- */
 export function accuracyStyle(helmet: Pick<MapHelmet, 'accuracy' | 'approximate'>, selected: boolean): AccuracyStyle | null {
   const radius = helmet.accuracy ?? 0
   if (!(radius > 0) || !(helmet.approximate || selected)) return null
@@ -107,19 +85,14 @@ export function accuracyStyle(helmet: Pick<MapHelmet, 'accuracy' | 'approximate'
     : { radius, stroke: withAlpha(COLOURS.work, 1), fill: withAlpha(COLOURS.work, 0.1), width: 1.5 }
 }
 
-/** What a helmet's marker looks like, as one string: when it changes the marker's picture is redrawn, and not otherwise. */
 export const helmetLook = (helmet: Pick<MapHelmet, 'presence' | 'alarm'>, selected: boolean): string => `${helmet.presence}|${selected ? 1 : 0}|${helmet.alarm ?? ''}`
 
-/** Stacking: the selected helmet on top, then one with an alarm, then the rest. Alarm pins sit between. */
 export const helmetZ = (helmet: Pick<MapHelmet, 'alarm'>, selected: boolean): number => (selected ? 1000 : helmet.alarm ? 500 : 0)
 export const ALARM_PIN_Z = 800
 export const CURSOR_Z = 1000
 
-// --- Geometry ----------------------------------------------------------------
-
 const METRES_PER_DEGREE = 111_320
 
-/** The four extreme points of a circle, for framing it. */
 export function circleBounds(center: LatLng, radiusMeters: number): Coordinate[] {
   const dLat = radiusMeters / METRES_PER_DEGREE
   const dLng = radiusMeters / (METRES_PER_DEGREE * Math.max(Math.cos((center.lat * Math.PI) / 180), 0.01))
@@ -131,10 +104,8 @@ export function circleBounds(center: LatLng, radiusMeters: number): Coordinate[]
   ]
 }
 
-/**
- * Framing one helmet, or a few that are close together, would otherwise zoom in until the street is a blur. This adds two invisible
- * points around the middle so that the frame is never smaller than `minMetres` across.
- */
+// One helmet, or a few close together, would zoom in until the street is a
+// blur, so two invisible points keep the frame at least `minMetres` across.
 export function withMinSpan(points: Coordinate[], minMetres = 160): Coordinate[] {
   if (points.length === 0) return points
   const lats = points.map((p) => p.latitude)
@@ -149,11 +120,8 @@ export function withMinSpan(points: Coordinate[], minMetres = 160): Coordinate[]
   return [...points, { latitude: midLat + halfLat, longitude: midLng + halfLng }, { latitude: midLat - halfLat, longitude: midLng - halfLng }]
 }
 
-/**
- * The points to frame for a route: every run of real length, but not stray one- or two-point outliers. With an out-of-region fix in
- * the history (a reading from another continent), framing everything would zoom out to show two continents and the real route would
- * become a dot. If no run is long enough, the longest one.
- */
+// Stray one or two point outliers are left out when framing a route: a fix from
+// another continent would zoom out so far that the real route became a dot.
 export function trackFitPoints(track: MapTrack | null | undefined): Coordinate[] {
   if (!track || track.segments.length === 0) return []
   let runs = track.segments.filter((segment) => segment.length >= 3)
@@ -172,7 +140,6 @@ export interface FitInput {
 const fenceBounds = (f: Pick<MapFence, 'type' | 'center' | 'radiusMeters' | 'points'>): Coordinate[] =>
   f.type === 'ROUND' ? (f.center ? circleBounds(f.center, f.radiusMeters) : []) : f.points.map(toCoordinate)
 
-/** The points the map should frame for a target: the helmets and alarms, the fence being drawn, the saved fences, or the route. */
 export function fitCoordinates(target: MapFitTarget, input: FitInput): Coordinate[] {
   switch (target) {
     case 'track':
@@ -186,7 +153,6 @@ export function fitCoordinates(target: MapFitTarget, input: FitInput): Coordinat
   }
 }
 
-/** Space kept clear round the edge when framing. A route keeps its bottom clear of the playback bar laid over the map. */
 export function edgePadding(target: MapFitTarget, bottomInset = 0): { top: number; right: number; bottom: number; left: number } {
   return target === 'track' ? { top: 48, right: 48, bottom: 48 + bottomInset, left: 48 } : { top: 60, right: 60, bottom: 60, left: 60 }
 }
@@ -196,7 +162,6 @@ export interface Bounds {
   southWest: Coordinate
 }
 
-/** True if the point is outside the middle of the screen, so it is worth moving the map to bring it back. `margin` is the share of each side that counts as the edge. */
 export function nearEdgeOrOff(at: Coordinate, bounds: Bounds, margin = 0.2): boolean {
   const latSpan = bounds.northEast.latitude - bounds.southWest.latitude
   const lngSpan = bounds.northEast.longitude - bounds.southWest.longitude
@@ -208,7 +173,6 @@ export function nearEdgeOrOff(at: Coordinate, bounds: Bounds, margin = 0.2): boo
   )
 }
 
-/** Distance between two points in metres (haversine). */
 export function distanceMetres(a: LatLng, b: LatLng): number {
   const rad = Math.PI / 180
   const dLat = (b.lat - a.lat) * rad
@@ -227,10 +191,6 @@ function inPolygon(at: LatLng, points: readonly LatLng[]): boolean {
   return inside
 }
 
-/**
- * Which saved fence a tap landed in, or null. A tap on a circle or polygon is worked out from where it fell, so every fence shape can
- * be selected the same way. Where fences overlap the one drawn last (on top) wins, as it does on the Leaflet map.
- */
 export function fenceAt(at: LatLng, fences: readonly MapFence[]): number | null {
   for (let i = fences.length - 1; i >= 0; i--) {
     const f = fences[i]

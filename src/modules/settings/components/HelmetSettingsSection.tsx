@@ -11,14 +11,8 @@ import { describeSettingsError } from '../lib/errorText'
 import { useSaveUnitSettings, useUnitSettings } from '../hooks/useSettings'
 import { SPLIT_CHOICES } from '../types'
 
-/**
- * How a helmet splits its recordings into clips. Needs UNIT_SETTING to see and
- * UNIT_SETTING_MANAGE to change.
- *
- * Settings reach the helmet straight away but only apply when it restarts, and the backend's
- * "apply now" only makes the helmet reconnect (it doesn't reload settings), so there is
- * deliberately no such button here.
- */
+// Settings reach the helmet at once but only apply when it restarts, and the backend's "apply now"
+// just makes it reconnect without reloading them, so there is deliberately no such button.
 export function HelmetSettingsSection({ id }: { id: string }) {
   const brand = useBrandColours()
   const canWrite = useCan('unitSettings:write')
@@ -29,7 +23,6 @@ export function HelmetSettingsSection({ id }: { id: string }) {
   const [minutes, setMinutes] = useState<number | undefined>(undefined)
   const [note, setNote] = useState<string | null>(null)
 
-  // Take the helmet's values once they load (and again after a save changes them).
   useEffect(() => {
     if (settings.data) {
       setSplitting(settings.data.videoSplitting)
@@ -41,7 +34,6 @@ export function HelmetSettingsSection({ id }: { id: string }) {
   if (settings.isLoading || !settings.data) return null
 
   const dirty = splitting !== settings.data.videoSplitting || minutes !== settings.data.videoSplitMinutes
-  // A length set some other way (the backend takes any 1-60) still shows, as its own chip.
   const choices = [...SPLIT_CHOICES] as number[]
   if (minutes !== undefined && !choices.includes(minutes)) choices.push(minutes)
 

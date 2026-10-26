@@ -9,8 +9,8 @@ import { useFonts } from 'expo-font'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { QueryClientProvider, focusManager } from '@tanstack/react-query'
 
-// One import per weight, deliberately not the package root: the root re-exports
-// every weight of the family, and Metro would bundle all of those font files.
+// One import per weight, not the package root: the root re-exports every
+// weight of the family and Metro would bundle all of those font files.
 import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular'
 import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium'
 import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold'
@@ -34,14 +34,12 @@ import { endSession } from '@/shared/lib/session'
 import { onSetupRequired, onUnauthorized } from '@/shared/lib/unauthorized'
 import { useAuthStore } from '@/shared/store/authStore'
 
-// Hold the native splash screen until fonts and the saved session are ready,
-// so there's no flash of a signed-out screen for someone who is signed in.
+// Hold the native splash screen until fonts and the saved session are ready, so
+// there's no flash of a signed-out screen for someone who is signed in.
 void SplashScreen.preventAutoHideAsync()
 
-// React Query decides when to refetch based on "focus". In a browser that's
-// the tab; on a phone it's the app being in the foreground. Wiring it to
-// AppState means polling stops when the phone is locked or the app is
-// backgrounded, and refreshes the moment it comes back.
+// React Query refetches on focus: in a browser that is the tab, on a phone it is the app being in the
+// foreground. Wiring it to AppState stops polling when the phone is locked or the app is backgrounded.
 if (Platform.OS !== 'web') {
   focusManager.setEventListener((handleFocus) => {
     const subscription = AppState.addEventListener('change', (state) => {
@@ -65,16 +63,14 @@ const FONT_ASSETS = {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(FONT_ASSETS)
-  // On a phone the app shows one message and does nothing else: no session is restored, no alarm stream or push alert starts.
   const gate = useTabletGate()
   const isBootstrapping = useAuthStore((s) => s.isBootstrapping)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
-  // The company requires two-step verification and this account hasn't set it up: the backend refuses everything but sign-in and the
-  // profile, so the only screen is the set-up one, and nothing that would only be refused (the alarm stream, push) runs.
+  // Until 2FA is set up the backend refuses everything but sign-in and the profile, so only
+  // the set-up screen shows and nothing that would be refused (alarm stream, push) runs.
   const mustSetup = useAuthStore((s) => s.user?.mustSetup2fa === true)
   const usable = isAuthenticated && !mustSetup
 
-  // Restore the saved session once, on launch (not on a phone, which is only shown the message).
   useEffect(() => {
     if (gate.blocked) {
       useAuthStore.getState().setBootstrapping(false)
@@ -95,10 +91,9 @@ export default function RootLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gate.blocked])
 
-  // A 401/403 from anywhere in the app means the token is dead.
   useEffect(() => onUnauthorized(() => void endSession()), [])
 
-  // ...but "set up 2FA first" is not a dead token: it sends the person to set it up, and never signs them out.
+  // "Set up 2FA first" is not a dead token: send the person to set it up, never sign them out.
   useEffect(() => onSetupRequired(() => useAuthStore.getState().requireSetup()), [])
 
   const ready = (fontsLoaded || !!fontError) && !isBootstrapping
@@ -115,9 +110,7 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <BrandTheme>
         <StatusBar style="dark" />
-        {/* Alarm alerts run for as long as someone is signed in. */}
         {usable ? <LiveAlarms /> : null}
-        {/* ...and so do alerts for a locked tablet, when this build has them. */}
         {usable ? <PushRuntime /> : null}
         <AlarmChrome>
         <Stack screenOptions={{ headerShown: false }}>

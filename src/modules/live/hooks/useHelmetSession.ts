@@ -6,14 +6,7 @@ import type { SessionMode, SessionState } from '../types'
 const noopSubscribe = () => () => {}
 const noState = () => null
 
-/**
- * Owns at most one session for the screen that uses it.
- *
- * Starting a session sends the helmet a command, so it must never happen twice by accident. React can run an
- * effect, undo it and run it again (in development), which would send start, stop, start within a blink; callers
- * therefore begin from a click, or from a timer that the undo cancels. The effect below only ever ends a
- * session, which is safe to repeat.
- */
+// Starting a session sends the helmet a command, so it must never happen twice by accident.
 export function useHelmetSession(deviceId: string) {
   const [session, setSession] = useState<HelmetSession | null>(null)
   const sessionRef = useRef<HelmetSession | null>(null)
@@ -35,7 +28,6 @@ export function useHelmetSession(deviceId: string) {
     sessionRef.current?.end()
   }, [])
 
-  // Leaving the screen ends the session.
   useEffect(
     () => () => {
       sessionRef.current?.end()

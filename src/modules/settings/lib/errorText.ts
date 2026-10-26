@@ -1,6 +1,5 @@
 import { isForbidden, statusOf } from '@/shared/lib/errors'
 
-/** One sentence for a failed settings or network request. */
 export function describeSettingsError(error: unknown): string {
   if (isForbidden(error)) return "Your role isn't allowed to do that."
   const status = statusOf(error)

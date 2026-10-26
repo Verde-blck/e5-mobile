@@ -46,8 +46,7 @@ function TrackScreen() {
   const [fromDate, setFromDate] = useState(initial.fromDate)
   const [toDate, setToDate] = useState(initial.toDate)
   const [rangeError, setRangeError] = useState<string | null>(null)
-  // Set when View is pressed, so editing the dates doesn't fire requests. Arriving from a helmet
-  // ("Replay route") goes straight to the last 7 days.
+  // Set when View is pressed, so editing the dates doesn't fire requests.
   const [requested, setRequested] = useState<{ from: number; to: number } | null>(() => {
     if (!paramId) return null
     const r = rangeFromDates(initial.fromDate, initial.toDate)
@@ -72,7 +71,8 @@ function TrackScreen() {
   useEffect(() => {
     if (!paramId) return
     setDeviceId(paramId)
-    // The last 7 days as of now: this screen may have been open for hours, so the window from when it first appeared is stale.
+    // The last 7 days as of now: this screen may have been open for
+    // hours, so the window from when it first appeared is stale.
     const fresh = presetDates('7d')
     setFromDate(fresh.fromDate)
     setToDate(fresh.toDate)
@@ -80,7 +80,6 @@ function TrackScreen() {
     if (!('error' in r)) setRequested(r)
   }, [paramId])
 
-  // A new track starts from the beginning.
   useEffect(() => {
     setCursor(0)
     setPlaying(false)

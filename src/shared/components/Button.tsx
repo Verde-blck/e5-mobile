@@ -15,7 +15,6 @@ interface ButtonProps {
   disabled?: boolean
   icon?: IconName
   className?: string
-  /** What a screen reader says, when the visible title alone is ambiguous (a list of identical "Play" buttons). */
   accessibilityLabel?: string
 }
 
@@ -50,7 +49,6 @@ export function Button({
   accessibilityLabel,
 }: ButtonProps) {
   const brand = useBrandColours()
-  // The ghost button is the company's colour; the rest are fixed.
   const iconColor = variant === 'ghost' ? brand.primary : ICON_COLOR[variant]
   const inactive = disabled || loading
   return (

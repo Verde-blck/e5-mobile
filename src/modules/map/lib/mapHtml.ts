@@ -1,12 +1,8 @@
 import { LEAFLET_CSS, LEAFLET_JS } from '../leaflet.generated'
 
-/**
- * Sent as the page's origin so the tile server can see who is asking. Public tile servers
- * refuse requests with no referrer, and a page loaded from a string has none.
- */
+// Sent as the page's origin so the tile server can see who is asking.
 export const MAP_BASE_URL = 'https://helmet.e5energyng.com'
 
-/** JSON that is safe to place inside an inline <script>. */
 export function safeJson(value: unknown): string {
   return JSON.stringify(value)
     .replace(/</g, '\\u003c')
@@ -14,21 +10,9 @@ export function safeJson(value: unknown): string {
     .replace(/\u2029/g, '\\u2029')
 }
 
-// Lagos, wide enough to see the region until the first helmets arrive.
 const DEFAULT_CENTER: [number, number] = [6.4474, 3.4012]
 const DEFAULT_ZOOM = 11
 
-/**
- * The whole map as one self-contained page: Leaflet embedded, styles included, nothing loaded
- * except the map tiles. The app talks to it through two things only:
- *
- *   in:  window.__apply({ type: 'state' | 'fit', ... })
- *   out: {type: 'ready' | 'select' | 'deselect' | 'selectAlarm', id}
- *        posted to the React Native WebView, or to the parent window in the web preview.
- *
- * The same page runs in the Android WebView and in the browser preview, so what is checked in
- * one is what runs in the other.
- */
 export function buildMapHtml(options: { tileUrl: string; attribution: string }): string {
   const config = safeJson({
     tileUrl: options.tileUrl,
@@ -191,7 +175,6 @@ html,body,#map{height:100%;margin:0;padding:0;background:#E5E7EB;font-family:sys
     if (pts.length === 1) { map.setView(pts[0], 16); return; }
     map.fitBounds(L.latLngBounds(pts), { padding: [60, 60], maxZoom: 16 });
   }
-
 
   function fenceStyle(f, selected, dim) {
     if (!f.active) return { color: '#94A3B8', weight: 1.5, fillColor: '#94A3B8', fillOpacity: 0.06, opacity: 0.7 };

@@ -1,6 +1,5 @@
 import type { PushMessage } from '../types'
 
-// The alarm id ends up in a route (/alarm/{id}), so only plain id characters are accepted.
 const ID = /^[A-Za-z0-9_-]{1,64}$/
 
 function text(value: unknown, max: number): string | undefined {
@@ -10,11 +9,9 @@ function text(value: unknown, max: number): string | undefined {
   return trimmed ? trimmed.slice(0, max) : undefined
 }
 
-/**
- * What a push is about, from its data payload (FCM data values arrive as strings), or null if it
- * isn't one of ours or is malformed. Nothing from a notification is trusted: it came through the
- * tablet's notification tray, not through the signed-in API connection.
- */
+// Nothing from a notification is trusted: it arrives through the tablet's
+// notification tray, not the signed-in API connection, so it is validated before
+// use.
 export function parsePushData(raw: unknown): PushMessage | null {
   let data = raw
   if (typeof raw === 'string') {

@@ -10,7 +10,6 @@ export interface WorkerForm {
 
 export type WorkerErrors = Partial<Record<keyof WorkerForm, string>>
 
-/** Only the name is required (up to 80 characters); the staff number and phone are optional. */
 export function validateWorker(form: WorkerForm): WorkerErrors {
   const errors: WorkerErrors = {}
   const name = form.name.trim()
@@ -19,7 +18,6 @@ export function validateWorker(form: WorkerForm): WorkerErrors {
   return errors
 }
 
-/** What is sent: trimmed, with the optional fields left out when empty. */
 export function workerPayload(form: WorkerForm): Worker {
   const staffId = form.staffId.trim()
   const phone = form.phone.trim()
@@ -30,12 +28,10 @@ export function formFromWorker(worker?: Worker): WorkerForm {
   return { name: worker?.name ?? '', staffId: worker?.staffId ?? '', phone: worker?.phone ?? '' }
 }
 
-/** "Worn by" as a person sees it: the name, or "Unassigned". */
 export function workerLabel(worker?: Worker): string {
   return worker?.name ?? 'Unassigned'
 }
 
-/** Yes for true, No for false, and a dash for unknown: a helmet that hasn't reported never shows "Yes". */
 export function wornLabel(isWorn: boolean | undefined): string {
   return isWorn === true ? 'Yes' : isWorn === false ? 'No' : '–'
 }

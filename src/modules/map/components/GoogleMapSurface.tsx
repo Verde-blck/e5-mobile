@@ -9,24 +9,12 @@ import {
 } from '../lib/nativeMap'
 import type { MapFitTarget, MapHelmet, MapSurfaceProps } from '../types'
 
-/*
- * The map on an Android tablet when the build has a Google Maps key: Google's own map, drawn natively, showing exactly what the
- * Leaflet map shows (helmets, alarm pins, fences, a fence being drawn, a route and its playback marker) behind the same
- * MapSurfaceProps, so the Live Map, the fence editor and track playback don't know which one they have.
- *
- * What to draw and how to frame it are the plain functions in lib/nativeMap.ts, which have their own tests. This file only turns
- * them into map elements.
- */
-
-// Lagos, wide enough to see the region until the first helmets arrive (the Leaflet map's start, at the same zoom).
 const START = { center: { latitude: 6.4474, longitude: 3.4012 }, zoom: 11, heading: 0, pitch: 0, altitude: 0 }
 
 type MarkerRef = ElementRef<typeof Marker>
 
-/**
- * A marker drawn from ordinary views. The map turns such a view into a picture once and then stops watching it (watching every
- * marker all the time makes a map crawl), so it is asked to look again for a moment whenever `look` changes.
- */
+// The map turns such a view into a picture once and then stops watching it (watching every marker all
+// the time makes a map crawl), so it is asked to look again for a moment whenever `look` changes.
 const BitmapMarker = forwardRef<MarkerRef, ComponentProps<typeof Marker> & { look: string }>(function BitmapMarker({ look, children, ...props }, ref) {
   const [watching, setWatching] = useState(true)
   useEffect(() => {
@@ -91,7 +79,6 @@ export function GoogleMapSurface(props: MapSurfaceProps) {
   const lastSelected = useRef<string | null>(null)
   const refitUntil = useRef(0)
   const lastFollow = useRef(0)
-  // While a handle is being dragged, the shape follows it here; a new draft from the screen replaces this.
   const [live, setLive] = useState<{ center?: LatLng; points?: LatLng[] } | null>(null)
   useEffect(() => setLive(null), [draft])
 
@@ -102,7 +89,8 @@ export function GoogleMapSurface(props: MapSurfaceProps) {
     mapRef.current?.fitToCoordinates(withMinSpan(coordinates), { edgePadding: edgePadding(target, inset), animated: true })
   }, [])
 
-  // Bring a point back into view, but only if it is near the edge or off screen, so the map doesn't jump while you watch.
+  // Bring a point back into view, but only if it is near the edge
+  // or off screen, so the map doesn't jump while you watch.
   const keepInView = useCallback((at: Coordinate, margin: number) => {
     void mapRef.current
       ?.getMapBoundaries()
@@ -112,7 +100,6 @@ export function GoogleMapSurface(props: MapSurfaceProps) {
       .catch(() => undefined)
   }, [])
 
-  // The first time there is something to show, frame it.
   useEffect(() => {
     if (ready && !fitted.current && ((helmets?.length ?? 0) > 0 || (alarms?.length ?? 0) > 0)) {
       fitted.current = true
@@ -120,7 +107,6 @@ export function GoogleMapSurface(props: MapSurfaceProps) {
     }
   }, [ready, helmets, alarms, frame])
 
-  // Choosing a helmet brings it into view and shows its name; a helmet already on screen isn't moved.
   useEffect(() => {
     if (!ready) return
     const previous = lastSelected.current
@@ -135,7 +121,7 @@ export function GoogleMapSurface(props: MapSurfaceProps) {
     lastSelected.current = selectedId ?? null
   }, [ready, selectedId, helmets, keepInView])
 
-  // A new route is framed. The screen's layout often settles just after the first frame (the playback bar appears), so it is framed
+  // The screen's layout often settles just after the first frame (the playback bar appears), so it is framed
   // again if the map changes size in the next couple of seconds, until the person touches the map.
   useEffect(() => {
     if (!ready || track === undefined) return
@@ -166,9 +152,7 @@ export function GoogleMapSurface(props: MapSurfaceProps) {
   const onPress = useCallback((event: MapPressEvent) => {
     const { latitude, longitude } = event.nativeEvent.coordinate
     const p = latest.current
-    // Drawing a fence: a tap places its centre or a corner.
     if (p.draft) return p.onMapTap?.(latitude, longitude)
-    // Otherwise a tap inside a saved fence selects it, and a tap on bare map clears the selection.
     const hit = p.fences && !p.dimFences ? fenceAt({ lat: latitude, lng: longitude }, p.fences) : null
     if (hit !== null) p.onSelectFence?.(hit)
     else p.onSelectHelmet?.(null)
@@ -182,7 +166,6 @@ export function GoogleMapSurface(props: MapSurfaceProps) {
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
         style={StyleSheet.absoluteFill}
-        // With a Map ID the map takes the dashboard's style; without one it is Google's standard map.
         {...(env.googleMapId ? { googleMapId: env.googleMapId, googleRenderer: 'LATEST' as const } : {})}
         initialCamera={START}
         minZoomLevel={3}
@@ -199,7 +182,6 @@ export function GoogleMapSurface(props: MapSurfaceProps) {
           refitUntil.current = 0
         }}
       >
-        {/* saved fences, under everything */}
         {fences?.map((fence) => {
           const style = fenceStyle(fence, fence.id === selectedFenceId, !!dimFences)
           if (fence.type === 'ROUND' && fence.center) return <Circle key={`fence-${fence.id}`} center={toCoordinate(fence.center)} radius={fence.radiusMeters} strokeColor={style.stroke} fillColor={style.fill} strokeWidth={style.width} zIndex={1} />
@@ -207,13 +189,11 @@ export function GoogleMapSurface(props: MapSurfaceProps) {
           return null
         })}
 
-        {/* how sure each helmet's position is */}
         {helmets?.map((helmet) => {
           const style = accuracyStyle(helmet, helmet.id === selectedId)
           return style ? <Circle key={`accuracy-${helmet.id}`} center={{ latitude: helmet.lat, longitude: helmet.lng }} radius={style.radius} strokeColor={style.stroke} fillColor={style.fill} strokeWidth={style.width} lineDashPattern={style.dash} zIndex={2} /> : null
         })}
 
-        {/* the fence being drawn */}
         {draft && draftLook && draft.type === 'ROUND' && (live?.center ?? draft.center) ? (
           <>
             <Circle center={toCoordinate(live?.center ?? (draft.center as LatLng))} radius={draft.radiusMeters} strokeColor={draftLook.stroke} fillColor={draftLook.fill} strokeWidth={draftLook.width} zIndex={3} />
@@ -264,7 +244,7 @@ export function GoogleMapSurface(props: MapSurfaceProps) {
             })()
           : null}
 
-        {/* a route, one line per continuous run, so no line crosses a gap in coverage */}
+        {/* A route is drawn as one line per continuous run, so no line crosses a gap in coverage. */}
         {track?.segments.map((segment, i) =>
           segment.length > 1 ? (
             <Polyline key={`run-${i}`} coordinates={segment.map(toCoordinate)} strokeColor={withAlpha(COLOURS.route, 0.85)} strokeWidth={4} lineCap="round" lineJoin="round" zIndex={4} />
@@ -290,7 +270,6 @@ export function GoogleMapSurface(props: MapSurfaceProps) {
           </BitmapMarker>
         ) : null}
 
-        {/* alarm pins, above the fences, below the selected helmet */}
         {alarms?.map((alarm) => (
           <BitmapMarker
             key={`alarm-${alarm.id}`}
@@ -305,7 +284,6 @@ export function GoogleMapSurface(props: MapSurfaceProps) {
           </BitmapMarker>
         ))}
 
-        {/* helmets: coloured by whether they are reporting, ringed when they have an alarm; the selected one is larger and named */}
         {helmets?.map((helmet) => {
           const selected = helmet.id === selectedId
           return (

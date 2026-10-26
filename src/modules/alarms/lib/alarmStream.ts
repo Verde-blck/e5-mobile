@@ -3,24 +3,13 @@ import { tokenStore } from '@/shared/lib/token'
 import { emitUnauthorized } from '@/shared/lib/unauthorized'
 import type { ApiAlarm } from '../api/alarms.wire'
 
-/**
- * Client for GET /api/alarms/stream — Server-Sent Events, read with fetch so
- * the normal Bearer header goes with it (EventSource can't send headers).
- *
- * What the server does, per Cypher's 16 Oct update:
- *  - `event: alarm`        a new alarm; `data` is an item of GET /api/alarms
- *  - `event: alarm-update` resolved or reopened
- *  - `: ping`              every 25 s, to keep Railway's proxy from closing it
- *  - closes the stream after 30 minutes, so the client must reconnect
- *  - `Last-Event-ID: <id>` on reconnect replays what was missed (up to 50)
- */
+// Read with fetch rather than EventSource, which can't send the Bearer header.
 
 export type StreamStatus = 'connecting' | 'open' | 'down' | 'forbidden'
 
 let status: StreamStatus = 'down'
 const listeners = new Set<() => void>()
 
-/** An external store, so React can follow it with useSyncExternalStore. */
 export const streamStatus = {
   get: (): StreamStatus => status,
   set(next: StreamStatus) {
@@ -36,7 +25,7 @@ export const streamStatus = {
   },
 }
 
-/** The id of the last alarm seen, sent as Last-Event-ID so a reconnect catches up. */
+// The id of the last alarm seen, sent as Last-Event-ID so a reconnect catches up.
 let lastAlarmId: number | undefined
 export const alarmCursor = {
   get: () => lastAlarmId,
@@ -48,21 +37,14 @@ export const alarmCursor = {
   },
 }
 
-// ---------------------------------------------------------------------------
-// Parsing
-// ---------------------------------------------------------------------------
-
 export interface SseEvent {
   event: string
   data: string
   id?: string
 }
 
-/**
- * Pulls complete events out of a text buffer. Network chunks don't line up
- * with events — one event can arrive in three pieces, or three events in one —
- * so what's left over is returned and prepended to the next chunk.
- */
+// Network chunks don't line up with events: one event can arrive in three pieces, or
+// three in one, so what is left over is returned and prepended to the next chunk.
 export function parseSse(buffer: string): { events: SseEvent[]; rest: string } {
   let rest = buffer.replace(/\r\n/g, '\n')
   const events: SseEvent[] = []
@@ -77,10 +59,9 @@ export function parseSse(buffer: string): { events: SseEvent[]; rest: string } {
     let id: string | undefined
     const data: string[] = []
     for (const line of block.split('\n')) {
-      if (!line || line.startsWith(':')) continue // a comment, e.g. ": ping"
+      if (!line || line.startsWith(':')) continue
       const colon = line.indexOf(':')
       const field = colon < 0 ? line : line.slice(0, colon)
-      // The spec strips exactly one space after the colon.
       const value = colon < 0 ? '' : line.slice(colon + 1).replace(/^ /, '')
       if (field === 'event') event = value
       else if (field === 'data') data.push(value)
@@ -92,45 +73,31 @@ export function parseSse(buffer: string): { events: SseEvent[]; rest: string } {
   return { events, rest }
 }
 
-// ---------------------------------------------------------------------------
-// Connection
-// ---------------------------------------------------------------------------
-
 export interface AlarmStreamOptions {
   onAlarm: (alarm: ApiAlarm) => void
   onUpdate: (alarm: ApiAlarm) => void
-  // Everything below defaults to the real thing; tests substitute their own.
   url?: string
   fetchImpl?: typeof fetch
   getToken?: () => string | null
   onStatus?: (status: StreamStatus) => void
   onUnauthorized?: () => void
   cursor?: { get(): number | undefined; set(id: number): void }
-  /** No bytes at all (not even a ping) for this long means the link is dead. */
   stallMs?: number
   sleep?: (ms: number) => Promise<void>
 }
 
-export const STALL_MS = 70_000 // the server pings every 25 s
+export const STALL_MS = 70_000
 const MAX_BACKOFF_MS = 30_000
 
-/** Short-lived connections count as failures, so a server that hangs up at once isn't hammered. */
+// Short-lived connections count as failures, so a server that hangs up at once isn't hammered.
 const HEALTHY_MS = 10_000
 
 export function backoffMs(attempt: number, random: number = Math.random()): number {
   return Math.min(MAX_BACKOFF_MS, 1000 * 2 ** attempt) + Math.floor(random * 500)
 }
 
-/**
- * Opens the stream and keeps it open until stop() is called: reconnecting
- * after drops, after the server's 30-minute close, and after silent stalls.
- *
- * It stops by itself in exactly two cases, because retrying can't help:
- *  - the token is dead (401, or a 403 without the "forbidden" body) → the
- *    session is ended through the normal route;
- *  - the account isn't allowed the stream (403 {"error":"forbidden"}) → status
- *    'forbidden', and the app falls back to polling.
- */
+// Stops by itself only when retrying can't help: a dead token (401, or a 403 without the
+// "forbidden" body), which ends the session, or an account that isn't allowed the stream.
 export function connectAlarmStream(options: AlarmStreamOptions): { stop(): void } {
   const url = options.url ?? `${env.apiBaseUrl}/alarms/stream`
   const doFetch = options.fetchImpl ?? ((input, init) => fetch(input, init))
@@ -158,7 +125,7 @@ export function connectAlarmStream(options: AlarmStreamOptions): { stop(): void 
     try {
       alarm = JSON.parse(event.data) as ApiAlarm
     } catch {
-      return // a malformed event shouldn't take the connection down
+      return
     }
     if (event.event === 'alarm') {
       if (typeof alarm.id === 'number') cursor.set(alarm.id)

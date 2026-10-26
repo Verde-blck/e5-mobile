@@ -7,10 +7,6 @@ import type { MapSurfaceProps } from '../types'
 
 type MapWindow = Window & { __apply?: (message: object) => void }
 
-/**
- * The map in the browser preview: the same embedded Leaflet page, in an iframe. This is a
- * development convenience; the product is the tablet APK, where MapSurface.tsx runs.
- */
 export function MapSurface(props: MapSurfaceProps) {
   const { helmets, alarms, selectedId, fences, selectedFenceId, dimFences, draft, track, cursor, fitKey, fitTarget, fitInsetBottom } = props
   const frame = useRef<HTMLIFrameElement>(null)
@@ -29,7 +25,6 @@ export function MapSurface(props: MapSurfaceProps) {
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
-      // Only listen to our own iframe.
       if (event.source !== frame.current?.contentWindow) return
       const message = parseMapEvent((event.data as { __e5map?: unknown } | null)?.__e5map)
       if (message) dispatchMapEvent(message, handlers.current)

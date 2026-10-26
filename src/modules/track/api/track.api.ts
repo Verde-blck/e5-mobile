@@ -19,18 +19,13 @@ interface ApiTelemetry {
   netStrength?: string | null
   rawGasData?: string | null
   recordedAt?: string | null
-  /** From Cypher's 16 Oct update. null on older rows. */
   fixType?: string | null
   accuracyMeters?: number | string | null
 }
 
-/** The backend's limit per page. */
 const PAGE_SIZE = 10_000
-/**
- * How many pages to pull before the range is treated as cut short. Each page is several megabytes of
- * JSON on a tablet's data connection, so a very long range is trimmed (to its most recent part) and
- * says so, rather than freezing the screen.
- */
+// Each page is several megabytes of JSON on a tablet's data connection, so a very long range
+// is trimmed (to its most recent part) and says so, rather than freezing the screen.
 export const MAX_PAGES = 3
 
 export interface TrackFetch {
@@ -55,17 +50,8 @@ function toSample(api: ApiTelemetry): TelemetrySample {
   }
 }
 
-/**
- * Position history for one helmet over a range.
- *
- * GET /api/devices/{id}/telemetry takes `from` and `to` (ISO instants, inclusive, on recordedAt), `sort`
- * and `page`/`size` (up to 10,000 a page; Cypher, 20 Oct). It is asked for the newest rows first, so if
- * the range is bigger than MAX_PAGES pages it is the OLDEST part that is dropped, and `truncated` says so
- * rather than quietly showing a short track.
- *
- * `hasPosition=true` exists but is deliberately not used: the uptime chart counts every report, including
- * the ones with no position fix.
- */
+// Rows are requested newest first, so when the range is larger than MAX_PAGES
+// pages it is the oldest part that is dropped, and `truncated` says so.
 export async function fetchTrackSamples(deviceId: string, from: number, to: number): Promise<TrackFetch> {
   if (env.useMocks) return { samples: getMockTrackSamples(deviceId, from, to), truncated: false }
 
@@ -80,7 +66,6 @@ export async function fetchTrackSamples(deviceId: string, from: number, to: numb
     const content = pageContent(data)
     rows.push(...content)
 
-    // A standard Spring page says how many pages there are; if it doesn't, a full page means "probably more".
     const total = Array.isArray(data) ? undefined : data?.totalPages
     const more = typeof total === 'number' ? page + 1 < total : content.length >= PAGE_SIZE
     if (!more) break

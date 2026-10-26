@@ -18,7 +18,8 @@ export function useAdmins() {
   return { admins: q.data ?? [], isLoading: q.isLoading, isError: q.isError, refetch: q.refetch }
 }
 
-/** Groups are also what the Group Call screen lists, so a role with group call (or group management) sees them without being able to administer accounts. */
+// Groups are also what the Group Call screen lists, so a role with group call (or
+// group management) sees them without being able to administer accounts.
 function useGroupsEnabled() {
   const signedIn = useAuthStore((s) => s.isAuthenticated)
   const users = useCan('users:read')
@@ -33,7 +34,6 @@ export function useGroups() {
   return { groups: q.data ?? [], isLoading: q.isLoading, isError: q.isError, refetch: q.refetch }
 }
 
-/** The catalogue is fixed server-side, so it is asked for rarely. */
 export function usePermissionCatalogue() {
   const enabled = useEnabled()
   return useQuery({ queryKey: ['permissions'], queryFn: fetchPermissions, enabled, staleTime: 60 * 60_000 }).data ?? []
@@ -72,13 +72,11 @@ export function useDeleteGroup() {
   return useMutation({ mutationFn: (id: number) => deleteGroup(id), onSuccess: invalidate })
 }
 
-/** Clears an administrator's two-step verification (a lost or changed phone). */
 export function useResetTwoFactor() {
   const queryClient = useQueryClient()
   return useMutation({ mutationFn: (id: number) => resetAdminTwoFactor(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admins'] }) })
 }
 
-/** The company policy "require two-step verification for everyone". Needs ADMINISTRATOR_SETTING, as the administrators list does. */
 export function useSecurityPolicy() {
   const signedIn = useAuthStore((s) => s.isAuthenticated)
   const canRead = useCan('users:read')

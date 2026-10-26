@@ -8,7 +8,6 @@ import { MediaViewer } from './MediaViewer'
 
 const GAP = 10
 
-/** The photos as a grid of tiles. One that hasn't arrived from the helmet yet says so rather than showing a broken picture. */
 export function PhotoGrid({ items, width, columns, emptyMessage, onLinkFailed }: { items: MediaItem[]; width: number; columns: number; emptyMessage: string; onLinkFailed: () => void }) {
   const now = useNow(30_000)
   const [open, setOpen] = useState<number | null>(null)
@@ -45,7 +44,7 @@ export function PhotoGrid({ items, width, columns, emptyMessage, onLinkFailed }:
                   <Text className="font-sans-medium text-xs" numberOfLines={1}>{item.deviceName}</Text>
                   <Text className="text-[11px] text-slate-400">
                     {formatLastSeen(item.capturedAt, now)}
-                    {/* Captured long before it arrived: the helmet was offline. Without this the gallery looks like it is reordering itself. */}
+                    {/* A photo captured long before it arrived (the helmet was offline) is tagged as a late upload; without the tag the gallery looks like it is reordering itself. */}
                     {lag > 10 * 60_000 ? <Text className="text-[11px] text-amber-600"> · late upload</Text> : null}
                   </Text>
                 </View>

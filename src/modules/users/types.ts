@@ -1,9 +1,7 @@
 import type { ApiPermission } from '@/shared/constants/backend-permissions'
 
-/**
- * An administrator account, matching GET /api/admins. `role` and `department` are free text on the account,
- * and permissions attach directly to it (not through a shared role): the backend doesn't model roles.
- */
+// `role` and `department` are free text and permissions attach directly to the
+// account, not through a shared role: the backend doesn't model roles.
 export interface Administrator {
   id: number
   username: string
@@ -12,9 +10,7 @@ export interface Administrator {
   mobilePhone?: string | null
   groupId?: number | null
   permissions: ApiPermission[]
-  /** Helmets this administrator is limited to. Empty means no restriction. */
   deviceIds: string[]
-  /** Full access. Only a super admin can edit or delete one. */
   superAdmin?: boolean
   twoFactorEnabled?: boolean
 }
@@ -30,7 +26,6 @@ export interface NewAdministrator {
   deviceIds: string[]
 }
 
-/** Editing omits the password unless it is being changed. */
 export type AdministratorUpdate = Partial<Omit<NewAdministrator, 'password'>> & { password?: string }
 
 export interface Group {

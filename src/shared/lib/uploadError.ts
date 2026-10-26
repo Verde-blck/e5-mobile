@@ -1,7 +1,5 @@
 export interface UploadProblem {
-  /** What to tell the person, in words that say what to do. */
   message: string
-  /** What the server actually answered, for when the cause isn't obvious. */
   detail?: string
 }
 
@@ -14,10 +12,8 @@ function serverText(data: unknown): string {
   return ''
 }
 
-/**
- * Why an upload failed. "Check the connection" is only true when no answer came back; if the server answered, the
- * connection was fine and the answer is what matters, so it is reported with its code and its own words.
- */
+// "Check the connection" is only true when no answer came back; if the server answered, the connection
+// was fine and the answer is what matters, so it is reported with its code and its own words.
 export function describeUploadError(error: unknown, what = 'the recording'): UploadProblem {
   const e = error as { name?: string; message?: string; response?: { status?: number; data?: unknown } }
   const status = e?.response?.status

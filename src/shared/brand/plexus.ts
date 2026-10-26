@@ -1,15 +1,8 @@
-/*
- * The sign-in panel's animated network: drifting nodes, links that fade in with distance, packets of "data" travelling along live
- * links, and larger "helmet" nodes that pulse slowly. It is the web dashboard's PlexusField, ported as it is.
- *
- * A phone or tablet has no browser canvas, so this is a small web page that is drawn in a transparent web view on the tablet and
- * in an iframe in the browser preview. Both show exactly this page, so the preview is what the tablet draws.
- */
+// A tablet has no browser canvas, so this runs as a small web page: in a
+// transparent web view on the tablet, in an iframe in the browser preview.
 
-/** The E5 mint, as the web uses it. */
 export const DEFAULT_MINT = '#A3E2D7'
 
-/** "#A3E2D7" as the "163, 226, 215" that rgba() wants; the default mint for anything that isn't a colour. */
 export function mintTriplet(hex: string): string {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim()) ?? /^#?([0-9a-f]{6})$/i.exec(DEFAULT_MINT)
   const value = m![1]
@@ -163,12 +156,7 @@ const SCRIPT = `
 })();
 `
 
-/**
- * The page. \`mint\` is the colour of the nodes and links. \`reduceMotion\` true or false is what the device says; leave it out and the
- * page asks the browser itself. With reduced motion, one still frame is drawn and nothing moves.
- */
 export function plexusHtml(mint: string = DEFAULT_MINT, reduceMotion: boolean | null = null): string {
   const script = SCRIPT.replace('__MINT__', mintTriplet(mint)).replace('__REDUCE__', reduceMotion === null ? 'null' : reduceMotion ? 'true' : 'false')
-  // The canvas fades in as the page loads, so the panel never flashes an empty frame.
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><meta name="color-scheme" content="normal"><style>html,body{margin:0;height:100%;background:transparent;overflow:hidden}canvas{position:absolute;left:0;top:0;width:100%;height:100%;display:block;opacity:0;animation:in .6s ease-out .05s forwards}@keyframes in{to{opacity:1}}</style></head><body><canvas id="c" aria-hidden="true"></canvas><script>${script}</script></body></html>`
 }

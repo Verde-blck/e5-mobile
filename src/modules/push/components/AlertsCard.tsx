@@ -21,10 +21,6 @@ const TONE = {
   info: { box: 'bg-slate-100', text: 'text-slate-700', icon: '#475569', name: 'info' },
 } as const
 
-/**
- * Where alarm alerts stand on this tablet, with the one thing to do about it, a way to test it,
- * and the battery setting that decides whether a locked tablet can really be woken.
- */
 export function AlertsCard() {
   const status = usePushStore((s) => s.status)
   const copy = describeStatus(status)

@@ -13,11 +13,8 @@ export interface AlarmVideo {
   url: string
   fileName: string
   sizeBytes?: number
-  /**
-   * "22:35" — the helmet's own clock, exactly as the API gave it. The backend
-   * sends this timestamp without a timezone, so converting it to a moment in
-   * time would be a guess; it's shown as a clock reading instead.
-   */
+  // The backend sends this timestamp without a timezone, so converting it to a
+  // moment in time would be a guess; it is shown as a clock reading.
   recordedClock?: string
 }
 
@@ -27,21 +24,14 @@ export interface AlarmDetail {
   videos: AlarmVideo[]
 }
 
-/**
- * The alarms the backend captures footage for: SOS (7), fall or impact (4) and
- * near live electricity (11). The SOS *button* (manual_sos_button) isn't
- * included yet — recording its call is the backend's next step.
- */
+// Only these alarm types have footage captured by the backend: SOS
+// (7), fall or impact (4) and near live electricity (11).
 export function expectsFootage(type: AlarmType): boolean {
   return type === 'sos' || type === 'fall' || type === 'near-electric'
 }
 
-/**
- * Clips reach the server about 35 minutes after the alarm, longer on a weak
- * connection. Three hours is generous enough that "still uploading" is
- * believable, and short enough that an alarm with nothing linked eventually
- * says so instead of promising footage forever.
- */
+// Three hours: long enough that "still uploading" is believable,
+// short enough that an alarm with no footage eventually says so.
 export const FOOTAGE_UPLOAD_WINDOW_MS = 3 * 60 * 60_000
 
 export type VideoStatus = 'ready' | 'uploading' | 'none'
@@ -52,5 +42,4 @@ export function videoStatus(detail: AlarmDetail, now: number): VideoStatus {
   return now - detail.alarm.raisedAt < FOOTAGE_UPLOAD_WINDOW_MS ? 'uploading' : 'none'
 }
 
-/** How often to re-check while footage is still on its way (the backend's advice). */
 export const FOOTAGE_POLL_MS = 30_000

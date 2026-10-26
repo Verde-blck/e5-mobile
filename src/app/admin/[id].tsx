@@ -34,7 +34,6 @@ function AdminFormScreen() {
   const update = useUpdateAdmin()
 
   const existing = isNew ? undefined : admins.find((a) => String(a.id) === id)
-  // What this person may hand out. A super admin may grant anything.
   const grantable = useMemo(() => (me?.superAdmin ? null : new Set(me?.apiPermissions ?? [])), [me])
 
   const [loaded, setLoaded] = useState(isNew)
@@ -49,7 +48,6 @@ function AdminFormScreen() {
   const [deviceFilter, setDeviceFilter] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  // Editing starts from the saved account once the list has loaded.
   useEffect(() => {
     if (!loaded && existing) {
       setUsername(existing.username)

@@ -2,7 +2,6 @@ import { createElement, useEffect, useRef } from 'react'
 import { View } from 'react-native'
 import type { StreamLike } from '../types'
 
-/** A picture from a stream in the browser preview: a <video> fed from the stream. */
 export function StreamView({ stream, muted, mirrored = false, overlay = false }: { stream: StreamLike | null; muted: boolean; mirrored?: boolean; overlay?: boolean }) {
   const ref = useRef<HTMLVideoElement>(null)
   useEffect(() => {

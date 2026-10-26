@@ -1,5 +1,3 @@
-// The E5 Command Centre product mark: a mint tile with a hard hat, as on the web's sign-in panel.
-// The same shapes were used to draw the launcher icon, splash and notification icon (assets/brand/source).
 export const BRAND = {
   mint: '#A7E5DA',
   deep: '#0C352F',

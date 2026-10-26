@@ -5,7 +5,6 @@ import { getLocalMedia } from '../lib/localMedia'
 import { GroupCallSession, type GroupCallState, type GroupDeps } from '../lib/groupSession'
 import { play, push } from '../lib/webrtc'
 
-/** The real wiring: the group call API, this platform's media and WebRTC, and the app's own foreground state. */
 const deps: GroupDeps = {
   startGroupCall,
   stopGroupCall,
@@ -22,10 +21,8 @@ const deps: GroupDeps = {
 const noopSubscribe = () => () => {}
 const noState = () => null
 
-/**
- * At most one group call for the screen that uses it. Starting one sends every helmet into call mode, so it must never
- * happen twice by accident: callers begin from a timer that React's undo cancels, and leaving the screen hangs up.
- */
+// Starting one sends every helmet into call mode, so it must never happen twice by accident:
+// callers begin from a timer that React's undo cancels, and leaving the screen hangs up.
 export function useGroupCall() {
   const [session, setSession] = useState<GroupCallSession | null>(null)
   const ref = useRef<GroupCallSession | null>(null)

@@ -15,12 +15,10 @@ const STATUS = {
   failed: { label: 'Failed', box: 'bg-red-50', text: 'text-red-700' },
 } as const
 
-/** Recordings read better as a file list than a wall of near-identical stills: the useful facts are name, when, size and whether it is ready. */
 export function VideoList({ items, onLinkFailed }: { items: MediaItem[]; onLinkFailed: () => void }) {
   const now = useNow(30_000)
   const [open, setOpen] = useState<number | null>(null)
   if (items.length === 0) return <Text className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500">No recordings match those filters.</Text>
-  // Live recordings come without a length; a row of dashes is noise.
   const hasLength = items.some((m) => m.durationMs != null)
 
   return (

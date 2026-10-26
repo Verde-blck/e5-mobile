@@ -4,11 +4,8 @@ export function formatMeters(meters: number): string {
   return meters < 10 ? meters.toFixed(1) : String(Math.round(meters))
 }
 
-/**
- * How trustworthy a helmet's position is. Indoors a helmet has no GPS and its
- * "location" is worked out from the mobile network or Wi-Fi, which can be
- * hundreds of metres out — it must read as approximate, never as a pin.
- */
+// Indoors a helmet has no GPS and its "location" is worked out from the mobile network or
+// Wi-Fi, which can be hundreds of metres out, it must read as approximate, never as a pin.
 export function describeFix(t: Pick<Telemetry, 'fixType' | 'accuracyMeters'>): {
   label: string
   approximate: boolean

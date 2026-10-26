@@ -56,7 +56,6 @@ function MapScreen() {
   const [showFences, setShowFences] = useState(true)
   const [panelTab, setPanelTab] = useState<PanelTab>('helmets')
 
-  // The counts on the chips describe the whole fleet; the map and list follow the filter.
   const everything = useMemo(() => buildMapHelmets(devices, active), [devices, active])
   const counts = useMemo(() => countByPresence(everything.placed), [everything.placed])
 
@@ -109,7 +108,6 @@ function MapScreen() {
         fences={mapFences}
         selectedFenceId={fenceId}
         fitKey={fitKey}
-        // Tapping empty map (id null) clears whatever was open; choosing a helmet replaces a chosen fence.
         onSelectHelmet={(id) => {
           select(id)
           selectFence(null)
@@ -122,7 +120,6 @@ function MapScreen() {
         }}
       />
 
-      {/* filters */}
       <BackButton floating />
       <View pointerEvents="box-none" className="absolute left-16 right-16 top-3 flex-row flex-wrap gap-2">
         {FILTERS.map(({ key, label }) => {
@@ -175,7 +172,6 @@ function MapScreen() {
         </View>
       ) : null}
 
-      {/* narrow screens: a way into the fence list */}
       {!twoPane && canFences && !selected && !selectedFence ? (
         <Pressable
           accessibilityRole="button"
@@ -187,7 +183,6 @@ function MapScreen() {
         </Pressable>
       ) : null}
 
-      {/* narrow screens: the chosen helmet, or fence, in a card over the map */}
       {!twoPane && selected ? (
         <View className="absolute inset-x-3 bottom-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg">
           <View className="flex-row items-start justify-between gap-3">
@@ -225,7 +220,6 @@ function MapScreen() {
 
   if (!twoPane) return <Screen top>{map}</Screen>
 
-  // wide screens: the map, with the helmets or the fences in a panel on the right
   return (
     <Screen>
       <View className="flex-1 flex-row">

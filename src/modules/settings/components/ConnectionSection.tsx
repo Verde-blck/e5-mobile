@@ -11,14 +11,8 @@ import type { DeviceView } from '@/modules/devices/types'
 import { isNoSim, noSimMessage, switchToMobileData, switchToWifi } from '../api/settings.api'
 import { describeSettingsError } from '../lib/errorText'
 
-/**
- * Move one helmet between Wi-Fi and mobile data.
- *
- * Both directions are confirmed first, because the risk is real: a helmet switched to a SIM
- * with no data drops off until someone can get it back onto Wi-Fi (USB or a known hotspot).
- * The backend refuses a helmet that hasn't reported a SIM; going ahead anyway takes a second,
- * stronger confirmation.
- */
+// Both directions are confirmed first: a helmet switched to a SIM with no data
+// drops off until someone can get it back onto Wi-Fi (USB or a known hotspot).
 export function ConnectionSection({ device }: { device: DeviceView }) {
   const canSwitch = useCan('wifi:write')
   const queryClient = useQueryClient()

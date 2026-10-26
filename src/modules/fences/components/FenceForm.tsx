@@ -12,7 +12,6 @@ import { describePeriod, isTooSmall, narrowestAcrossM, validateDraft } from '../
 import { AudioPreview } from '@/shared/components/AudioPreview'
 import { BEHAVIOR_LABEL, FREQUENCIES, MIN_FENCE_ACROSS_M, type Fence, type FenceBehavior, type FenceDraft } from '../types'
 
-/** "0830" -> "08:30": digits only, the colon added for you. */
 export function formatTimeInput(raw: string): string {
   const digits = raw.replace(/\D/g, '').slice(0, 4)
   return digits.length > 2 ? `${digits.slice(0, 2)}:${digits.slice(2)}` : digits
@@ -43,18 +42,14 @@ function Chip({ label, on, onPress }: { label: string; on: boolean; onPress: () 
 interface Props {
   draft: FenceDraft
   onChange: (patch: Partial<FenceDraft>) => void
-  /** The saved fence when editing; undefined for a new one. */
   existing?: Fence
   devices: DeviceView[]
   saving: boolean
   error: string | null
-  /** A new clip chosen but not saved yet. */
   clip: ClipFile | null
-  /** The attached clip is to be removed when saved. */
   clipRemoved: boolean
   clipError: string | null
   onPickClip: () => void
-  /** The tablet's own recorder: active while recording, with seconds so far and the limit. */
   recording: { active: boolean; seconds: number; limit: number; error: string | null }
   onRecord: () => void
   onStopRecording: () => void
@@ -65,13 +60,11 @@ interface Props {
   onCancel: () => void
 }
 
-/** The fence's details. Its shape is drawn on the map beside or above this. */
 export function FenceForm({ draft, onChange, existing, devices, saving, error, clip, clipRemoved, clipError, onPickClip, recording, onRecord, onStopRecording, onCancelRecording, onDiscardClip, onRemoveClip, onSave, onCancel }: Props) {
   const brand = useBrandColours()
   const [showProblems, setShowProblems] = useState(false)
   const [radiusText, setRadiusText] = useState(String(Math.round(draft.radiusMeters)))
 
-  // A radius changed some other way (the stepper buttons) shows here too.
   useEffect(() => {
     setRadiusText((current) => (Number(current) === Math.round(draft.radiusMeters) ? current : String(Math.round(draft.radiusMeters))))
   }, [draft.radiusMeters])
@@ -96,7 +89,6 @@ export function FenceForm({ draft, onChange, existing, devices, saving, error, c
     <View className="gap-6">
       <TextField label="Name" value={draft.name} onChangeText={(name) => onChange({ name })} placeholder="e.g. Site A work area" />
 
-      {/* shape */}
       <View>
         <Label>Shape</Label>
         <View className="flex-row gap-2">
@@ -168,7 +160,6 @@ export function FenceForm({ draft, onChange, existing, devices, saving, error, c
         ) : null}
       </View>
 
-      {/* behaviour */}
       <View>
         <Label>Type</Label>
         <View className="gap-2">
@@ -190,7 +181,6 @@ export function FenceForm({ draft, onChange, existing, devices, saving, error, c
         </View>
       </View>
 
-      {/* repeat */}
       <View>
         <Label>Repeat the alarm while in breach</Label>
         <View className="flex-row flex-wrap gap-2">
@@ -203,7 +193,6 @@ export function FenceForm({ draft, onChange, existing, devices, saving, error, c
         ) : null}
       </View>
 
-      {/* hours */}
       <View>
         <Label>Active hours (Lagos time)</Label>
         {draft.validPeriods.length === 0 ? (
@@ -231,7 +220,6 @@ export function FenceForm({ draft, onChange, existing, devices, saving, error, c
         {draft.validPeriods.length > 0 ? <Text className="mt-1 text-xs text-slate-500">Active {draft.validPeriods.map(describePeriod).join(', ')}.</Text> : null}
       </View>
 
-      {/* helmets */}
       <View>
         <Label>Helmets</Label>
         <View className="flex-row gap-2">
@@ -247,7 +235,6 @@ export function FenceForm({ draft, onChange, existing, devices, saving, error, c
                   key={d.id}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: on }}
-                  // react-native-web doesn't write aria-checked from accessibilityState.
                   aria-checked={on}
                   accessibilityLabel={d.name}
                   onPress={() => {
@@ -268,7 +255,6 @@ export function FenceForm({ draft, onChange, existing, devices, saving, error, c
         ) : null}
       </View>
 
-      {/* warning clip */}
       <View>
         <Label>Warning played on the helmet</Label>
         <Text className="mb-2 text-xs leading-5 text-slate-500">Played when a breach is detected, for example "You have left the work area."</Text>

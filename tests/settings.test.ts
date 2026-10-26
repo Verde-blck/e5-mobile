@@ -13,7 +13,6 @@ const http = installHttp()
 const HELMET = '866652022956057'
 
 async function main() {
-  // ---------- rules ----------
   await t('a Wi-Fi name is 1-32 BYTES: accents and emoji run out sooner than ASCII', () => {
     assert.equal(validateSsid(''), 'Enter the network name.')
     assert.equal(validateSsid('E5ENERGY'), null); assert.equal(validateSsid('a'.repeat(32)), null)
@@ -35,7 +34,6 @@ async function main() {
     assert.ok(manage.includes('wifi:write') && manage.includes('unitSettings:write') && manage.includes('wifi:read'))
   })
 
-  // ---------- site Wi-Fi (Cypher's section 6) ----------
   await t('site Wi-Fi: GET returns the name and whether a password is set (never the password); none set -> null', async () => {
     http.routes = { 'GET /settings/site-wifi': () => ({ status: 200, data: { ssid: 'E5ENERGY', passwordSet: true } }) }
     assert.deepEqual(await fetchSiteWifi(), { ssid: 'E5ENERGY', passwordSet: true })
@@ -56,7 +54,6 @@ async function main() {
     await removeSiteWifi(); assert.equal(`${http.calls[0].method} ${http.calls[0].url}`, 'DELETE /settings/site-wifi')
   })
 
-  // ---------- Unit Setting / video split (section 5) ----------
   await t('unit settings: tolerant of booleans and numbers arriving as strings', () => {
     assert.deepEqual(toUnitSettings({ videoSplitting: true, videoSplitMinutes: 2 }), { videoSplitting: true, videoSplitMinutes: 2 })
     assert.deepEqual(toUnitSettings({ videoSplitting: 'false', videoSplitMinutes: '20' }), { videoSplitting: false, videoSplitMinutes: 20 })
@@ -77,7 +74,6 @@ async function main() {
     assert.equal((await saveUnitSettings(HELMET, { videoSplitting: false })).delivered, false, 'saved but not yet delivered is its own state')
   })
 
-  // ---------- switching network (section 7) ----------
   await t('mobile data: POST, and the helmet reports whether it received it', async () => {
     http.calls.length = 0; http.routes = { [`POST /devices/${HELMET}/network/mobile`]: () => ({ status: 200, data: { delivered: true } }) }
     assert.deepEqual(await switchToMobileData(HELMET), { delivered: true })

@@ -8,13 +8,8 @@ interface JwtPayload {
   iat?: number
 }
 
-/**
- * Reads a JWT's payload without verifying it.
- *
- * Verification is the server's job — this is only used to recover the
- * username and expiry after the app restarts, because the API has no /auth/me
- * endpoint to ask. Never treat anything in here as trustworthy.
- */
+// Verification is the server's job: this only recovers the username
+// and expiry, so never treat anything in here as trustworthy.
 export function decodeToken(token: string): JwtPayload | null {
   const parts = token.split('.')
   if (parts.length !== 3) return null
@@ -30,22 +25,17 @@ export function decodeToken(token: string): JwtPayload | null {
 
 export function isExpired(token: string, skewMs = 30_000): boolean {
   const exp = decodeToken(token)?.exp
-  if (!exp) return false // no expiry claim — let the server decide
-  // Treat a token that's about to expire as already expired, so a request
-  // doesn't set off mid-flight and come back 401.
+  if (!exp) return false
+  // Treat a token that's about to expire as already expired, so a
+  // request doesn't set off mid-flight and come back 401.
   return Date.now() + skewMs >= exp * 1000
 }
 
-/**
- * Secure storage is asynchronous, but the axios request interceptor has to
- * read the token synchronously. So the token is mirrored in memory: `load()`
- * fills the mirror once at startup (before the first screen renders), and
- * every request after that reads `get()` without touching disk.
- */
+// Secure storage is asynchronous but the request interceptor needs the token synchronously, so it is mirrored
+// in memory: `load()` fills the mirror at startup and every request reads `get()` without touching disk.
 let cached: string | null = null
 
 export const tokenStore = {
-  /** Reads the saved token into memory. Call once, before any request. */
   async load(): Promise<string | null> {
     const saved = await storage.get(STORAGE_KEY)
     if (saved && !isExpired(saved)) {

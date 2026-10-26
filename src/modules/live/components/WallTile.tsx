@@ -7,7 +7,6 @@ import type { HelmetSession } from '../lib/session'
 import { SessionMessage, StatusPill } from './SessionPanel'
 import { StreamView } from './StreamView'
 
-/** One helmet on the wall. Always muted; enlarging it is how you hear it, so only one helmet ever talks. */
 export function WallTile({ name, session, width, onStart, onRemove, onFocus }: { name: string; session: HelmetSession | null; width: number; onStart: () => void; onRemove: () => void; onFocus: () => void }) {
   const state = useSessionState(session)
   const live = state?.status === 'live'

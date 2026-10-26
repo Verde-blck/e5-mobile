@@ -4,7 +4,6 @@ import { Text } from '@/shared/components/Text'
 
 const BARS = 5
 
-/** The API's lastNetStrength: 0–5 bars. */
 export function SignalBars({ level }: { level: number | undefined }) {
   if (level === undefined) return <Text className="font-sans-medium text-sm">—</Text>
   const filled = Math.max(0, Math.min(BARS, Math.round(level)))

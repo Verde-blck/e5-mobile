@@ -33,22 +33,18 @@ function FenceEditorScreen() {
   const [draft, setDraft] = useState<FenceDraft | null>(isNew ? EMPTY_DRAFT : null)
   const [fitKey, setFitKey] = useState(0)
 
-  // Editing starts from the saved fence once the list has loaded.
   useEffect(() => {
     if (!draft && existing) setDraft(toDraft(existing))
   }, [draft, existing])
-  // Once the shape is known, frame it (a new fence frames the existing ones instead).
   useEffect(() => {
     if (draft && fitKey === 0) setFitKey(1)
   }, [draft, fitKey])
 
   const patch = (changes: Partial<FenceDraft>) => setDraft((d) => (d ? { ...d, ...changes } : d))
 
-  // The other fences stay visible for context, faded and not tappable.
   const others = useMemo(() => fences.filter((f) => f.id !== existing?.id).map(toMapFence), [fences, existing?.id])
   const mapDraft = useMemo(() => (draft ? toMapDraft(draft) : null), [draft])
 
-  // A new recording is staged exactly like a chosen file: it replaces whatever was staged, and is saved with the fence.
   const staged = useCallback((made: ClipFile) => {
     setClipError(null)
     setClipRemoved(false)
@@ -72,10 +68,8 @@ function FenceEditorScreen() {
     if (!draft) return
     setClipError(null)
     try {
-      // new file to attach, null to remove the current clip, undefined to leave it as it is
       const result = await save.mutateAsync({ draft, id: existing?.id ?? savedId, clip: clip ?? (clipRemoved ? null : undefined) })
       if (result.clipError) {
-        // The fence is saved; only the clip needs another go. Stay here, and treat further saves as edits.
         setSavedId(result.fence.id)
         setClipError(`The fence was saved, but its clip wasn't: ${result.clipError}`)
         return

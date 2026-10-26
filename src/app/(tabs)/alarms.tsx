@@ -31,7 +31,6 @@ function AlarmsScreen() {
     { key: 'history', label: 'History', count: history.length },
   ]
 
-  // Single column: keep it to a readable width on a portrait tablet.
   const cap = twoPane ? undefined : { width: '100%' as const, maxWidth: CONTENT_MAX_DP, alignSelf: 'center' as const }
 
   const list = (
@@ -121,7 +120,6 @@ function AlarmsScreen() {
         </View>
         <View className="flex-1">
           {selectedId ? (
-            // key: choosing another alarm is a fresh open, which is what acknowledges it.
             <AlarmDetailView key={selectedId} id={selectedId} embedded />
           ) : (
             <EmptyState

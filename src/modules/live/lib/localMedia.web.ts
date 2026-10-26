@@ -1,6 +1,5 @@
 import type { StreamLike } from '../types'
 
-/** The browser preview's microphone, and camera for a video call (carrying on as audio if there is none). */
 export async function getLocalMedia(withCamera: boolean): Promise<{ stream: StreamLike; noCamera: boolean }> {
   if (!navigator.mediaDevices?.getUserMedia) {
     throw new Error('This browser can’t use the microphone here. It needs the page on https:// (or localhost).')

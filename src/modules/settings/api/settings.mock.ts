@@ -1,9 +1,6 @@
 import { getMockDevice, setMockNetwork } from '@/modules/devices/api/devices.mock'
 import type { NetworkSwitchResult, SaveSettingsResult, SiteWifi, SiteWifiInput, UnitSettings } from '../types'
 
-// Sample-data twin of the settings API, behaving like the real one: a password is never
-// returned, a helmet with no SIM is refused unless forced, and so on.
-
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 function httpError(status: number, body?: object) {
@@ -42,7 +39,6 @@ export async function saveUnitSettings(deviceId: string, patch: UnitSettings): P
   await delay(300)
   const next = { ...DEFAULTS, ...settings.get(deviceId), ...patch }
   settings.set(deviceId, next)
-  // A helmet that has been silent for a while can't be reached: saved, but not delivered.
   const device = getMockDevice(deviceId)
   const isReachable = !!device && reachable(device.lastSeenAt)
   return { saved: true, delivered: isReachable, appliesAfterRestart: true, settings: next }

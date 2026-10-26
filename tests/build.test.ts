@@ -6,9 +6,9 @@ import { createRunner } from './harness'
 
 const { t, report } = createRunner()
 
-// Tailwind scans ALL source text (comments and regexes included) for things that look like class names.
-// A pattern such as [-:T.Z] reads as an "arbitrary property" and emits invalid CSS: the web build shrugs it
-// off, but NativeWind's native compiler fails with "Unexpected end of input" and the app won't bundle.
+// Tailwind scans all source text, comments and regexes included, for class-like strings. A pattern such
+// as [-:T.Z] reads as an arbitrary property and emits invalid CSS: the web build shrugs it off, but
+// NativeWind's native compiler fails with "Unexpected end of input" and the app won't bundle.
 async function main() {
   const css = (() => {
     execSync('npx tailwindcss -c tailwind.config.js -i global.css -o /tmp/e5-tw-check.css', { stdio: 'pipe' })
@@ -20,7 +20,6 @@ async function main() {
     assert.match(css.trimEnd(), /\}$/)
   })
   await t('no source text has been read as an "arbitrary property" class (the kind that breaks the native build)', () => {
-    // Legitimate arbitrary VALUES look like .text-\[10px\]; an arbitrary PROPERTY starts the selector with the bracket.
     const bad = [...css.matchAll(/^\.\\\[[^{]*\{/gm)].map((m) => m[0])
     assert.deepEqual(bad, [], 'source text that Tailwind treats as a class: ' + bad.join(' '))
   })
@@ -28,7 +27,6 @@ async function main() {
     const walk = (dir: string): string[] => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(`${dir}/${e.name}`) : /\.(ts|tsx)$/.test(e.name) ? [`${dir}/${e.name}`] : []))
     const source = walk('src').map((f) => fs.readFileSync(f, 'utf8')).join('\n')
     const COLOURS = new Set<string>()
-    // The fonts and colours come from the config itself, so this can't drift out of step with it.
     const config = createRequire(`${process.cwd()}/`)('./tailwind.config.js') as { theme: { extend: { fontFamily: Record<string, unknown>; colors: { brand: Record<string, unknown> } } } }
     const FONTS = new Set(Object.keys(config.theme.extend.fontFamily).map((k) => `font-${k}`))
     for (const k of Object.keys(config.theme.extend.colors.brand)) COLOURS.add(k)
@@ -37,7 +35,6 @@ async function main() {
     assert.ok(colourUses.length > 20 && fontUses.length > 20, 'the scan found the app\'s classes')
     for (const [, , , cls, name] of colourUses) assert.ok(COLOURS.has(name), `${cls} is not a brand colour (the palette has ${[...COLOURS].join(', ')})`)
     for (const [, , , cls] of fontUses) assert.ok(FONTS.has(cls), `${cls} is not a font the app defines`)
-    // A class used with no variant in front (no active: or dark:) must have its own style in the generated sheet.
     for (const [, , variant, cls] of [...colourUses, ...fontUses].map((m) => [m[0], m[1], m[2], m[3] ?? m[3]] as const))
       if (!variant) assert.ok(css.includes('.' + cls + ' ') || css.includes('.' + cls + '{') || css.includes('.' + cls + ','), `${cls} has no style`)
   })

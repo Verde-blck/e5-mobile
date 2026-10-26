@@ -8,15 +8,9 @@ export interface SyncDeps {
   register: (registration: PushRegistration) => Promise<void>
   installId: () => Promise<string>
   appVersion: string
-  /** True when the person has just asked to turn alerts on, so the permission prompt may appear. */
   ask: boolean
 }
 
-/**
- * Brings this tablet to the best state it can reach for alarm alerts, and says which state that is:
- * channels ready, permission held (asked for only when the person has chosen to), a token fetched,
- * the backend told. The app never asks for notifications out of the blue.
- */
 export async function syncPush({ adapter, register, installId, appVersion, ask }: SyncDeps): Promise<PushStatus> {
   if (!adapter.isSupported()) return 'unavailable'
   await adapter.setup()
@@ -32,11 +26,9 @@ export async function syncPush({ adapter, register, installId, appVersion, ask }
   try {
     token = await adapter.getToken()
   } catch {
-    // No EAS project id, no Google services, or no Firebase config in this build: nothing to retry.
     return 'unavailable'
   }
 
-  // The backend refuses anything but an Expo token (400 invalid_token): not worth sending.
   if (!isExpoPushToken(token)) return 'unavailable'
 
   try {

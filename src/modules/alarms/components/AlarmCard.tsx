@@ -10,10 +10,6 @@ import { lastSeenLabel } from '@/modules/devices/lib/presence'
 import { alarmLabel, type Alarm } from '../types'
 import { ALARM_ICONS, alarmTone } from './alarm-style'
 
-/**
- * Opens an alarm from anywhere (the banner, a toast, a card). On a wide screen
- * it opens in the Alarms tab's right-hand pane; on a narrow one, as a full screen.
- */
 export function openAlarm(id: string) {
   const canUseTab = useAuthStore.getState().user?.permissions.includes('alarms:read') ?? false
   if (detailGoesInPane(isTwoPaneNow(), canUseTab)) {
@@ -32,9 +28,7 @@ export function AlarmCard({
 }: {
   alarm: Alarm
   now: number
-  /** Highlighted when it's the one open in the side pane. */
   selected?: boolean
-  /** Overrides the default navigation, e.g. to fill the side pane. */
   onOpen?: (id: string) => void
 }) {
   const tone = alarmTone(alarm)

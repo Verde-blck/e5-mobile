@@ -13,7 +13,6 @@ const admin = (over: Partial<Administrator> = {}): Administrator => ({ id: 1, us
 const sorted = (a: readonly string[]) => [...a].sort()
 
 async function main() {
-  // ---- what a person may hand out ----
   await t('you can only grant a code you hold (a super admin, anything); holding X_MANAGE includes X', () => {
     assert.equal(canGrant(null, 'FENCE'), true)
     const mine = new Set(['FENCE_MANAGE', 'DASHBOARD'])
@@ -51,7 +50,6 @@ async function main() {
     assert.equal(countAreas([]), 0); assert.equal(countAreas(['FENCE_MANAGE', 'FENCE', 'DASHBOARD']), 2)
   })
 
-  // ---- who may do what to an account ----
   await t('only a super admin touches a super admin; nobody deletes themselves', () => {
     const boss = admin({ username: 'boss', superAdmin: true }), staff = admin({ username: 'staff' })
     assert.deepEqual(rowRules(boss, { username: 'staff', superAdmin: false }), { lockedSuper: true, isSelf: false, canEdit: false, canDelete: false })
@@ -80,7 +78,6 @@ async function main() {
     assert.match(deleteErrorMessage(http(400)), /own account/); assert.match(deleteErrorMessage(http(403)), /super admin can delete a super admin/); assert.match(deleteErrorMessage(http(409, { error: 'last_super_admin' })), /last super admin/); assert.match(deleteErrorMessage(http(500)), /Couldn't delete/)
   })
 
-  // ---- the endpoints ----
   await t('list, create, update and delete hit the backend\'s paths; a blank password is never sent on an edit', async () => {
     http.calls.length = 0
     http.routes = { 'GET /admins': () => ({ status: 200, data: [{ id: 1, username: 'a', permissions: [], deviceIds: [] }] }), 'POST /admins': (r) => ({ status: 200, data: { id: 9, ...r.data } }), 'PUT /admins/9': (r) => ({ status: 200, data: { id: 9, ...r.data } }), 'DELETE /admins/9': () => ({ status: 204 }) }

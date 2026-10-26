@@ -19,36 +19,26 @@ import {
   type TwoFactorSetup,
 } from '@/modules/auth/api/auth.api'
 
-/** "JBSW Y3DP EHPK 3PXP" — easier to read and type than 16 unbroken characters. */
 const groupSecret = (secret: string) => secret.match(/.{1,4}/g)?.join(' ') ?? secret
 
-/**
- * Two-step verification for this account. With `forced` it is the only screen the app shows: the company requires 2FA and
- * this account hasn't set it up, so the backend refuses everything else until it has. Then it starts straight away and has no
- * way out but finishing (or signing out).
- */
 export function SecurityScreen({ forced = false }: { forced?: boolean }) {
   const user = useAuthStore((s) => s.user)
   const setUser = useAuthStore((s) => s.setUser)
   const username = user?.username ?? ''
-  // From the server (GET /auth/me), so this is the real state, not a guess.
   const enabled = user?.twoFactorEnabled === true
 
   const [setup, setSetup] = useState<TwoFactorSetup | null>(null)
   const [disabling, setDisabling] = useState(false)
-  /** Moving to a new phone: the current code is asked for before a new key is made. */
   const [moving, setMoving] = useState(false)
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
-  /** Re-reads the profile so the status badge reflects what the server now says. */
   async function syncProfile(expected: boolean) {
     try {
       setUser(await refreshProfile(username))
     } catch {
-      // The change itself succeeded; if the re-read fails, trust it.
       if (user) setUser({ ...user, twoFactorEnabled: expected, ...(expected ? { mustSetup2fa: false } : {}) })
     }
   }

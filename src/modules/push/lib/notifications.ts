@@ -14,7 +14,6 @@ const IMPORTANCE = {
 
 let configured = false
 
-/** The EAS project this build belongs to: Expo needs it to issue a push token (`eas init` writes it into app.json). */
 function easProjectId(): string | undefined {
   const fromConfig = (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId
   return fromConfig ?? Constants.easConfig?.projectId
@@ -28,7 +27,6 @@ async function fetchExpoToken(): Promise<string> {
   return token.data
 }
 
-/** The Android tablet implementation, on expo-notifications and the device's own FCM token. */
 export const notifications: PushAdapter = {
   isSupported: () => Platform.OS === 'android',
 
@@ -72,7 +70,6 @@ export const notifications: PushAdapter = {
   async permission(): Promise<PermissionState> {
     const result = await Notifications.getPermissionsAsync()
     if (result.granted) return 'granted'
-    // Android lets the app ask once more after a first refusal; after that only Settings can help.
     return result.canAskAgain ? 'undetermined' : 'denied'
   },
 
@@ -85,8 +82,6 @@ export const notifications: PushAdapter = {
   getToken: fetchExpoToken,
 
   onTokenChange(callback) {
-    // The device's own FCM token rotating is the cue; the Expo token is then asked for again, and the
-    // caller registers it if it is different.
     const subscription = Notifications.addPushTokenListener(() => {
       void fetchExpoToken().then(callback, () => {})
     })

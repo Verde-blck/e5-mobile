@@ -11,7 +11,6 @@ import type { MediaItem } from '../types'
 function Player({ url, onError }: { url: string; onError: () => void }) {
   const player = useVideoPlayer(url)
   useEffect(() => {
-    // A signed link can lapse mid-playback on a long recording: the caller reloads the list, which brings fresh links.
     const subscription = player.addListener('statusChange', (event) => {
       if (event.status === 'error') onError()
     })
@@ -21,7 +20,7 @@ function Player({ url, onError }: { url: string; onError: () => void }) {
   return <VideoView player={player} nativeControls contentFit="contain" style={{ width: '100%', height: '100%' }} />
 }
 
-/** One photo or recording, large, with previous and next. The links are signed and expire, so a failing one reloads the list once. */
+// The links are signed and expire, so a failing one reloads the list once.
 export function MediaViewer({ item, now, onClose, onPrev, onNext, onLinkFailed }: { item: MediaItem; now: number; onClose: () => void; onPrev?: () => void; onNext?: () => void; onLinkFailed: () => void }) {
   // Once per item: if the fresh link fails too, the file itself is the problem, and asking again would just loop.
   const refreshedFor = useRef<string | null>(null)
@@ -30,7 +29,6 @@ export function MediaViewer({ item, now, onClose, onPrev, onNext, onLinkFailed }
     refreshedFor.current = item.id
     onLinkFailed()
   }
-  // A clip recorded while the helmet was out of signal can arrive days later; saying so explains why it is only just there.
   const arrivedLate = item.uploadedAt != null && item.uploadedAt - item.capturedAt > 60 * 60_000
   const meta = [
     item.deviceName,

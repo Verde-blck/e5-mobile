@@ -8,7 +8,6 @@ import { useCan } from '@/shared/lib/permissions'
 import { useDeleteFence, useFences } from '../hooks/useFences'
 import { FenceCard } from './FenceCard'
 
-/** Create a fence. */
 export function newFence() {
   router.push('/fence/new')
 }
@@ -17,10 +16,6 @@ export function editFence(id: number) {
   router.push(`/fence/${id}`)
 }
 
-/**
- * Every fence, with edit and delete for accounts allowed to change them. Used in the Live Map's
- * side panel and as the full-screen Fences list.
- */
 export function FenceListPanel({
   selectedId,
   onSelect,

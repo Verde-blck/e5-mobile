@@ -42,7 +42,7 @@ async function main() {
     const u = await auth.verifyTwoFactorLogin(r.challenge, '123456')
     assert.equal(u.username, 'MFA-001'); assert.equal(u.twoFactorEnabled, true)
 
-    await assert.rejects(auth.startTwoFactorSetup('MFA-001'), (e: unknown) => auth.statusOf(e) === 409) // already on: a new phone needs the current code
+    await assert.rejects(auth.startTwoFactorSetup('MFA-001'), (e: unknown) => auth.statusOf(e) === 409)
     const setup = await auth.startTwoFactorSetup('MFA-001', '123456'); assert.match(setup.otpAuthUrl, /^otpauth:\/\/totp\/E5%20Energy%3AMFA-001\?secret=JBSWY3DPEHPK3PXP/)
     await assert.rejects(auth.disableTwoFactor('MFA-001', '111111'), (e: unknown) => auth.statusOf(e) === 401)
     await auth.disableTwoFactor('MFA-001', '123456')
@@ -64,7 +64,6 @@ async function main() {
     assert.equal((await fetchDevice(fleet[0].id))?.name, fleet[0].name)
   })
 
-  // ---------- sample alarms and the mock stream ----------
   await t('sample alarms go through the real mapping; a stale active critical alarm is listed but does not ring', async () => {
     const alarms = await fetchAlarms(); const now = Date.now()
     assert.ok(alarms.length >= 6); assert.ok(alarms.some((a) => a.type === 'sos-button') && alarms.some((a) => a.type === 'fall'))
@@ -93,7 +92,6 @@ async function main() {
     await assert.rejects(fetchAlarmDetail('999999'), (e: unknown) => auth.statusOf(e) === 404)
   })
 
-  // ---------- settings and network, sample data ----------
   await t('sample site Wi-Fi: starts set; keeps its password when edited without one; can be removed', async () => {
     assert.deepEqual(await settings.fetchSiteWifi(), { ssid: 'E5ENERGY', passwordSet: true })
     assert.deepEqual(await settings.saveSiteWifi({ ssid: 'E5-SITE-2' }), { ssid: 'E5-SITE-2', passwordSet: true })
@@ -109,7 +107,7 @@ async function main() {
     assert.equal((await settings.saveUnitSettings('866652022959544', { videoSplitting: false })).delivered, false, 'offline for two days')
   })
   await t('sample network switch: no SIM is refused until forced, and the fleet then shows the new link', async () => {
-    const noSim = '866652022957881'   // reports no SIM, on Wi-Fi
+    const noSim = '866652022957881'
     const refused = await settings.switchToMobileData(noSim, false).catch((e) => e)
     assert.equal(settings.isNoSim(refused), true)
     assert.equal((await settings.switchToMobileData(noSim, true)).delivered, true)
@@ -126,7 +124,6 @@ async function main() {
     await assert.rejects(withTimeout(Promise.reject(new Error('boom')), 500), /boom/)
   })
 
-  // ---------- sample administrators enforce the backend's rules ----------
   const signInAs = (username: string) => useAuthStore.getState().setUser(mockUserFor(username))
   await t('sample administrators: you can\'t delete yourself (400), only a super admin deletes a super admin (403)', async () => {
     signInAs('AD-001')
@@ -152,7 +149,6 @@ async function main() {
   await t('sample administrators: the last super admin can\'t be deleted (409), checked from a second super admin', async () => {
     signInAs('ADM-001')
     const second = await admins.createAdmin({ username: 'second-boss', password: 'secret1', permissions: ['DASHBOARD'], deviceIds: [] })
-    // (the sample data has one super admin: confirm the rule by trying to delete them as someone else who is a super admin)
     const boss = (await admins.fetchAdmins()).find((a) => a.superAdmin)!
     useAuthStore.getState().setUser({ ...mockUserFor('ADM-001'), username: 'someone-else' })
     await assert.rejects(admins.deleteAdmin(boss.id), (e: { response?: { status: number; data?: { error?: string } } }) => e.response?.status === 409 && e.response?.data?.error === 'last_super_admin')

@@ -3,7 +3,6 @@ import Feather from '@expo/vector-icons/Feather'
 import { Text } from '@/shared/components/Text'
 import { cn } from '@/shared/lib/cn'
 
-/** A round control on a dark call screen: mute, camera, hang up. */
 export function RoundButton({ icon, label, on, onPress, danger, size = 64, disabled }: { icon: React.ComponentProps<typeof Feather>['name']; label: string; on?: boolean; onPress: () => void; danger?: boolean; size?: number; disabled?: boolean }) {
   return (
     <View className="items-center gap-2">

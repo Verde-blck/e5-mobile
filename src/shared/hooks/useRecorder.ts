@@ -4,7 +4,6 @@ import { useFocusEffect } from 'expo-router'
 import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from 'expo-audio'
 import { extensionFor, toWavFile } from '../lib/webAudio'
 
-/** What a recording produces: a file on the tablet, labelled with what it really is. */
 export interface RecordedAudio {
   uri: string
   name: string
@@ -13,18 +12,14 @@ export interface RecordedAudio {
   file?: Blob
 }
 
-// Built from the date's parts rather than a character-class regex: Tailwind scans all source text (comments
-// included) for class names, and a bracketed pattern with a colon reads as an "arbitrary property", which
-// breaks the native style compiler. See tests/build.test.ts.
+// Built from the date's parts rather than a character-class regex: Tailwind scans all source text, comments
+// included, and a bracketed pattern with a colon reads as an arbitrary property, which breaks the native build.
 function stamp(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
 }
 
-/**
- * Records audio on the tablet. A tablet records AAC in an .m4a file. Recording stops itself at the limit,
- * and leaving the screen stops it too, so the microphone is never left open.
- */
+// Recording stops itself at the limit, and leaving the screen stops it too, so the microphone is never left open.
 export function useRecorder({ maxSeconds, namePrefix, onFinished }: { maxSeconds: number; namePrefix: string; onFinished: (audio: RecordedAudio) => void }) {
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY)
   const state = useAudioRecorderState(recorder, 250)
@@ -57,13 +52,11 @@ export function useRecorder({ maxSeconds, namePrefix, onFinished }: { maxSeconds
     }
     const base = `${namePrefix}-${stamp(new Date())}`
     if (Platform.OS !== 'web') {
-      // A tablet records AAC in an .m4a file, and attaches it by its path.
       onFinished({ uri, name: `${base}.m4a`, mimeType: 'audio/mp4' })
       return
     }
-    // In a browser the recording is a blob, which has to travel as a real file (an object with a uri attaches as the
-    // text "[object Object]"), and it isn't m4a: it is WebM. Send WAV, as the web dashboard does; if the browser can't
-    // convert it, send what it is, honestly labelled, so the server's own answer says why it was refused.
+    // Send WAV, as the web dashboard does; if the browser can't convert it, send what it
+    // is, honestly labelled, so the server's own answer says why it was refused.
     const raw = await (await fetch(uri)).blob()
     const wav = await toWavFile(raw, `${base}.wav`)
     const file = wav ?? new File([raw], `${base}.${extensionFor(raw.type)}`, { type: raw.type || 'application/octet-stream' })
@@ -83,7 +76,6 @@ export function useRecorder({ maxSeconds, namePrefix, onFinished }: { maxSeconds
       live.current = true
       recorder.record({ forDuration: maxSeconds })
       setActive(true)
-      // The recorder stops itself at the limit; this collects the result when it does.
       timer.current = setTimeout(() => void stop(), (maxSeconds + 1) * 1000)
     } catch {
       live.current = false

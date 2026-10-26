@@ -3,10 +3,6 @@ import { dayBounds } from '../types'
 import type { MediaItem, MediaQuery } from '../types'
 import { SAMPLE_PHOTOS, SAMPLE_VIDEO } from './sampleMedia'
 
-/*
- * Sample photos and recordings, spread over the last weeks and the month before so the calendar has something to show.
- * Photos are small generated pictures; every video is the same 2-second clip. One of each kind is still "uploading".
- */
 const DAY = 86_400_000
 const pad = (n: number) => String(n).padStart(2, '0')
 

@@ -2,9 +2,7 @@ import { create } from 'zustand'
 import type { Alarm } from '../types'
 
 interface AlertState {
-  /** Alarms whose siren has been silenced on this phone. Not shared, not saved. */
   silenced: Record<string, true>
-  /** The brief in-app notice for a non-critical alarm. */
   toast: { alarm: Alarm; key: number } | null
   silence: (ids: string[]) => void
   showToast: (alarm: Alarm) => void

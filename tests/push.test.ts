@@ -41,14 +41,12 @@ async function run(over: Parameters<typeof fakeAdapter>[0], ask: boolean, regist
 }
 
 async function main() {
-  // ---- what a push says ----
   await t('a push is read from its data: alarm and alarm-resolved, FCM string values, numbers and JSON strings tolerated', () => {
     assert.deepEqual(parsePushData({ kind: 'alarm', alarmId: '77', alarmType: 'manual_sos_button', severity: 'critical', deviceId: '866652022956057', deviceName: 'Rig Supervisor' }),
       { kind: 'alarm', alarmId: '77', alarmType: 'manual_sos_button', severity: 'critical', deviceId: '866652022956057', deviceName: 'Rig Supervisor' })
     assert.deepEqual(parsePushData({ kind: 'alarm-resolved', alarmId: 77 }), { kind: 'alarm-resolved', alarmId: '77' })
     assert.deepEqual(parsePushData('{"kind":"alarm","alarmId":"5"}'), { kind: 'alarm', alarmId: '5', alarmType: undefined, severity: undefined, deviceId: undefined, deviceName: undefined })
     assert.equal(parsePushData({ kind: 'alarm', alarmId: '5', severity: 'bogus' })?.kind === 'alarm' && (parsePushData({ kind: 'alarm', alarmId: '5', severity: 'bogus' }) as { severity?: string }).severity, undefined)
-    // The backend marks non-critical alarms 'normal' (and gas warnings 'warning').
     for (const sev of ['critical', 'warning', 'normal']) assert.equal((parsePushData({ kind: 'alarm', alarmId: '5', severity: sev }) as { severity?: string }).severity, sev)
   })
   await t('anything else is ignored: an alarm id that could steer a route, a wrong kind, junk', () => {
@@ -60,7 +58,6 @@ async function main() {
     const m = parsePushData({ kind: 'alarm', alarmId: '1', deviceName: 'N'.repeat(500) }); assert.ok(m?.kind === 'alarm' && (m.deviceName?.length ?? 0) === 80)
   })
 
-  // ---- channels: a contract with the backend, and with the bundled siren ----
   await t('critical alarms go to the siren channel and everything else to the other one', () => {
     assert.equal(channelFor('critical'), SOS_CHANNEL); for (const s of ['warning', undefined, '', 'x']) assert.equal(channelFor(s), ALARM_CHANNEL)
     assert.deepEqual([SOS_CHANNEL, ALARM_CHANNEL], ['sos', 'alarm'], 'these ids are what the request to Cypher asks him to send')
@@ -92,7 +89,6 @@ async function main() {
     assert.equal(appCoversAlarm({ kind: 'alarm-resolved', alarmId: '1' }), true); assert.equal(appCoversAlarm(null), false, 'unrecognisable: show it')
   })
 
-  // ---- this installation's id ----
   await t('the install id is random, 32 hex characters, and the same one comes back after a restart', async () => {
     await storage.remove('push.installId'); resetInstallIdCache()
     const first = await getInstallId(); assert.match(first, /^[0-9a-f]{32}$/)
@@ -100,7 +96,6 @@ async function main() {
     await storage.set('push.installId', 'corrupt'); resetInstallIdCache(); const fresh = await getInstallId(); assert.match(fresh, /^[0-9a-f]{32}$/); assert.notEqual(fresh, 'corrupt')
   })
 
-  // ---- the proposed registration contract ----
   await t('register: PUT /push/registrations/{installId} with the token, platform and app version, nothing else', async () => {
     http.calls.length = 0; http.routes = { [`PUT /push/registrations/${ID}`]: () => ({ status: 204 }) }
     await registerPush({ installId: ID, token: 'fcm-token', platform: 'android', appVersion: '1.2.3' })
@@ -128,7 +123,6 @@ async function main() {
     http.routes = { [`DELETE /push/registrations/${ID}`]: () => ({ status: 204 }) }; await unregisterThisTablet(); assert.equal(http.calls.length, 2)
   })
 
-  // ---- the decision tree for a tablet ----
   await t('a tablet that can\'t do push says so and asks for nothing', async () => {
     const r = await run({ supported: false }, true); assert.equal(r.status, 'unavailable'); assert.deepEqual(r.calls, [])
   })
@@ -153,7 +147,6 @@ async function main() {
     assert.equal((await run({ permission: 'granted' }, true, true)).status, 'error')
   })
 
-  // ---- what the person is told ----
   await t('every state has plain words, a tone and the right button', () => {
     const all: PushStatus[] = ['off', 'unavailable', 'needs-permission', 'blocked', 'registering', 'on', 'error']
     const actions: Record<PushStatus, string | undefined> = { off: undefined, unavailable: undefined, 'needs-permission': 'enable', blocked: 'settings', registering: undefined, on: undefined, error: 'retry' }
@@ -162,7 +155,6 @@ async function main() {
     assert.match(describeStatus('off').detail, /keep this app open/i, 'while off, say what actually works')
   })
 
-  // ---- Cypher's reply: Expo tokens, install ids ----
   await t('only an Expo push token is accepted (what the backend takes; anything else is a 400 invalid_token)', () => {
     for (const ok of ['ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]', 'ExpoPushToken[abc-123_X]']) assert.equal(isExpoPushToken(ok), true, ok)
     for (const bad of ['', 'fcm:APA91bHxxxxxxxx', 'ExponentPushToken[]', 'ExponentPushToken[a b]', 'ExponentPushToken[abc', 'exponentpushtoken[abc]', ' ExponentPushToken[abc]', null, undefined, 42, {}]) assert.equal(isExpoPushToken(bad), false, String(bad))
@@ -176,7 +168,6 @@ async function main() {
     const r = await run({ permission: 'granted', token: 'fcm:APA91bHrawdevicetoken' }, true); assert.equal(r.status, 'unavailable'); assert.equal(r.sent.length, 0)
   })
 
-  // ---- build config ----
   await t('the Firebase file is added to the Android config only when it exists (or EAS supplies it), so the app builds without it', () => {
     const load = createRequire(`${process.cwd()}/`)
     const cfg = () => (load('./app.config.js') as (a: { config: { android: Record<string, unknown> } }) => { android: Record<string, unknown> })({ config: { android: { package: 'com.e5energy.smarthelmet' } } })
@@ -206,7 +197,6 @@ async function main() {
       fs.writeFileSync(file, JSON.stringify({ projectId: ` ${A.toUpperCase()} ` })); assert.equal(id(), A.toUpperCase(), 'upper case and surrounding spaces are fine')
       assert.equal(warnings.length, 0, 'nothing wrong, nothing said')
 
-      // The wrong things people put there: each is ignored (falling through to the next source) and named in a warning.
       for (const wrong of ['file-id', 'e5-smart-helmet', 'acme/e5-smart-helmet', 'https://expo.dev/accounts/acme/projects/e5', '1234', '<the id from expo.dev>', '11111111-1111-4111-8111-11111111111', '11111111111141118111111111111111']) {
         warnings.length = 0; fs.writeFileSync(file, JSON.stringify({ projectId: wrong }))
         assert.equal(id(), C, `"${wrong}" is not a project ID, so it falls through to the environment`)
@@ -220,12 +210,10 @@ async function main() {
       warnings.length = 0; fs.writeFileSync(file, JSON.stringify({ projectId: B }))
       assert.equal(id({ extra: { eas: { projectId: 'e5-smart-helmet' } } }), B, 'a bad ID already in app.json is replaced by the good one in e5.local.json'); assert.ok(warnings.some((w) => w.includes('app.json')))
       fs.rmSync(file); assert.equal(cfg({ extra: { eas: { projectId: 'e5-smart-helmet' } } }).extra?.eas?.projectId, undefined, 'and with nothing to replace it, it is removed rather than left to reach EAS')
-      // The label that expo.dev shows next to the ID is not part of it, and neither are quotes or spaces round it.
       process.env.EAS_PROJECT_ID = C; warnings.length = 0
       for (const labelled of [`ID: ${A}`, `id: ${A}`, `Project ID: ${A}`, `ID:${A}`, ` ID : ${A} `, `"${A}"`]) { fs.writeFileSync(file, JSON.stringify({ projectId: labelled })); assert.equal(id(), A, `"${labelled}" is the ID with a label on it`) }
       assert.equal(warnings.length, 0, 'a labelled ID is accepted without fuss')
       fs.writeFileSync(file, JSON.stringify({ projectId: 'ID: not-an-id' })); assert.equal(id(), C, 'but a label in front of something that is not an ID is still not an ID')
-      // A file that is not valid JSON is ignored, and says so: a comma after the last line is the usual cause.
       for (const damaged of ['{ this is not json', '{\r\n  "projectId": "' + A + '",\r\n \r\n}', '{ "projectId": "' + A + '" ', '{ "projectId": ' + A + ' }']) {
         warnings.length = 0; fs.writeFileSync(file, damaged); assert.equal(id(), C, 'a damaged file must never break the build, and the next source is used')
         assert.ok(warnings.length === 1 && /e5\.local\.json could not be read as JSON/.test(warnings[0]) && /comma after the last line/.test(warnings[0]), `a damaged file is named, not skipped in silence: ${damaged.slice(0, 30)}`)

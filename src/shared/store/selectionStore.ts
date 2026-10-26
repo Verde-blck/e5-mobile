@@ -1,12 +1,7 @@
 import { create } from 'zustand'
 
-/**
- * Which alarm / helmet is open in the right-hand pane on a wide screen.
- *
- * Nothing is selected until someone chooses it. Auto-selecting the first
- * alarm would be a mistake: opening an alarm acknowledges it, which silences
- * its siren, so a default selection would quietly silence the most urgent one.
- */
+// Auto-selecting the first alarm would be a mistake: opening an alarm acknowledges it, which
+// silences its siren, so a default selection would quietly silence the most urgent one.
 interface SelectionState {
   alarmId: string | null
   helmetId: string | null

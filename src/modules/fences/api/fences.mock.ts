@@ -1,8 +1,6 @@
 import { CLIP_MAX_BYTES, validateClip, type ClipFile } from '../lib/clip'
 import type { Fence, FenceDraft } from '../types'
 
-// Sample fences placed around the sample fleet (central Lagos), so helmets fall inside and
-// outside them: "Welding Bay 2" stands inside the no-entry yard.
 let nextId = 3
 const fences: Fence[] = [
   {
@@ -50,7 +48,6 @@ export async function getMockFences(): Promise<Fence[]> {
 
 export async function saveMockFence(draft: FenceDraft, id?: number): Promise<Fence> {
   await delay()
-  // Like the backend, refuse what it would refuse.
   const error = (message: string) =>
     Object.assign(new Error(message), { response: { status: 400, data: { error: message } } })
   if (!draft.name.trim()) throw error('A fence needs a name.')
@@ -74,7 +71,6 @@ type ClipOp = { op: 'upload' | 'remove'; id: number; name?: string; size?: numbe
 const clipLog: ClipOp[] = []
 const clipRecord = (entry: ClipOp) => {
   clipLog.push(entry)
-  // Lets the browser tests see what would have been sent.
   ;(globalThis as { __e5ClipLog?: ClipOp[] }).__e5ClipLog = clipLog
 }
 const httpError = (status: number, error?: string) => Object.assign(new Error(`HTTP ${status}`), { response: { status, data: error ? { error } : {} } })
@@ -83,7 +79,7 @@ export async function uploadMockClip(id: number, clip: ClipFile): Promise<void> 
   await delay()
   const fence = fences.find((f) => f.id === id)
   if (!fence) throw httpError(404)
-  if ((globalThis as { __e5ClipFail?: boolean }).__e5ClipFail) throw httpError(500) // test hook: make the upload fail
+  if ((globalThis as { __e5ClipFail?: boolean }).__e5ClipFail) throw httpError(500)
   const size = clip.file?.size ?? clip.size
   if (size != null && size > CLIP_MAX_BYTES) throw httpError(413)
   if (validateClip({ name: clip.name, mimeType: clip.mimeType, size })) throw httpError(400, 'The warning clip must be an MP3 or WAV file.')

@@ -1,11 +1,8 @@
 import { useMemo, useRef } from 'react'
 import { PanResponder, View, type AccessibilityActionEvent } from 'react-native'
 
-/**
- * A draggable position bar. React Native has no built-in slider and a native one would be a new
- * dependency for one control, so this is tap-or-drag over a plain bar. The touch is read from the
- * bar itself (the visuals ignore touches), so the position is always relative to the whole bar.
- */
+// React Native has no built-in slider and a native one would be a new
+// dependency for one control, so this is tap-or-drag over a plain bar.
 export function Scrubber({
   value,
   max,

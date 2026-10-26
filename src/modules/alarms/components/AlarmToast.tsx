@@ -11,7 +11,6 @@ import { openAlarm } from './AlarmCard'
 
 const TOAST_MS = 6_000
 
-/** A brief in-app notice for a non-critical alarm; tap to open it. */
 export function AlarmToast() {
   const toast = useAlertStore((s) => s.toast)
   const dismiss = useAlertStore((s) => s.dismissToast)

@@ -1,6 +1,5 @@
 import { Linking, Platform } from 'react-native'
 
-/** Opens a coordinate in the phone's own maps app. */
 export function openInMaps(lat: number, lng: number, label: string): void {
   const name = encodeURIComponent(label)
   const url = Platform.select({

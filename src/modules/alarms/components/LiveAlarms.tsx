@@ -22,41 +22,24 @@ function useAppActive(): boolean {
   return active
 }
 
-/**
- * The engine behind the alarm alerts. Renders nothing; it keeps three things
- * running while someone is signed in:
- *
- *  1. The live alarm stream, written straight into the alarm list's cache, so
- *     an alarm shows up the instant the backend saves it.
- *  2. A chime and toast for fresh non-critical alarms.
- *  3. The siren and vibration, for as long as any critical alarm is
- *     unresolved and not yet silenced.
- *
- * The stream is held open only while the app is in the foreground. A phone
- * that's locked or in another app doesn't get alarms this way — that is what
- * push notifications are for, and they need backend support.
- */
 export function LiveAlarms() {
   const queryClient = useQueryClient()
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const appActive = useAppActive()
 
-  // 1 + 2: the stream
   useEffect(() => {
     if (!isAuthenticated || !appActive) return
 
     const handleAlarm = (raw: ApiAlarm) => {
       const alarm = toAlarm(raw)
       applyAlarm(queryClient, alarm)
-      // The dashboard's "alarms in 24 h" count changes with every new alarm.
       void queryClient.invalidateQueries({ queryKey: ['fleet-summary'] })
       if (arrivalAlert(alarm, Date.now()) === 'chime') {
         void playChime()
         useAlertStore.getState().showToast(alarm)
       }
     }
-    // Resolved or reopened somewhere. The banner and siren follow the list,
-    // so updating it is all that's needed to clear them on this phone too.
+    // The banner and siren follow the list, so updating it is all that's needed to clear them on this phone too.
     const handleUpdate = (raw: ApiAlarm) => applyAlarm(queryClient, toAlarm(raw))
 
     if (env.useMocks) {
@@ -72,7 +55,6 @@ export function LiveAlarms() {
     return () => connection.stop()
   }, [isAuthenticated, appActive, queryClient])
 
-  // 3: siren + vibration
   const critical = useCriticalAlarms()
   const silenced = useAlertStore((s) => s.silenced)
   const ringing = critical.some((a) => !silenced[a.id])
@@ -81,7 +63,6 @@ export function LiveAlarms() {
     if (!ringing) return
     void startSiren()
     Vibration.vibrate(500)
-    // A repeating pattern is Android-only; an interval behaves the same everywhere.
     const buzz = setInterval(() => Vibration.vibrate(500), 1500)
     return () => {
       clearInterval(buzz)

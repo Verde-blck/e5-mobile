@@ -34,7 +34,6 @@ function fake(over: Partial<GroupDeps> = {}, broken: string[] = []) {
 const live = (s: GroupCallSession, id: string) => s.getState().participants.find((p) => p.deviceId === id)?.status
 
 async function main() {
-  // =============== who can start what ===============
   await t('one helmet is a one-to-one call, two or more a group call, never more than eight, and each needs its own permission', () => {
     const both = { single: true, group: true }
     assert.deepEqual(callPlan(['a'], both), { kind: 'single', deviceId: 'a' }); assert.deepEqual(callPlan(['a', 'b'], both), { kind: 'group', deviceIds: ['a', 'b'] })
@@ -50,7 +49,6 @@ async function main() {
     assert.deepEqual(toggleChosen(['a'], { id: 'z', active: false }), ['a']); assert.deepEqual(toggleChosen(['z'], { id: 'z', active: false }), [], 'one deactivated since it was ticked can still be unticked')
   })
 
-  // =============== the API ===============
   await t('starting a call POSTs the helmets to the backend (at most eight) and reads the room it returns; no room is an error', async () => {
     http.calls.length = 0; http.routes = { 'POST /webrtc-group-call/start': () => ({ status: 200, data: { callId: 'abc', adminPushUrl: 'https://m/push', helmets: [{ deviceId: 'a', delivered: true, watchUrl: 'https://m/w/a' }, { deviceId: 'b', delivered: false }] } }) }
     const c = await startGroupCall(['a', 'b']); assert.equal(`${http.calls[0].method} ${http.calls[0].url}`, 'POST /webrtc-group-call/start'); assert.deepEqual(http.calls[0].data, { deviceIds: ['a', 'b'] })
@@ -64,7 +62,6 @@ async function main() {
     http.calls.length = 0; await stopGroupCall('abc'); assert.equal(`${http.calls[0].method} ${http.calls[0].url}`, 'POST /webrtc-group-call/abc/stop')
   })
 
-  // =============== the call ===============
   await t('a group call: camera and microphone first, then every helmet is called at once, and each connects on its own connection', async () => {
     const d = fake(); const s = new GroupCallSession(d, true); assert.equal(s.getState().status, 'requesting-media'); await s.start(['a', 'b', 'c']); await until(() => ['a', 'b', 'c'].every((id) => live(s, id) === 'live'))
     assert.deepEqual(d.log.slice(0, 3), ['media:true', 'start:a,b,c', 'remember:c1'], 'microphone and camera before any helmet is touched, and the call is remembered at once'); assert.equal(d.log.filter((x) => x === 'push').length, 1, 'our voice and picture go out ONCE, to the room')

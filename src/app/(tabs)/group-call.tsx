@@ -20,10 +20,7 @@ import { GROUP_CALL_MAX, callPlan, toggleChosen } from '@/modules/live/lib/group
 const DOT = { online: 'bg-emerald-500', degraded: 'bg-amber-400', offline: 'bg-slate-300' } as const
 const STATE = { online: 'Online', degraded: 'Weak signal', offline: 'Offline' } as const
 
-/**
- * A call that this tablet started and that is still running, because the app was closed or killed mid-call and could
- * not tell the helmets. They stay in call mode until told otherwise, so this offers to end it.
- */
+// If the app is killed mid-call the helmets stay in call mode, so the next visit offers to end it.
 function LeftOverCall() {
   const [call, setCall] = useState<{ id: string; helmets: number } | null>(null)
   useEffect(() => {
@@ -57,10 +54,6 @@ function LeftOverCall() {
   )
 }
 
-/**
- * Where helmets are called: tick one for a one-to-one call, or up to 8 to talk with all of them at once, then a video
- * call or an audio call. A voice message is sent from a helmet's own screen, not from here.
- */
 function GroupCallScreen() {
   const { devices } = useDeviceViews()
   const canSingle = useCan('live:write')

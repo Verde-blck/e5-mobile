@@ -5,7 +5,6 @@ import { cn } from '@/shared/lib/cn'
 import type { VoiceMessage } from '../types'
 import { MessagePlayer } from './MessagePlayer'
 
-/** One message: sent to the helmet on the right, from the wearer on the left. */
 export function MessageBubble({ message, onMissing }: { message: VoiceMessage; onMissing: () => void }) {
   const outbound = message.direction === 'TO_HELMET'
   const [missing, setMissing] = useState(false)

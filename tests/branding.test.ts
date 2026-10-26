@@ -7,7 +7,6 @@ const { t, report } = createRunner()
 const http = installHttp()
 
 async function main() {
-  // =============== colours ===============
   await t('colours are read the way the backend does: with or without #, three digits or six, any case, and always returned as #RRGGBB', () => {
     assert.deepEqual(['0b5cad', '#0b5cad', '#0bc', '0BC', ' #f28c28 '].map(normaliseColour), ['#0B5CAD', '#0B5CAD', '#00BBCC', '#00BBCC', '#F28C28'])
     for (const bad of ['', '#', 'blue', '#12', '#12345', '#1234567', '#GGGGGG', 'rgb(1,2,3)']) assert.equal(normaliseColour(bad), null, bad)
@@ -38,7 +37,6 @@ async function main() {
     const blue = surfaceColours(brandFor('#0B5CAD')); assert.notDeepEqual(blue, surfaceColours(DEFAULT_BRAND)); assert.equal(blue.panel, brandFor('#0B5CAD').secondary); assert.equal(blue.mint, brandFor('#0B5CAD').mint)
   })
 
-  // =============== the requests ===============
   await t('the profile is read safely: unset fields are null, colours are normalised, and a blank name is not a name', () => {
     assert.deepEqual(toProfile({ companyName: 'E5 Energy', supportEmail: ' a@b.co ', logoUrl: 'https://r2/x.png', primaryColor: '0b5cad', secondaryColor: null, updatedAt: '2026-10-21T08:15:00Z' }), { companyName: 'E5 Energy', supportEmail: 'a@b.co', logoUrl: 'https://r2/x.png', primaryColor: '#0B5CAD', secondaryColor: null, updatedAt: '2026-10-21T08:15:00Z' })
     assert.deepEqual(toProfile({ companyName: '  ', primaryColor: 'junk' }).companyName, null); assert.equal(toProfile({ primaryColor: 'junk' }).primaryColor, null); assert.equal(toProfile(null).companyName, null)

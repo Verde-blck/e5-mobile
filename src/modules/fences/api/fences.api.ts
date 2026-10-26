@@ -5,18 +5,6 @@ import type { Fence, FenceBehavior, FenceDraft, FenceFrequency, FenceShape, LatL
 import { clipMimeType, type ClipFile } from '../lib/clip'
 import { deleteMockFence, getMockFences, removeMockClip, saveMockFence, uploadMockClip } from './fences.mock'
 
-/*
- * GET    /api/fences                     all fences
- * POST   /api/fences                     create   (body: the draft)
- * PUT    /api/fences/{id}                update   (same body)
- * DELETE /api/fences/{id}
- * POST   /api/fences/{id}/warning-audio  multipart `file` (mp3 or wav), max 5 MB
- * DELETE /api/fences/{id}/warning-audio
- *
- * Invalid input is a 400 with {"error": "..."}; the message is shown as-is,
- * since the backend knows its own rules best.
- */
-
 type ApiFence = Record<string, unknown>
 
 function toLatLng(raw: unknown): LatLng | null {
@@ -45,12 +33,10 @@ export function toFence(api: ApiFence): Fence {
       : [],
     deviceIds: Array.isArray(api.deviceIds) ? (api.deviceIds as unknown[]).map(String) : [],
     active: api.active !== false,
-    // Confirmed by Cypher (20 Oct): hasWarningAudio, and warningAudioUrl which is null when there is no clip.
     hasWarningAudio: Boolean(api.hasWarningAudio ?? api.warningAudioUrl),
   }
 }
 
-/** The body for POST and PUT: only what the guide lists, shape-specific. */
 export function toBody(draft: FenceDraft) {
   return {
     name: draft.name.trim(),
@@ -66,7 +52,6 @@ export function toBody(draft: FenceDraft) {
   }
 }
 
-/** The backend's own explanation from a 400, if there is one. */
 export function fenceErrorMessage(error: unknown): string {
   const response = (error as { response?: { status?: number; data?: { error?: string } } })?.response
   if (response?.data?.error) return response.data.error
@@ -95,15 +80,11 @@ export async function deleteFence(id: number): Promise<void> {
   await apiClient.delete(`/fences/${id}`)
 }
 
-/** An editable draft from a saved fence. */
 export function toDraft(fence: Fence): FenceDraft {
   const { id: _id, hasWarningAudio: _audio, ...draft } = fence
   return draft
 }
 
-// --- warning clip -------------------------------------------------------------------------------
-
-/** The multipart body: one field, `file`. A browser gets the Blob; the tablet gets React Native's { uri, name, type }. */
 export function buildClipForm(clip: ClipFile): FormData {
   const form = new FormData()
   const type = clipMimeType(clip.name, clip.mimeType)
@@ -115,7 +96,6 @@ export function buildClipForm(clip: ClipFile): FormData {
 export async function uploadWarningAudio(id: number, clip: ClipFile): Promise<void> {
   if (env.useMocks) return uploadMockClip(id, clip)
   await apiClient.post(`/fences/${id}/warning-audio`, buildClipForm(clip), {
-    // On a tablet React Native adds the multipart boundary itself; a browser ignores this and adds its own.
     headers: { 'Content-Type': 'multipart/form-data' },
     transformRequest: (data) => data,
   })
@@ -126,7 +106,6 @@ export async function removeWarningAudio(id: number): Promise<void> {
   await apiClient.delete(`/fences/${id}/warning-audio`)
 }
 
-/** Why a clip upload failed, in a sentence. */
 export function clipErrorMessage(error: unknown): string {
   const response = (error as { response?: { status?: number; data?: { error?: string } } })?.response
   if (response?.status === 413) return 'That clip is too large. The limit is 5 MB.'
@@ -137,16 +116,11 @@ export function clipErrorMessage(error: unknown): string {
 
 export interface SaveResult {
   fence: Fence
-  /** Set when the fence was saved but its clip wasn't. The fence is kept: only the clip needs another try. */
   clipError: string | null
 }
 
-/**
- * Saves the fence, then its warning clip: a new one to upload, null to remove the current one, or
- * undefined to leave it alone. The clip is a separate request that needs the fence's id first, so
- * if it fails the fence is already saved. That is reported on its own, so the person neither loses
- * the fence nor creates a second copy by saving again.
- */
+// The clip is a separate request that needs the fence's id first, so if it fails the fence is already saved. That
+// is reported on its own, so the person neither loses the fence nor creates a second copy by saving again.
 export async function saveFenceWithClip(draft: FenceDraft, id: number | undefined, clip: ClipFile | null | undefined): Promise<SaveResult> {
   const fence = await saveFence(draft, id)
   if (clip === undefined) return { fence, clipError: null }

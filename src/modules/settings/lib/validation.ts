@@ -1,4 +1,4 @@
-/** A Wi-Fi network name is at most 32 *bytes*, so an accented or emoji name runs out sooner. */
+// A Wi-Fi network name is at most 32 *bytes*, so an accented or emoji name runs out sooner.
 export function validateSsid(value: string): string | null {
   const bytes = new TextEncoder().encode(value).length
   if (bytes === 0) return 'Enter the network name.'
@@ -6,7 +6,6 @@ export function validateSsid(value: string): string | null {
   return null
 }
 
-/** Empty is allowed: it keeps the current password, or means an open network. */
 export function validateWifiPassword(value: string): string | null {
   if (value === '') return null
   if (value.length < 8 || value.length > 63) return 'A Wi-Fi password is 8 to 63 characters.'

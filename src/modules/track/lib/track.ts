@@ -3,7 +3,6 @@ import type { Track, TrackPoint, TrackStats } from '../types'
 
 const EARTH_RADIUS_M = 6_371_000
 
-/** Great-circle distance between two fixes, in metres. */
 export function haversine(
   a: { lat: number; lng: number },
   b: { lat: number; lng: number }
@@ -19,32 +18,18 @@ export function haversine(
   return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(h))
 }
 
-/**
- * GPS noise means a stationary helmet still reports slightly different
- * coordinates each time. Without a floor, a worker standing still for an hour
- * accumulates a few hundred metres of imaginary walking.
- */
+// GPS noise makes a stationary helmet report slightly different coordinates each time. Without a
+// floor, a worker standing still for an hour accumulates a few hundred metres of imaginary walking.
 const NOISE_FLOOR_M = 3
 
-/** A leg longer than this is treated as a coverage gap, not a walk. */
 const GAP_MS = 5 * 60_000
 
-/**
- * Faster than this and the fix is wrong, not fast.
- *
- * 40 m/s is 144 km/h — generous enough to cover a helmet riding in a vehicle
- * on a motorway, and far below anything a bad fix produces. Real devices
- * carry readings from wherever they were tested: this fleet's telemetry
- * contains coordinates in Hunan province alongside its Lagos history, and a
- * single Lagos-to-China leg added eleven thousand kilometres to the total.
- */
+// Faster than this and the fix is wrong, not fast: 40 m/s is 144 km/h, generous
+// enough for a vehicle on a motorway and far below anything a bad fix produces.
 const MAX_PLAUSIBLE_SPEED_MPS = 40
 
-/**
- * Not from GPS. Cypher's 16 Oct update added the fix type to telemetry: indoors a helmet reports
- * 'network' (mobile mast) or 'wifi', which can be hundreds of metres off. Older rows have no
- * fix type and are treated as GPS, as before.
- */
+// Indoors a helmet reports 'network' (mobile mast) or 'wifi' fixes, which can be
+// hundreds of metres off. Older rows have no fix type and are treated as GPS.
 export function isApproximate(sample: Pick<TelemetrySample, 'fixType'>): boolean {
   return sample.fixType !== undefined && sample.fixType !== 'gps'
 }
@@ -80,8 +65,8 @@ export function buildTrack(
     if (previous) {
       const legMs = fix.ts - previous.ts
       const raw = haversine(previous, { lat: fix.lat as number, lng: fix.lng as number })
-      // A leg with no elapsed time can't have a speed; treat it as a jump
-      // rather than dividing by zero and producing infinity.
+      // A leg with no elapsed time can't have a speed; treat it as a
+      // jump rather than dividing by zero and producing infinity.
       const impliedSpeed = legMs > 0 ? raw / (legMs / 1000) : Infinity
 
       if (legMs > GAP_MS) {
@@ -90,9 +75,6 @@ export function buildTrack(
         longestGapMs = Math.max(longestGapMs, legMs)
         segment += 1
       } else if (impliedSpeed > MAX_PLAUSIBLE_SPEED_MPS) {
-        // The fix is wrong, or the device was somewhere else entirely. Either
-        // way it isn't movement, so it breaks the line and contributes
-        // nothing to the distance.
         impossibleJumps += 1
         segment += 1
       } else {
@@ -146,10 +128,6 @@ export function formatDuration(ms: number): string {
   return rest ? `${hours}h ${rest}m` : `${hours}h`
 }
 
-/**
- * One row per fix, so the export can be opened in a spreadsheet or handed to
- * whoever is investigating an incident.
- */
 export function trackToCsv(track: Track, deviceName: string): string {
   const header = [
     'device_id',
@@ -185,7 +163,6 @@ export function trackToCsv(track: Track, deviceName: string): string {
   return [header, ...rows].join('\n')
 }
 
-/** Splits a track into its continuous runs, for drawing and for fitting. */
 export function segmentsOf(points: TrackPoint[]): TrackPoint[][] {
   const runs: TrackPoint[][] = []
   for (const point of points) {

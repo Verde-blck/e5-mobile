@@ -8,17 +8,13 @@ import type { AlarmDetail, AlarmPhoto, AlarmVideo } from '../footage'
 import type { ApiAlarm, ApiAlarmDetail, ApiAlarmPhoto, ApiAlarmVideo } from './alarms.wire'
 import { getMockAlarmDetail, getMockAlarms, setMockAlarmResolved } from './alarms.mock'
 
-/** Used for the list, for stream events and for GET /alarms/{id}. */
 export function toAlarm(api: ApiAlarm): Alarm {
   const type = alarmTypeFromCode(api.alarmType)
   return {
     id: String(api.id),
     deviceId: api.deviceId,
-    // The API carries no helmet name; the screens look it up from the device
-    // list by deviceId. The short IMEI is only the fallback.
     deviceName: shortDeviceName(api.deviceId),
     type,
-    // Derived — the API sends no severity. See severityForType.
     severity: severityForType(type),
     status: api.resolved ? 'resolved' : 'active',
     raisedAt: ts(api.occurredAt) ?? 0,
@@ -53,7 +49,6 @@ export function toAlarmDetail(api: ApiAlarmDetail): AlarmDetail {
   return {
     alarm: toAlarm(api),
     photos: (api.photos ?? []).map(toPhoto).filter((p): p is AlarmPhoto => p !== null),
-    // The helmet's clips are listed oldest-first by file name (a timestamp).
     videos: (api.videos ?? [])
       .map(toVideo)
       .filter((v): v is AlarmVideo => v !== null)
@@ -61,11 +56,8 @@ export function toAlarmDetail(api: ApiAlarmDetail): AlarmDetail {
   }
 }
 
-/**
- * The endpoint is paginated and has no "all" mode, so this takes a single
- * large page. Fine at current volume; it should move to proper pagination or
- * a date filter once alarm history grows.
- */
+// The endpoint is paginated and has no "all" mode, so this takes a single large page. Fine
+// at current volume; it needs pagination or a date filter as alarm history grows.
 export async function fetchAlarms(): Promise<Alarm[]> {
   if (env.useMocks) return getMockAlarms().map(toAlarm)
 
@@ -75,11 +67,6 @@ export async function fetchAlarms(): Promise<Alarm[]> {
   return pageContent(data).map(toAlarm)
 }
 
-/**
- * One alarm with the footage the backend linked to it (by alarmId). Needs the
- * photo/video permissions as well as alarm access; a refusal comes back as a
- * 403 {"error":"forbidden"} that the screen shows as "no access".
- */
 export async function fetchAlarmDetail(id: string): Promise<AlarmDetail> {
   if (env.useMocks) {
     const mock = getMockAlarmDetail(id)
@@ -90,10 +77,7 @@ export async function fetchAlarmDetail(id: string): Promise<AlarmDetail> {
   return toAlarmDetail(data)
 }
 
-/**
- * Resolve or reopen. Two endpoints rather than one with a body, which is how
- * the API models it. Every open dashboard hears about it on the stream.
- */
+// Two endpoints rather than one with a body, which is how the API models it.
 export async function setAlarmResolved(id: string, resolved: boolean): Promise<void> {
   if (env.useMocks) {
     setMockAlarmResolved(id, resolved)

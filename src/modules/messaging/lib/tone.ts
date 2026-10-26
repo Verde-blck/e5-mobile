@@ -1,4 +1,3 @@
-// A short beep as a data: URI, for the sample conversation. A real build never uses it.
 const RATE = 16_000
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 
@@ -11,7 +10,6 @@ function base64(bytes: Uint8Array): string {
   return out
 }
 
-/** 16-bit mono PCM WAV of a sine tone with soft edges. */
 export function toneWavBytes(seconds = 0.6, frequency = 660): Uint8Array {
   const samples = Math.floor(RATE * seconds)
   const bytes = new Uint8Array(44 + samples * 2)

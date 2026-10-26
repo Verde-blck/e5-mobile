@@ -1,11 +1,5 @@
-// `npm test` — logic tests for the pieces that don't need a phone: token
-// storage, the sign-in / 2FA request shapes, 401 handling, API normalising,
-// roles, presence rules, the alarm vocabulary, footage, the alert policy, the tablet layout rules and the map.
-//
-// Each suite is bundled with esbuild (so the app's `@/` imports and the
-// TypeScript just work) with the two native modules stubbed out, then run in
-// a plain Node process. HTTP is mocked at the axios adapter, so nothing here
-// touches the network.
+// Each suite is bundled with esbuild (so the app's `@/` imports and TypeScript just work) with the two native modules
+// stubbed out, then run in plain Node. HTTP is mocked at the axios adapter, so nothing touches the network.
 import { build } from 'esbuild'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
@@ -13,33 +7,33 @@ import path from 'node:path'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const suites = [
-  ['live', {}], // mocks off: exercises the real request code paths
-  ['stream', {}], // the alarm stream client against a fake streaming server
-  ['groupsession', {}], // group call: who can start what, the API, one connection per helmet, hanging up on every one
-  ['audio', {}], // WAV encoding, browser recording names, and honest upload errors
-  ['wall', {}], // the live wall: who can be on it, one session per helmet, leaving and returning
-  ['twofactor', {}], // 2FA: set-up required (never a sign-out), new-phone code, company policy, reset
-  ['worker', {}], // worn (the new field, not the raw code) and who a helmet is assigned to
-  ['branding', {}], // company colours (with their safeguards), the form's rules, and the profile requests
-  ['media', {}], // photo and video records: mapping, per-helmet fan-out, calendar, asking the helmet for clips
-  ['tabletgate', {}], // keeping phones out: the 600 dp rule, run against real device sizes
-  ['nativemap', {}], // the Google map's drawing, framing, tap and engine-choice rules
-  ['mapkey', {}], // the Google key: validated, put in the Android build, and never printed
-  ['plexus', {}], // the sign-in panel's animated network: the web's animation, run against a stand-in canvas
-  ['prune', {}], // leftover files from earlier zips: listed first, deleted only on request, and only inside src, tests and docs
-  ['flags', {}], // how a switch in .env is read
-  ['layout', {}], // screen-size classes and the list/detail pane rules
-  ['map', {}], // map data rules, the embedded map page, and events from it
-  ['settings', {}], // site Wi-Fi, helmet settings and network switching against Cypher's documented requests
-  ['fences', {}], // fence API shapes, geometry and validation (ported from the web app)
-  ['messages', {}], // a helmet's conversation: the web's exact requests, ordering, defaults
-  ['users', {}], // administrators: grant rules, permission tree, who may edit or delete whom, endpoints
-  ['build', {}], // the generated style sheet is sound (a stray pattern in source can break the NATIVE build only)
-  ['calls', {}], // call access rule (the SOS window)
-  ['session', {}], // the live session, the media-server exchange, retries, leaving the app, the live API
-  ['push', {}], // alarm push: payloads, channels, registration contract, permission flow, build config
-  ['track', { TZ: 'Africa/Lagos' }], // track rules (gaps, jumps, noise), availability and dates, in Lagos time
-  ['mock', { EXPO_PUBLIC_USE_MOCKS: 'true' }], // sample-data mode
+  ['live', {}],
+  ['stream', {}],
+  ['groupsession', {}],
+  ['audio', {}],
+  ['wall', {}],
+  ['twofactor', {}],
+  ['worker', {}],
+  ['branding', {}],
+  ['media', {}],
+  ['tabletgate', {}],
+  ['nativemap', {}],
+  ['mapkey', {}],
+  ['plexus', {}],
+  ['prune', {}],
+  ['flags', {}],
+  ['layout', {}],
+  ['map', {}],
+  ['settings', {}],
+  ['fences', {}],
+  ['messages', {}],
+  ['users', {}],
+  ['build', {}],
+  ['calls', {}],
+  ['session', {}],
+  ['push', {}],
+  ['track', { TZ: 'Africa/Lagos' }],
+  ['mock', { EXPO_PUBLIC_USE_MOCKS: 'true' }],
 ]
 
 let failed = false
@@ -52,7 +46,6 @@ for (const [name, env] of suites) {
     format: 'cjs',
     outfile,
     logLevel: 'warning',
-    // The sample-data alarms bundle a photo and a clip; the tests only need them to resolve.
     loader: { '.jpg': 'dataurl', '.mp4': 'dataurl', '.wav': 'dataurl' },
     tsconfig: path.join(root, 'tsconfig.json'),
     alias: {

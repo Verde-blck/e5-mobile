@@ -2,10 +2,6 @@ import { useEffect, useState } from 'react'
 import { TextField } from '@/shared/components/TextField'
 import { parseDay } from '@/modules/track/lib/range'
 
-/**
- * One day, typed as year-month-day. It only changes the filter once it is a real date (so half-typed text doesn't
- * trigger a search), says so when it isn't, and follows the calendar when a day is picked there.
- */
 export function DayField({ value, onChange, label = 'Date' }: { value?: string; onChange: (day: string | undefined) => void; label?: string }) {
   const [text, setText] = useState(value ?? '')
   const [error, setError] = useState<string | null>(null)

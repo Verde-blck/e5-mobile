@@ -39,7 +39,6 @@ function Tile({
   label: string
   value: number | string
   tone: 'brand' | 'green' | 'slate' | 'red'
-  /** The tile's width once the row has been measured; until then it just shares the row. */
   width?: number
 }) {
   const brandColour = useBrandColours().primary
@@ -62,7 +61,6 @@ function Tile({
   )
 }
 
-/** Why a helmet is on the "needs attention" list — can be more than one reason. */
 function reasonsFor(d: DeviceView, now: number): string[] {
   const reasons: string[] = []
   if (d.presence === 'offline') {
@@ -80,13 +78,10 @@ function DashboardScreen() {
   const user = useAuthStore((s) => s.user)
   const fleet = useDeviceViews()
   const summary = useFleetSummary()
-  // Four tiles in a row when they have room, otherwise an even two by two: never three and an orphan, which is what
-  // a flowing row gives beside a side rail on a tablet in portrait.
   const [rowWidth, setRowWidth] = useState(0)
   const tileWidth = tileWidthFor(rowWidth)
 
   const attention = fleet.devices
-    // A deactivated helmet being offline is expected, not something to chase.
     .filter((d) => d.active)
     .map((d) => ({ device: d, reasons: reasonsFor(d, fleet.now) }))
     .filter((x) => x.reasons.length > 0)
@@ -193,7 +188,6 @@ function DashboardScreen() {
 }
 
 export default function DashboardRoute() {
-  // A restricted account lands on its helmet list rather than a dead-end.
   const canDevices = useCan('devices:read')
   return (
     <RequirePermission permission="dashboard:read" fallback={canDevices ? '/devices' : '/more'}>

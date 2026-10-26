@@ -1,11 +1,5 @@
 import type { PermissionState, PushAdapter } from './adapter'
 
-/**
- * The browser preview's stand-in: it simulates permission, a token and notifications so the whole
- * flow can be exercised without a tablet. It is NOT push: a browser tab can't be woken when locked.
- * The test hooks on `globalThis` let the browser tests refuse permission, tap a notification, or
- * deliver one.
- */
 type Hooks = typeof globalThis & {
   __e5PushPermission?: PermissionState
   __e5PushDeny?: boolean

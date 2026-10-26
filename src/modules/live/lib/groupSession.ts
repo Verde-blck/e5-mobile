@@ -20,34 +20,24 @@ export interface GroupCallState {
   micOn: boolean
   cameraOn: boolean
   noCamera: boolean
-  /** Our audio and video couldn't reach the call room. */
   outgoingFailed: boolean
   startedAt: number | null
-  /** Why it ended: hung up, or the app was left (a tablet can't keep a call in the background). */
   endReason: 'you' | 'left-app' | null
 }
 
-/** Everything platform-specific, handed in so the session can be tested with fakes. */
 export interface GroupDeps {
   startGroupCall(deviceIds: readonly string[]): Promise<GroupCall>
   stopGroupCall(callId: string): Promise<void>
   getLocalMedia(withCamera: boolean): Promise<{ stream: StreamLike; noCamera: boolean }>
   play(url: string, signal: AbortSignal): Promise<MediaConnection>
   push(url: string, media: StreamLike, signal: AbortSignal): Promise<MediaConnection>
-  /** Remembers the running call (or forgets it with null), so a killed app can offer to end it next time. */
   rememberCall(callId: string | null): void
   watchBackground(callback: (inBackground: boolean) => void): () => void
-  /** Tests only: shorter timings than the real ones. */
   timing?: { intervalMs?: number; deadlineMs?: number; outgoingDeadlineMs?: number; leaveGraceMs?: number }
 }
 
-/**
- * One group call, from start to hang-up (ported from the web dashboard's GroupCallSession).
- *
- * Each helmet is its own incoming connection, so one weak signal never affects the others; our microphone and camera
- * go out once, to the room. Ending always tells the backend, on every way out, because helmets stay in call mode until
- * told otherwise. A tablet can't keep a call in the background, so the app staying out of sight for a few seconds ends it.
- */
+// Each helmet is its own incoming connection, so one weak signal never
+// affects the others; our microphone and camera go out once, to the room.
 export class GroupCallSession {
   private state: GroupCallState
   private readonly listeners = new Set<() => void>()
@@ -100,10 +90,8 @@ export class GroupCallSession {
     return this.controller.signal
   }
 
-  /** New call with these helmets. */
   async start(deviceIds: readonly string[]): Promise<void> {
     try {
-      // Camera and microphone first: if they are refused, no helmet is put into call mode.
       const { stream, noCamera } = await this.deps.getLocalMedia(this.withCamera)
       if (this.signal.aborted) {
         stream.getTracks().forEach((t) => t.stop())
@@ -111,13 +99,11 @@ export class GroupCallSession {
       }
       this.set({ localStream: stream, status: 'starting', ...(noCamera ? { noCamera: true, cameraOn: false } : {}) })
 
-      // Marked before the request goes out, so a call hung up mid-request still ends on every helmet.
       this.startSent = true
       const call = await this.deps.startGroupCall(deviceIds)
       this.call = call
       this.deps.rememberCall(call.callId)
       if (this.signal.aborted) {
-        // Hung up while the request was in flight: make sure the stop lands after the start.
         void this.deps.stopGroupCall(call.callId)
         this.deps.rememberCall(null)
         return
@@ -139,7 +125,6 @@ export class GroupCallSession {
     }
   }
 
-  /** Try a helmet's picture again after it failed. */
   retryHelmet(deviceId: string): void {
     if (this.state.participants.find((p) => p.deviceId === deviceId)?.status === 'failed') void this.connectHelmet(deviceId)
   }
@@ -190,7 +175,6 @@ export class GroupCallSession {
     this.set({ micOn: next })
   }
 
-  /** Off sends black frames rather than renegotiating, so it is instant both ways. */
   toggleCamera(): void {
     if (this.state.noCamera || !this.withCamera) return
     const next = !this.state.cameraOn
@@ -208,14 +192,12 @@ export class GroupCallSession {
     this.incoming.forEach((c) => c.close())
     this.incoming.clear()
     this.outgoing?.close()
-    // Turns the microphone and camera off: leaving tracks running keeps them on.
     this.state.localStream?.getTracks().forEach((t) => t.stop())
 
     if (this.startSent && this.call) {
       void this.deps.stopGroupCall(this.call.callId)
       this.deps.rememberCall(null)
     }
-    // Every picture is let go, not just closed: nothing is left attached to a stream that no longer exists.
     this.state = { ...this.state, status: 'ended', localStream: null, participants: this.state.participants.map((p) => ({ ...p, stream: null })), endReason: reason }
     this.listeners.forEach((l) => l())
   }
@@ -223,7 +205,6 @@ export class GroupCallSession {
   private onBackground(inBackground: boolean) {
     if (this.leaveTimer) clearTimeout(this.leaveTimer)
     this.leaveTimer = null
-    // While a permission dialog is up the app is paused too: that is not leaving.
     if (!inBackground || this.state.status === 'requesting-media' || this.state.status === 'ended') return
     this.leaveTimer = setTimeout(() => this.end('left-app'), this.deps.timing?.leaveGraceMs ?? LEAVE_GRACE_MS)
   }

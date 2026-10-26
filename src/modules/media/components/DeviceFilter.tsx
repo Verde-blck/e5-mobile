@@ -2,7 +2,6 @@ import { Pressable, View } from 'react-native'
 import { Text } from '@/shared/components/Text'
 import { cn } from '@/shared/lib/cn'
 
-/** Which helmet: All devices, or one. Chips rather than a drop-down, so it is one tap and nothing is hidden. */
 export function DeviceFilter({ devices, value, onChange, label = 'Device' }: { devices: { id: string; name: string }[]; value?: string; onChange: (id: string | undefined) => void; label?: string }) {
   const Chip = ({ id, name }: { id?: string; name: string }) => {
     const on = (value ?? undefined) === id

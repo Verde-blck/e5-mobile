@@ -16,16 +16,6 @@ import { CompanyLogo } from '@/shared/components/Logo'
 import { Text } from '@/shared/components/Text'
 import { useAuthStore } from '@/shared/store/authStore'
 
-/*
- * The sign-in screen, laid out as the web dashboard's sign-in page (AuthLayout.tsx) so the two look like one product. Every measurement
- * below is that page's, read from it in a browser.
- *
- *   Under 640 wide    a 224 tall banner with the card overlapping its lower edge by 40, the card as wide as the screen allows.
- *   640 and up        the same, with a 256 tall banner, larger type, and a 400 wide card.
- *   1024 and up       two panes: the panel on the left (5 parts of 12), the card centred in the rest (7 parts).
- *
- * (These are the web page's own widths, not the app's tablet breakpoints, which are for the lists and detail screens.)
- */
 export default function SignInScreen() {
   const branding = useBranding()
   const brand = useBrandColours()
@@ -47,7 +37,6 @@ export default function SignInScreen() {
 
   async function submitCredentials() {
     if (busy) return
-    // Like the web page's form: the button is always there, and pressing it with something missing says what.
     if (!canSubmitCredentials) {
       setUsernameError(username.trim() ? null : 'Enter your username.')
       setPasswordError(password ? null : 'Enter your password.')
@@ -61,8 +50,6 @@ export default function SignInScreen() {
         setChallenge(result.challenge)
         setCode('')
       } else {
-        // Flipping the user is what moves the app past the sign-in screen:
-        // the root layout's route guards react to it.
         setUser(result.user)
       }
     } catch (e) {
@@ -107,7 +94,6 @@ export default function SignInScreen() {
       testID="signin-hero"
       style={[
         { backgroundColor: brand.secondary, overflow: 'hidden' },
-        // A banner is tall enough for its content plus the status bar above it; the panel fills its half.
         split ? { flex: 5 } : { height: (sm ? 256 : 224) + insets.top },
       ]}
     >
@@ -246,7 +232,6 @@ export default function SignInScreen() {
         borderColor: ink(0.06),
         backgroundColor: '#FFFFFF',
         padding: sm ? 32 : 24,
-        // The web page's shadow: a hairline, and a soft one that falls away to the bottom.
         boxShadow: `0 1px 2px ${rgba(brand.secondary, 0.06)}, 0 12px 32px -12px ${rgba(brand.secondary, 0.18)}`,
       }}
     >
@@ -281,7 +266,6 @@ export default function SignInScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView keyboardShouldPersistTaps="handled" bounces={false} contentContainerStyle={{ flexGrow: 1 }}>
           {hero}
-          {/* The card overlaps the banner by 40. */}
           <View style={{ marginTop: -40, paddingHorizontal: sm ? 24 : 16, paddingBottom: 48 }}>{column}</View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -298,6 +282,5 @@ function Heading({ children }: { children: ReactNode }) {
 }
 
 function Subheading({ children }: { children: ReactNode }) {
-  // 28 below it, to the first field: the web page's mt-7.
   return <Text style={{ marginTop: 6, marginBottom: 28, fontSize: 14, lineHeight: 22.75, color: ink(0.7) }}>{children}</Text>
 }

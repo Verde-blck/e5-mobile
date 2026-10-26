@@ -36,7 +36,6 @@ async function main() {
   assert.equal(env.useMocks, false, 'live suite must run with mocks off')
   assert.equal(env.apiBaseUrl, 'https://e5energy-production.up.railway.app/api')
 
-  // ---------- normalisers ----------
   await t('num/flag/ts behave like the web versions', () => {
     assert.equal(num('83'), 83); assert.equal(num(''), undefined); assert.equal(num('abc'), undefined)
     assert.equal(flag('1'), true); assert.equal(flag('0'), false); assert.equal(flag(null), undefined)
@@ -49,7 +48,6 @@ async function main() {
     assert.equal(shortDeviceName('866652022956404'), '…56404')
   })
 
-  // ---------- token storage ----------
   await t('storage keys are sanitised for SecureStore', () => assert.equal(safeKey('e5.twoFactor.ADM@001'), 'e5.twoFactor.ADM_001'))
   await t('decodeToken / isExpired (30 s skew)', () => {
     assert.equal(decodeToken(jwt({ sub: 'admin', exp: future }))?.sub, 'admin'); assert.equal(decodeToken('nonsense'), null)
@@ -65,9 +63,7 @@ async function main() {
     assert.equal(__mem.has('authToken'), false)
   })
 
-  // ---------- roles: permission codes -> module:action ----------
   await t('expandPermissions: Cypher\'s "Viewer" test role (DASHBOARD + TRACK_PLAYBACK)', () => {
-    // Single-code areas mean full access in the web's model (only the paired areas split view from manage).
     assert.deepEqual(expandPermissions(['DASHBOARD', 'TRACK_PLAYBACK']).sort(), ['dashboard:delete', 'dashboard:read', 'dashboard:write', 'trackPlayback:delete', 'trackPlayback:read', 'trackPlayback:write'])
   })
   await t('permission parity with the web (its users/lib/permissions.ts): the codes my old table got wrong', () => {
@@ -90,7 +86,6 @@ async function main() {
       assert.ok(ALL_PERMISSIONS.includes(p as typeof ALL_PERMISSIONS[number]), `${p} must be a real module:action`)
   })
 
-  // ---------- sign-in, /auth/me ----------
   const adminToken = jwt({ sub: 'admin', exp: future })
   await t('login: POST /auth/login, then GET /auth/me with the bearer token; super admin = everything', async () => {
     http.calls.length = 0
@@ -158,7 +153,6 @@ async function main() {
     assert.deepEqual(http.calls.slice(0, 3).map((c) => c.data), [undefined, { code: '123456' }, { code: '123456' }])
   })
 
-  // ---------- restoring a session ----------
   await t('restoreSession: valid token -> profile from /auth/me', async () => {
     await tokenStore.set(viewerToken)
     http.routes = { 'GET /auth/me': () => ({ status: 200, data: VIEWER_ME }) }
@@ -186,7 +180,6 @@ async function main() {
     assert.equal(await auth.restoreSession(), null); assert.equal(http.calls.length, 0)
   })
 
-  // ---------- 401 / 403 ----------
   let fired = 0
   const off = onUnauthorized(() => { fired++ })
   await t('a 401, or a 403 WITHOUT the forbidden body, ends the session', async () => {
@@ -220,7 +213,6 @@ async function main() {
     assert.match(auth.describeAuthError(e(503), 'x'), /server had a problem/); assert.match(auth.describeAuthError(e(), 'x'), /Can't reach the server/)
   })
 
-  // ---------- devices: Cypher's 16 Oct fields ----------
   await t('fetchDevices maps names, numbers, gas, and the new location/SIM fields (the real "ES5 3" sample)', async () => {
     http.routes = { 'GET /devices': () => ({ status: 200, data: [
       { deviceId: '866652022956057', name: 'ES5 3', lastBatteryLevel: '83', lastLatitude: '6.567546', lastLongitude: '3.369325', lastWearStatus: '1',
@@ -250,7 +242,6 @@ async function main() {
     assert.equal(networkLabel('wifi'), 'Wi-Fi'); assert.equal(networkLabel('4g'), '4G'); assert.equal(networkLabel(undefined), null)
   })
 
-  // ---------- presence ----------
   await t('presence follows the web rules: online < 2 min, degraded < 10 min, else offline', () => {
     const now = 1_000_000_000_000
     assert.equal(ONLINE_WINDOW_MS, 120_000); assert.equal(DEGRADED_WINDOW_MS, 600_000)
@@ -260,7 +251,6 @@ async function main() {
     assert.equal(lastSeenLabel(0, now), 'never')
   })
 
-  // ---------- alarms ----------
   await t('alarm vocabulary: protocol codes, SOS variants, derived severity (matches Cypher\'s critical list)', () => {
     assert.equal(alarmTypeFromCode('7'), 'sos'); assert.equal(alarmTypeFromCode('manual_sos_button'), 'sos-button'); assert.equal(alarmTypeFromCode('99'), 'other')
     assert.ok(isSos('sos') && isSos('sos-button') && !isSos('fall'))
@@ -330,7 +320,6 @@ async function main() {
     assert.equal(withNew.length, 2, 'the input list is never mutated')
   })
 
-  // ---------- teardown ----------
   await t('endSession clears user, cache, token, profile, alarm cursor and silenced sirens', async () => {
     await tokenStore.set(adminToken); __mem.set('e5.profile', '{}')
     useAuthStore.getState().setUser({ id: 'a', username: 'a', name: 'a', role: 'r', permissions: [] })

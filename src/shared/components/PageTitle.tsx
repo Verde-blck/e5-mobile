@@ -3,7 +3,6 @@ import { cn } from '@/shared/lib/cn'
 import { BackButton } from './BackButton'
 import { Text } from './Text'
 
-/** The heading of a module page, with the back arrow to the initial page. (The Dashboard is the initial page, so it has none.) */
 export function PageTitle({ title, padded = true }: { title: string; padded?: boolean }) {
   return (
     <View className={cn('flex-row items-center gap-1 pb-2 pt-3', padded && 'px-2')}>

@@ -6,23 +6,16 @@ import {
   type PermissionNode,
 } from '@/shared/constants/backend-permissions'
 
-/** The codes this person may hand out. null means everything (a super admin). */
 export type Grantable = ReadonlySet<string> | null
 
-/**
- * The backend refuses to let anyone grant a code they don't hold; holding X_MANAGE includes X.
- * (Same rule as the web's permission tree.)
- */
 export function canGrant(grantable: Grantable, code: ApiPermission): boolean {
   return grantable === null || grantable.has(code) || (!code.endsWith('_MANAGE') && grantable.has(`${code}_MANAGE`))
 }
 
 export interface RowState {
-  /** "Set" is a heading in the reference platform, not a permission. */
   heading: boolean
-  /** The backend doesn't offer this code, so it isn't shown. */
+  // The backend doesn't offer this code, so it isn't shown.
   hidden: boolean
-  /** The "can change" code, when this area splits view and change and the backend offers it. */
   manage?: ApiPermission
   viewing: boolean
   managing: boolean
@@ -30,7 +23,6 @@ export interface RowState {
   manageAllowed: boolean
 }
 
-/** What one row of the tree should show, given what is held, what the backend offers and what may be granted. */
 export function rowState(node: PermissionNode, granted: readonly ApiPermission[], available: readonly ApiPermission[], grantable: Grantable): RowState {
   const held = new Set(granted)
   const offered = new Set(available)
@@ -46,7 +38,6 @@ export function rowState(node: PermissionNode, granted: readonly ApiPermission[]
   }
 }
 
-/** The View box. Ticking grants the plain code; unticking removes it and its _MANAGE too. */
 export function toggleView(granted: readonly ApiPermission[], node: PermissionNode): ApiPermission[] {
   if (!node.code) return [...granted]
   const next = new Set(granted)
@@ -60,12 +51,11 @@ export function toggleView(granted: readonly ApiPermission[], node: PermissionNo
   return [...next]
 }
 
-/** The Can-change box. _MANAGE includes view, so only one of the two is ever stored. */
 export function toggleManage(granted: readonly ApiPermission[], node: PermissionNode): ApiPermission[] {
   if (!node.code || !node.manageCode) return [...granted]
   const next = new Set(granted)
   if (next.has(node.manageCode)) {
-    next.delete(node.manageCode) // back to view only
+    next.delete(node.manageCode)
     next.add(node.code)
   } else {
     next.add(node.manageCode)
@@ -74,7 +64,6 @@ export function toggleManage(granted: readonly ApiPermission[], node: Permission
   return [...next]
 }
 
-/** "Select all": the strongest code for each area, within what the backend offers and what may be granted. */
 export function selectAll(available: readonly ApiPermission[], grantable: Grantable): ApiPermission[] {
   const offered = new Set(available)
   const best = new Map<string, ApiPermission>()
@@ -87,12 +76,10 @@ export function selectAll(available: readonly ApiPermission[], grantable: Granta
   return [...best.values()]
 }
 
-/** How many areas are granted (view and manage of one area count once). */
 export function countAreas(codes: readonly string[]): number {
   return new Set(codes.map(viewCodeOf)).size
 }
 
-/** The tree as a flat list with depth, in display order, for rendering. */
 export function flattenTree(): Array<{ node: PermissionNode; depth: number }> {
   const out: Array<{ node: PermissionNode; depth: number }> = []
   const walk = (nodes: PermissionNode[], depth: number) => {

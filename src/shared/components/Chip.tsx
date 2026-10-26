@@ -2,7 +2,6 @@ import { Pressable } from 'react-native'
 import { cn } from '@/shared/lib/cn'
 import { Text } from './Text'
 
-/** A pill for choosing one of a few options. */
 export function Chip({ label, on, onPress, disabled }: { label: string; on: boolean; onPress: () => void; disabled?: boolean }) {
   return (
     <Pressable

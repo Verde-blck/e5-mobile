@@ -3,11 +3,6 @@ import { viewCodeOf, type ApiPermission } from '@/shared/constants/backend-permi
 import { useAuthStore } from '@/shared/store/authStore'
 import type { Administrator, AdministratorUpdate, Group, NewAdministrator } from '../types'
 
-// Sample-data twin of the administrators API. It enforces the same rules the backend does (Cypher, 20 Oct):
-// you can't delete yourself (400), only a super admin edits or deletes a super admin (403), the last super
-// admin can't be deleted (409 last_super_admin), you can't grant a code you don't hold (403 with the code),
-// and an account name can only be used once (409).
-
 const delay = () => new Promise((resolve) => setTimeout(resolve, 250))
 const httpError = (status: number, data: object = {}) => Object.assign(new Error(`HTTP ${status}`), { response: { status, data } })
 const me = () => useAuthStore.getState().user
@@ -28,7 +23,6 @@ let nextGroup = 3
 
 const copy = (a: Administrator): Administrator => ({ ...a, permissions: [...a.permissions], deviceIds: [...a.deviceIds] })
 
-/** Whether the signed-in sample user holds a code (a _MANAGE code includes its view code). */
 function holds(code: ApiPermission): boolean {
   const user = me()
   if (!user || user.superAdmin) return true
@@ -39,7 +33,6 @@ const firstNotHeld = (codes: readonly ApiPermission[]) => codes.find((c) => !hol
 
 export async function getMockAdmins(): Promise<Administrator[]> {
   await delay()
-  // Each account's two-step state is the one the sign-in uses, so setting it up, turning it off or resetting it shows here.
   admins = admins.map((a) => ({ ...a, twoFactorEnabled: mockTwoFactorOn(a.username) }))
   return admins.map(copy)
 }
@@ -81,10 +74,6 @@ export async function deleteMockAdmin(id: number): Promise<void> {
   admins = admins.filter((a) => a.id !== id)
 }
 
-/**
- * A lost or changed phone. Not your own account (400); only a super admin can reset a super admin (403). The person sets
- * 2FA up again at their next sign-in (and is forced to, if the company requires it).
- */
 export async function resetMockTwoFactor(id: number): Promise<Administrator> {
   await delay()
   const target = admins.find((a) => a.id === id)
@@ -117,5 +106,3 @@ export async function deleteMockGroup(id: number): Promise<void> {
   groups = groups.filter((g) => g.id !== id)
 }
 
-// An area counts once whether it is held as view or manage.
-export const areaOf = viewCodeOf

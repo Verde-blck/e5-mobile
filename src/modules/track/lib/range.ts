@@ -1,9 +1,6 @@
 const pad = (n: number) => String(n).padStart(2, '0')
 
-/**
- * A date as "YYYY-MM-DD" in the tablet's own time zone. (Not toISOString, which is UTC: in Lagos
- * that names the previous day for the first hour after midnight.)
- */
+// Not toISOString, which is UTC: in Lagos that names the previous day for the first hour after midnight.
 export function localDay(ts: number): string {
   const d = new Date(ts)
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
@@ -32,7 +29,6 @@ export function presetDates(preset: RangePreset, now: number = Date.now()): { fr
   }
 }
 
-/** "2026-10-19" -> local midnight, or null if it isn't a real calendar date (2026-02-30 is not). */
 export function parseDay(value: string): Date | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim())
   if (!m) return null
@@ -41,7 +37,6 @@ export function parseDay(value: string): Date | null {
   return d.getFullYear() === year && d.getMonth() === month - 1 && d.getDate() === day ? d : null
 }
 
-/** The start of the first day to the last millisecond of the last, or null with a reason. */
 export function rangeFromDates(fromDate: string, toDate: string): { from: number; to: number } | { error: string } {
   const from = parseDay(fromDate)
   const to = parseDay(toDate)

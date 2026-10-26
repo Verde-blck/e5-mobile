@@ -20,21 +20,16 @@ function close() {
   else router.replace('/')
 }
 
-/**
- * A call with one helmet: its picture and sound, the timer, mute and hang up. Voice only from this side: the tablet
- * shows the helmet's camera and never uses its own. It starts by itself when this account is allowed to, and ends
- * when you leave, including leaving the app for more than a few seconds.
- */
+// Voice only from this side: the tablet shows the helmet's camera and never uses its own.
 export function CallScreen({ deviceId, video = false }: { deviceId: string; video?: boolean }) {
   const insets = useSafeAreaInsets()
   const { devices } = useDeviceViews()
   const name = devices.find((d) => d.id === deviceId)?.name ?? 'the helmet'
   const { supported, access } = useCallAccess(deviceId)
   const { session, state, begin, end } = useHelmetSession(deviceId)
-  const now = useNow(250) // four ticks a second, so the timer is never more than a quarter-second behind
+  const now = useNow(250) // Four ticks a second, so the timer is never more than a quarter second behind.
   const canCall = supported && access.allowed
 
-  // Started from a timer that an undo cancels, so a development double-run can't send the helmet start, stop, start.
   useEffect(() => {
     if (!canCall) return
     const timer = setTimeout(() => begin('call', { withCamera: video }), 0)

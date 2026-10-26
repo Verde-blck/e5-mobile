@@ -4,14 +4,10 @@ import { createAudioPlayer, type AudioPlayer } from 'expo-audio'
 import Feather from '@expo/vector-icons/Feather'
 import { Text } from '@/shared/components/Text'
 
-// One message plays at a time: starting another stops the one that was going.
 let current: { stop: () => void } | null = null
 
-/**
- * Plays one voice message. The link is signed and expires after about an hour, so before playing it is asked
- * for one byte: a dead link is caught immediately and reported (the web does the same), rather than the player
- * sitting there silently. Helmets record AMR, which Android's own player reads, so there is no decoder here.
- */
+// The link expires after about an hour, so it is asked for one byte before playing: a dead
+// link is caught and reported at once instead of the player sitting there silently.
 export function MessagePlayer({ url, fromHelmet, onMissing }: { url: string; fromHelmet: boolean; onMissing: () => void }) {
   const [state, setState] = useState<'idle' | 'loading' | 'playing'>('idle')
   const player = useRef<AudioPlayer | null>(null)

@@ -1,4 +1,3 @@
-/** 83 seconds -> "01:23"; an hour or more -> "1:02:03". */
 export function formatCallTime(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000))
   const h = Math.floor(total / 3600)

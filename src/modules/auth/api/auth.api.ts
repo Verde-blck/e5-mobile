@@ -16,30 +16,15 @@ export interface Credentials {
   password: string
 }
 
-// ---------------------------------------------------------------------------
-// The signed-in profile — GET /api/auth/me
-// ---------------------------------------------------------------------------
-
-/**
- * What GET /api/auth/me returns. The login response and the 2FA verify
- * response carry the same profile, but the app always asks /auth/me instead
- * of depending on those shapes: one request, one definition, and it's what
- * restores a session after the app restarts.
- *
- * Permissions are re-read by the server on every request, so a role change
- * takes effect immediately — and this profile is only ever a *display* of
- * them. The server is what enforces.
- */
+// The login and 2FA responses carry the same profile, but the app always asks /auth/me:
+// one request, one definition, and it is what restores a session after a restart.
 interface ApiProfile {
   username?: string
   roleName?: string | null
-  /** true = full access; `permissions` is ignored. */
   superAdmin?: boolean
   permissions?: string[]
-  /** The helmets this account is limited to. Empty = every helmet. */
   deviceIds?: string[]
   twoFactorEnabled?: boolean
-  /** The company requires 2FA and this account hasn't set it up: only the set-up screen is usable until it has. */
   mustSetup2fa?: boolean
 }
 
@@ -52,7 +37,6 @@ export function userFromProfile(profile: ApiProfile, fallbackUsername: string): 
     name: username,
     role: superAdmin ? 'Super admin' : (profile.roleName ?? 'No role'),
     superAdmin,
-    // expandPermissions only ever produces module:action strings from MODULE_PERMISSION's keys.
     permissions: superAdmin ? ALL_PERMISSIONS : (expandPermissions(profile.permissions ?? []) as Permission[]),
     apiPermissions: profile.permissions ?? [],
     deviceIds: profile.deviceIds ?? [],
@@ -91,11 +75,8 @@ async function loadProfile(fallbackUsername: string): Promise<AuthUser> {
   return user
 }
 
-/**
- * Stores the token and fetches the profile. If the profile can't be loaded
- * the token is dropped again, so a failed sign-in never leaves the phone
- * half signed-in.
- */
+// If the profile can't be loaded the token is dropped again, so a
+// failed sign-in never leaves the phone half signed-in.
 async function startSession(token: string, username: string): Promise<AuthUser> {
   await tokenStore.set(token)
   try {
@@ -106,24 +87,15 @@ async function startSession(token: string, username: string): Promise<AuthUser> 
   }
 }
 
-/** Re-reads the profile, e.g. after switching 2FA on or off. */
 export async function refreshProfile(username: string): Promise<AuthUser> {
   if (env.useMocks) return mockUserFor(username)
   return loadProfile(username)
 }
 
-// ---------------------------------------------------------------------------
-// Sign-in, including the optional second step
-// ---------------------------------------------------------------------------
-
-/** What the second sign-in step needs to carry forward from the first. */
 export interface TwoFactorChallenge {
   username: string
-  /**
-   * One-time token proving the password step succeeded. The backend doesn't
-   * issue one yet; it is passed through whenever it's present, so nothing here
-   * changes when it arrives.
-   */
+  // The backend doesn't issue one yet; it is passed through whenever
+  // it's present, so nothing here changes when it arrives.
   mfaToken?: string
 }
 
@@ -138,14 +110,8 @@ interface LoginResponse {
   challengeToken?: string
 }
 
-/** The code the mock 2FA account always accepts. */
 const MOCK_CODE = '123456'
 
-/**
- * Step one. Resolves either with a signed-in user, or with a challenge when
- * the account has 2FA on, in which case the caller asks for a code and then
- * calls verifyTwoFactorLogin. No token is stored until that succeeds.
- */
 export async function login(credentials: Credentials): Promise<LoginResult> {
   if (env.useMocks) {
     await delay(300)
@@ -174,10 +140,6 @@ export async function login(credentials: Credentials): Promise<LoginResult> {
   return { status: 'signed-in', user: await startSession(data.token, credentials.username) }
 }
 
-/**
- * Step two: the 6-digit code from the authenticator app. A wrong or expired
- * code comes back as a 401.
- */
 export async function verifyTwoFactorLogin(
   challenge: TwoFactorChallenge,
   code: string
@@ -196,25 +158,13 @@ export async function verifyTwoFactorLogin(
   return startSession(data.token, challenge.username)
 }
 
-// ---------------------------------------------------------------------------
-// Managing 2FA from the account security screen
-// ---------------------------------------------------------------------------
-
 export interface TwoFactorSetup {
-  /** Base32 key, for pasting into an authenticator app. */
   secret: string
-  /** otpauth:// URL. On a phone this opens the authenticator app directly. */
   otpAuthUrl: string
 }
 
-/**
- * Generates a new secret. 2FA is not on yet: it only switches on when
- * confirmTwoFactorSetup succeeds, which proves the app was set up correctly.
- *
- * With 2FA already on (moving to a new phone) the CURRENT code must be sent, so that someone holding an unattended signed-in
- * phone can't swap it for their own. Without it the backend answers 409 2fa_already_enabled. The old phone keeps working
- * until confirmTwoFactorSetup succeeds with the new one.
- */
+// With 2FA already on, moving to a new phone needs the CURRENT code, so
+// someone holding an unattended signed-in phone can't swap it for their own.
 export async function startTwoFactorSetup(username: string, currentCode?: string): Promise<TwoFactorSetup> {
   if (env.useMocks) {
     await delay(400)
@@ -244,10 +194,6 @@ export async function confirmTwoFactorSetup(username: string, code: string): Pro
   await apiClient.post('/auth/2fa/confirm', { code })
 }
 
-/**
- * Needs the current code (a wrong or missing one is 401), and is refused with 409 2fa_required_by_company while the company
- * requires two-step verification.
- */
 export async function disableTwoFactor(username: string, code: string): Promise<void> {
   if (env.useMocks) {
     await delay(400)
@@ -259,20 +205,8 @@ export async function disableTwoFactor(username: string, code: string): Promise<
   await apiClient.post('/auth/2fa/disable', { code })
 }
 
-// ---------------------------------------------------------------------------
-// Session
-// ---------------------------------------------------------------------------
-
-/**
- * Restores a session on launch: loads the saved token into memory, then asks
- * the server who it belongs to.
- *
- * - Token rejected (401, or a 403 that isn't a permission refusal) → the
- *   session is dead; returns null and forgets the token.
- * - Server unreachable → keeps the token and falls back to the last profile
- *   this phone saw, so the app still opens on a site with no signal. If there
- *   isn't one, returns null but keeps the token for the next launch.
- */
+// A 401 (or a 403 that isn't a permission refusal) means the token is dead. With no
+// signal the saved profile is used, so the app still opens on a site with no coverage.
 const RESTORE_TIMEOUT_MS = 6000
 
 export async function restoreSession(): Promise<AuthUser | null> {
@@ -281,8 +215,6 @@ export async function restoreSession(): Promise<AuthUser | null> {
 
   const username = decodeToken(token)?.sub ?? 'unknown'
   try {
-    // The splash screen waits for this. On a dead network the request could take its full 20 s timeout;
-    // after 6 s the saved profile is used instead, and the app carries on.
     return await withTimeout(loadProfile(username), RESTORE_TIMEOUT_MS)
   } catch (error) {
     const status = statusOf(error)
@@ -295,33 +227,23 @@ export async function restoreSession(): Promise<AuthUser | null> {
   }
 }
 
-/**
- * There is no logout endpoint, so this only clears the phone. The token stays
- * valid at the server for the rest of its 24 hours — worth asking the backend
- * for a revocation endpoint, especially for a device that can be lost.
- */
+// There is no logout endpoint, so this only clears the phone: the
+// token stays valid at the server for the rest of its 24 hours.
 export async function clearSession(): Promise<void> {
   await tokenStore.clear()
   await storage.remove(PROFILE_KEY)
 }
 
-// ---------------------------------------------------------------------------
-
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-/** Shaped like an Axios error, so callers handle mocks and live the same way. */
 function httpError(status: number, data?: { error: string }) {
   const error = new Error(`HTTP ${status}`) as Error & { response?: { status: number; data?: { error: string } } }
   error.response = { status, data }
   return error
 }
 
-/**
- * Turns a failed sign-in or code check into a sentence for the screen.
- * `wrongInput` is what a 401 means in context ("wrong password" vs "wrong code").
- */
 export function describeTwoFactorError(error: unknown, wrongInput: string): string {
   const body = (error as { response?: { data?: { error?: string } } })?.response?.data?.error
   if (statusOf(error) === 409 && body === '2fa_already_enabled') return 'Two-step verification is already on. Enter your current code to move it to a new phone.'
@@ -334,6 +256,5 @@ export function describeAuthError(error: unknown, wrongInput: string): string {
   if (status === 401 || status === 400) return wrongInput
   if (status === 429) return 'Too many attempts. Wait a minute and try again.'
   if (status !== undefined && status >= 500) return 'The server had a problem. Try again shortly.'
-  // No response at all: offline, DNS, timeout.
   return "Can't reach the server. Check your connection and try again."
 }

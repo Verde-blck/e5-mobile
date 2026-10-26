@@ -1,7 +1,6 @@
 import { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { apiClient } from '@/shared/lib/api-client'
 
-/** A tiny test runner: prints ok/FAIL per test and sets a failing exit code. */
 export function createRunner() {
   const lines: string[] = []
   let passed = 0
@@ -44,11 +43,8 @@ export interface Req {
 }
 export type Route = (req: Req) => { status: number; data?: any }
 
-/**
- * Replaces axios's network layer, so the real client — its base URL, its
- * interceptors, its error handling — runs against canned responses.
- * status 0 means "no response at all" (offline).
- */
+// Replaces axios's network layer so the real client (base URL, interceptors, error
+// handling) runs against canned responses. Status 0 means no response at all (offline).
 export function installHttp() {
   const state = { calls: [] as Req[], routes: {} as Record<string, Route> }
 
@@ -58,7 +54,6 @@ export function installHttp() {
       url: config.url,
       baseURL: config.baseURL,
       params: config.params,
-      // A multipart body is passed through untouched; everything else in the app is JSON.
       data: !config.data ? undefined : typeof FormData !== 'undefined' && config.data instanceof FormData ? config.data : JSON.parse(config.data),
       contentType: String((config.headers as any)?.get?.('Content-Type') ?? (config.headers as any)?.['Content-Type'] ?? ''),
       auth: (config.headers as any)?.Authorization,

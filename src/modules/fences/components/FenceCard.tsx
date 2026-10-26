@@ -4,7 +4,6 @@ import { cn } from '@/shared/lib/cn'
 import { describePeriod, isTooSmall } from '../lib/geometry'
 import { BEHAVIOR_LABEL, type Fence } from '../types'
 
-/** Work areas in the brand teal, no-entry zones in amber; red stays for alarms. */
 export function fenceSwatch(fence: Pick<Fence, 'behavior' | 'active'>): string {
   return !fence.active ? 'bg-slate-300' : fence.behavior === 'NO_ENTRY' ? 'bg-amber-500' : 'bg-brand-primary'
 }
@@ -18,7 +17,6 @@ export function FenceCard({
   fence: Fence
   selected?: boolean
   onPress?: () => void
-  /** Edit / delete controls, when the account may use them. */
   children?: React.ReactNode
 }) {
   return (

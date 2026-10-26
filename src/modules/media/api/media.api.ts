@@ -7,8 +7,6 @@ import { getMockMedia } from './media.mock'
 import { dayBounds } from '../types'
 import type { MediaItem, MediaKind, MediaQuery } from '../types'
 
-// --- Photos -------------------------------------------------------------
-
 export interface ApiPhoto {
   id: number
   deviceId: string
@@ -19,8 +17,8 @@ export interface ApiPhoto {
 }
 
 export function toPhoto(api: ApiPhoto): MediaItem {
-  // The backend currently stores a placeholder string where the URL will go, so anything that isn't an absolute URL is
-  // treated as "not uploaded yet" rather than rendered as a broken image.
+  // The backend currently stores a placeholder string where the URL will go, so anything that isn't
+  // an absolute URL is treated as "not uploaded yet" rather than rendered as a broken image.
   const url = api.imageUrl ?? ''
   const uploaded = /^https?:\/\//i.test(url)
   return {
@@ -38,21 +36,17 @@ export function toPhoto(api: ApiPhoto): MediaItem {
   }
 }
 
-// --- Videos -------------------------------------------------------------
-
 export interface ApiVideo {
   id: number
   deviceId: string
   videoUrl?: string | null
   fileName?: string | null
   fileSizeBytes?: number | string | null
-  /** Helmet clock, no timezone: "2026-08-31T13:01:52". */
   recordedAt?: string | null
   recordedDate?: string | null
   uploadedAt?: string | null
 }
 
-/** Fallback for rows without recordedAt. The helmet names each clip after the moment recording started: "20260831130152.mp4" is 31 Aug 2026, 13:01:52. */
 export function recordedAtFromFileName(fileName?: string | null): number | undefined {
   const m = fileName?.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/)
   if (!m) return undefined
@@ -65,15 +59,13 @@ export function toVideo(api: ApiVideo): MediaItem {
   const uploadedAt = ts(api.uploadedAt)
   const url = api.videoUrl ?? ''
   return {
-    // Prefixed: video and photo ids come from different tables.
     id: `v${api.id}`,
     deviceId: api.deviceId,
     deviceName: shortDeviceName(api.deviceId),
     kind: 'video',
-    // Rows only exist once the upload has finished.
     status: /^https?:\/\//i.test(url) ? 'available' : 'failed',
-    // When the helmet recorded it, which can be days before it uploaded. recordedAt has no timezone, so it parses as local
-    // time: the helmet's clock reading, shown as-is.
+    // When the helmet recorded it, which can be days before it uploaded. recordedAt has no
+    // timezone, so it parses as local time: the helmet's clock reading, shown as-is.
     capturedAt: ts(api.recordedAt) ?? recordedAtFromFileName(api.fileName) ?? uploadedAt ?? 0,
     uploadedAt,
     sizeBytes: num(api.fileSizeBytes),
@@ -82,9 +74,6 @@ export function toVideo(api: ApiVideo): MediaItem {
   }
 }
 
-// --- Listing ------------------------------------------------------------
-
-/** Pages are 20 by default; a helmet with a busy week can have hundreds. */
 const PAGE_SIZE = 100
 const MAX_PAGES = 5
 
@@ -109,8 +98,8 @@ export async function fetchMedia(query: MediaQuery = {}): Promise<MediaItem[]> {
     return getMockMedia(query)
   }
 
-  // Both endpoints are per device; there's no fleet-wide list, so "all devices" fans out one request per helmet. Fine at
-  // this fleet size; worth a GET /api/videos (and /photos) once the fleet grows.
+  // Photos and videos are both listed per device, with no fleet-wide
+  // list, so "all devices" fans out one request per helmet.
   const deviceIds = query.deviceId ? [query.deviceId] : (await fetchDevices()).map((d) => d.id)
   const kinds: MediaKind[] = query.kind ? [query.kind] : ['photo', 'video']
 
@@ -119,11 +108,11 @@ export async function fetchMedia(query: MediaQuery = {}): Promise<MediaItem[]> {
       kinds.map((kind) =>
         fetchAllPages<never>(
           `/devices/${id}/${ENDPOINT[kind].path}`,
-          // Videos filter by recording date on the server (inclusive), so a day with hundreds of clips doesn't page the whole history down.
+          // Videos filter by recording date on the server (inclusive), so a day
+          // with hundreds of clips doesn't page the whole history down.
           kind === 'video' && query.date ? { from: query.date, to: query.date } : {}
         )
           .then((rows) => rows.map(ENDPOINT[kind].map))
-          // One helmet failing shouldn't blank the whole gallery.
           .catch(() => [] as MediaItem[])
       )
     )
@@ -141,14 +130,11 @@ export async function fetchMedia(query: MediaQuery = {}): Promise<MediaItem[]> {
   return items.sort((a, b) => b.capturedAt - a.capturedAt)
 }
 
-// --- Calendar -----------------------------------------------------------
-
 export interface CalendarDay {
   count: number
   totalBytes: number
 }
 
-/** Days in a month (YYYY-MM) that have recordings, keyed by YYYY-MM-DD. */
 export interface VideoCalendar {
   month: string
   totalClips: number
@@ -161,7 +147,6 @@ interface ApiCalendar {
   days?: { date: string; count: number | string; totalBytes?: number | string }[]
 }
 
-/** Which days of a month have clips, by recording date. One call per helmet; for "all devices" it fans out and adds the counts together, like the list. */
 export async function fetchVideoCalendar(month: string, deviceId?: string): Promise<VideoCalendar> {
   if (env.useMocks) return mockCalendar(month, deviceId)
 

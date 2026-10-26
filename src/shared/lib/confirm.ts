@@ -1,9 +1,6 @@
 import { Alert, Platform } from 'react-native'
 
-/**
- * A yes/no prompt that works everywhere. Alert.alert does nothing on web, so
- * the browser's own confirm() stands in for the `expo start --web` preview.
- */
+// Alert.alert does nothing on web, so the browser's own confirm() stands in for the `expo start --web` preview.
 export function confirmAction(opts: {
   title: string
   message: string

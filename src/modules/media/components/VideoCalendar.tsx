@@ -7,16 +7,13 @@ import { useVideoCalendar } from '../hooks/useMedia'
 import { WEEKDAYS, dayKey, monthCells, monthKey, monthLabel, shiftMonth } from '../lib/calendar'
 import { formatBytes } from '../types'
 
-/**
- * A month of when recordings were made, by the helmet's recording date rather than the upload date (clips often upload
- * days later and would land on the wrong day). Days with clips show a count; tapping one lists just that day.
- */
+// A month of when recordings were made, by the helmet's recording date rather than the
+// upload date (clips often upload days later and would land on the wrong day).
 export function VideoCalendar({ deviceId, date, onDateChange }: { deviceId?: string; date?: string; onDateChange: (date: string | undefined) => void }) {
   const today = new Date()
   const thisMonth = monthKey(today)
   const todayKey = dayKey(thisMonth, today.getDate())
   const [month, setMonth] = useState(date?.slice(0, 7) ?? thisMonth)
-  // Picking a date in the filter moves the calendar to that month.
   useEffect(() => {
     if (date) setMonth(date.slice(0, 7))
   }, [date])

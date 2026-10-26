@@ -13,19 +13,8 @@ import { criticalActive } from '../lib/alert-policy'
 import { streamStatus } from '../lib/alarmStream'
 import type { Alarm } from '../types'
 
-/**
- * The alarm list, newest first with unresolved ones pinned on top — someone
- * opening this during an incident shouldn't have to scroll to find it.
- *
- * New alarms arrive instantly over the stream (see LiveAlarms) and are written
- * straight into this list's cache. While the stream is up, polling is only a
- * slow safety net; while it's down, polling is the only way alarms arrive, so
- * it goes back to the normal interval.
- *
- * An account without alarm access (alarms:read) never fetches the list, but
- * still receives stream events into the same cache, so it still sees the
- * banner for a live SOS.
- */
+// While the stream is up, polling is only a slow safety net; while it is down,
+// polling is the only way alarms arrive, so it returns to the normal rate.
 export function useAlarms() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const canRead = useCan('alarms:read')
@@ -43,9 +32,7 @@ export function useAlarms() {
     retry: (count, error) => !isForbidden(error) && count < 1,
   })
 
-  // Signing out clears the cache, but an observer that's still mounted (the
-  // banner's, for one) keeps the last result it saw. Without this gate the
-  // previous account's SOS would still be on screen for whoever signs in next.
+  // Without this gate the previous account's SOS would still be on screen for whoever signs in next.
   const data = isAuthenticated ? query.data : undefined
 
   const alarms = useMemo(() => {
@@ -72,17 +59,11 @@ export function useAlarms() {
   }
 }
 
-/** Unresolved critical alarms inside the alert window — what the banner and siren follow. */
 export function useCriticalAlarms(): Alarm[] {
   const { alarms, now } = useAlarms()
   return useMemo(() => criticalActive(alarms, now), [alarms, now])
 }
 
-/**
- * One alarm with its linked footage. Re-checks every 30 s while clips are
- * still on their way (the backend's advice), and stops once they've arrived or
- * the alarm is too old for any to be expected.
- */
 export function useAlarmDetail(id: string) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const query = useQuery({
@@ -107,8 +88,6 @@ export function useResolveAlarm() {
     mutationFn: ({ id, resolved }: { id: string; resolved: boolean }) =>
       setAlarmResolved(id, resolved),
     onMutate: async ({ id, resolved }) => {
-      // Optimistic: a resolve that takes a round-trip to grey out feels broken
-      // during an incident, which is exactly when it gets used.
       await queryClient.cancelQueries({ queryKey: ALARMS_KEY })
       const previous = queryClient.getQueryData<Alarm[]>(ALARMS_KEY)
 

@@ -1,6 +1,5 @@
 import type { LatLng } from '@/modules/fences/types'
 
-/** What the map page tells the app. Everything crossing that boundary is validated here. */
 export type MapEvent =
   | { type: 'ready' }
   | { type: 'select'; id: string }
@@ -14,7 +13,6 @@ export type MapEvent =
 const validLat = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= 90
 const validLng = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= 180
 
-/** Turns whatever arrived from the page into a MapEvent, or null if it isn't one. */
 export function parseMapEvent(raw: unknown): MapEvent | null {
   let value = raw
   if (typeof raw === 'string') {
@@ -47,7 +45,6 @@ export interface MapHandlers {
   onDraftChange?: (patch: { center?: LatLng; points?: LatLng[] }) => void
 }
 
-/** Routes a validated event to whichever handler the screen supplied. */
 export function dispatchMapEvent(event: MapEvent, handlers: MapHandlers): void {
   switch (event.type) {
     case 'ready': return handlers.onReady?.()

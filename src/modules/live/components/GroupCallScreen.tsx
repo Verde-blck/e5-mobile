@@ -22,7 +22,6 @@ function close() {
   else router.replace('/')
 }
 
-/** One helmet in the call. Everyone is audible, as on a call; any one can be muted. */
 function HelmetTile({ participant, name, width, onRetry }: { participant: Participant; name: string; width: number; onRetry: () => void }) {
   const [muted, setMuted] = useState(false)
   const live = participant.status === 'live'
@@ -55,11 +54,6 @@ function HelmetTile({ participant, name, width, onRetry }: { participant: Partic
   )
 }
 
-/**
- * A call with several helmets in one room: each helmet's picture and sound, your own tile, and mute, camera and hang up.
- * Hanging up ends it for every helmet. It starts by itself, and ends when you leave, including leaving the app for more
- * than a few seconds. Beta: it hasn't been tried with several real helmets.
- */
 export function GroupCallScreen({ ids, video }: { ids: string[]; video: boolean }) {
   const insets = useSafeAreaInsets()
   const { devices } = useDeviceViews()
@@ -70,7 +64,6 @@ export function GroupCallScreen({ ids, video }: { ids: string[]; video: boolean 
   const [gridWidth, setGridWidth] = useState(0)
   const idsKey = ids.join(',')
 
-  // Started from a timer that an undo cancels, so a development double-run can't call every helmet twice.
   useEffect(() => {
     if (!canGroup || ids.length === 0) return
     const timer = setTimeout(() => begin(ids, video), 0)

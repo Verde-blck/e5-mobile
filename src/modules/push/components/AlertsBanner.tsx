@@ -7,11 +7,6 @@ import { describeStatus } from '../lib/describe'
 import { usePushStore } from '../store/pushStore'
 import { perform } from './AlertsCard'
 
-/**
- * A nudge at the top of the Dashboard when alerts are switched on in this build but this tablet
- * isn't set up for them, because a tablet that isn't would miss an SOS while locked. It never
- * appears when alerts aren't part of this build, nor once they're working.
- */
 export function AlertsBanner() {
   const status = usePushStore((s) => s.status)
   if (!env.pushEnabled || (status !== 'needs-permission' && status !== 'blocked' && status !== 'error')) return null

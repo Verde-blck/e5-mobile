@@ -6,7 +6,6 @@ import { cn } from '@/shared/lib/cn'
 import type { DeviceView } from '@/modules/devices/types'
 import { PRESETS, presetDates, type RangePreset } from '../lib/range'
 
-/** Choose which helmet to replay: search, then tap. Collapses to one line once chosen (when `compact`). */
 export function HelmetPicker({
   devices,
   selectedId,
@@ -71,7 +70,6 @@ export function HelmetPicker({
   )
 }
 
-/** Quick ranges, plus the two dates for anything else. */
 export function RangePicker({
   fromDate,
   toDate,

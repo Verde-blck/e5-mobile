@@ -11,7 +11,6 @@ const http = installHttp()
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const until = async (cond: () => boolean, ms = 1500) => { const end = Date.now() + ms; while (!cond() && Date.now() < end) await sleep(5); assert.ok(cond(), 'timed out waiting') }
 
-// ---------- fakes: a peer connection, streams, and the platform's dependencies ----------
 function fakePeer(log: string[] = []) {
   const peer: PeerLike & { local?: string; remote?: string } = {
     createOffer: async () => { log.push('offer'); return { sdp: 'OFFER-SDP' } },
@@ -50,7 +49,6 @@ function fakeDeps(over: Partial<SessionDeps> = {}) {
 const watchStatuses = (s: HelmetSession) => { const seen: SessionStatus[] = [s.getState().status]; s.subscribe(() => { const x = s.getState().status; if (seen[seen.length - 1] !== x) seen.push(x) }); return seen }
 
 async function main() {
-  // =============== the exchange with the media server ===============
   await t('the exchange: offer, local description, the SDP POSTed as plain text, then the answer set as remote', async () => {
     const log: string[] = []; const peer = fakePeer(log); let sent: { url: string; init: RequestInit } | null = null
     const fakeFetch = (async (url: string, init: RequestInit) => { sent = { url, init }; log.push('fetch'); return { json: async () => ({ code: 0, sdp: 'ANSWER-SDP' }) } }) as unknown as typeof fetch
@@ -79,7 +77,6 @@ async function main() {
     assert.ok((await p) instanceof SessionEndedError)
   })
 
-  // =============== a call ===============
   await t('a call: the microphone is asked for BEFORE the helmet is touched, then start, then both directions connect', async () => {
     const deps = fakeDeps(); const s = new HelmetSession('dev1', 'call', deps); const seen = watchStatuses(s)
     assert.equal(s.getState().status, 'requesting-media'); await s.start(); await until(() => s.getState().status === 'live')
@@ -118,7 +115,6 @@ async function main() {
     await until(() => s.getState().outgoingFailed); assert.equal(s.getState().status, 'live', 'the helmet can still be heard'); s.end()
   })
 
-  // =============== a video call ===============
   await t('a video call asks for the camera as well as the microphone, before the helmet is touched, and the camera starts on', async () => {
     const deps = fakeDeps(); const s = new HelmetSession('dev1', 'call', deps, true); assert.equal(s.getState().cameraOn, true, 'on from the start, so the button is right while connecting')
     await s.start(); await until(() => s.getState().status === 'live'); assert.deepEqual(deps.calls.slice(0, 2), ['getLocalMedia:true', 'startCall:dev1']); assert.deepEqual([s.getState().cameraOn, s.getState().noCamera], [true, false]); s.end()
@@ -140,7 +136,6 @@ async function main() {
     assert.equal(s.getState().status, 'failed'); assert.match(s.getState().error ?? '', /microphone or camera is blocked/); assert.ok(!deps.calls.some((c) => c.startsWith('startCall'))); s.end()
   })
 
-  // =============== live view, retries and drops ===============
   await t('live view needs no microphone, and closing it sends nothing to the helmet (others may be watching)', async () => {
     const deps = fakeDeps(); const s = new HelmetSession('dev1', 'watch', deps); await s.start(); await until(() => s.getState().status === 'live')
     assert.ok(deps.calls.includes('startLive:dev1') && !deps.calls.some((c) => c.startsWith('getLocalMedia')) && !deps.calls.includes('push')); s.end()
@@ -165,7 +160,6 @@ async function main() {
     assert.ok(seen.includes('reconnecting')); assert.equal(s.getState().liveSince, since, 'one continuous call'); assert.ok(deps.conns.remote[0].closed); s.end()
   })
 
-  // =============== leaving the app (a tablet cannot keep a call in the background) ===============
   await t('out of sight past the grace period ends a call and stops the helmet; a quick glance away (notification shade) does not', async () => {
     const deps = fakeDeps(); const s = new HelmetSession('dev1', 'call', deps); await s.start(); await until(() => s.getState().status === 'live')
     deps.setBackground(true); await sleep(15); deps.setBackground(false); await sleep(60); assert.equal(s.getState().status, 'live', 'back within the grace period: still in the call')
@@ -176,7 +170,6 @@ async function main() {
     const s = new HelmetSession('dev1', 'call', deps); const started = s.start(); deps.setBackground(true); await sleep(100); assert.equal(s.getState().status, 'requesting-media', 'still waiting for the person'); deps.setBackground(false); release(); await started; await until(() => s.getState().status === 'live'); s.end()
   })
 
-  // =============== wording, formatting, the API ===============
   await t('every failure comes out as a sentence an operator can act on', () => {
     const named = (name: string) => Object.assign(new Error(name), { name })
     assert.match(describe(named('NotAllowedError')), /microphone is blocked.*settings/); assert.match(describe(named('NotAllowedError'), true), /microphone or camera is blocked/, 'a video call names the camera too'); assert.match(describe(named('NotFoundError')), /No microphone/); assert.match(describe(named('NotReadableError')), /another app/)

@@ -5,10 +5,8 @@ import { createRunner } from './harness'
 
 const { t, report } = createRunner()
 
-/** The page's script, taken out of the html. */
 const scriptOf = (html: string) => html.slice(html.indexOf('<script>') + 8, html.indexOf('</script>'))
 
-/** A stand-in browser: a canvas that counts what is drawn to it, a frame queue we drive by hand, and observers we can fire. */
 function run(opts: { width: number; height: number; reduce?: boolean | null; html?: string; prefersReduced?: boolean }) {
   const calls = { arc: 0, stroke: 0, clear: 0, gradient: 0 }
   const strokes = new Set<string>()

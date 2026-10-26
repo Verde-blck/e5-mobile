@@ -6,9 +6,8 @@ import { dispatchMapEvent, parseMapEvent, type MapHandlers } from '../lib/mapEve
 import { MAP_BASE_URL, buildMapHtml, safeJson } from '../lib/mapHtml'
 import type { MapSurfaceProps } from '../types'
 
-// react-native-webview's published prop types intersect its iOS, Android and Windows props,
-// which collapses to `never` under this TypeScript version. At runtime nothing is wrong, so
-// this declares exactly the props (and the one method) this file uses.
+// react-native-webview's published prop types intersect its iOS, Android and
+// Windows props, which collapses to `never` under this TypeScript version.
 interface MapWebViewProps {
   source: { html: string; baseUrl: string }
   originWhitelist: string[]
@@ -28,14 +27,6 @@ const MapWebView = WebViewImpl as unknown as ForwardRefExoticComponent<
   MapWebViewProps & RefAttributes<MapWebViewHandle>
 >
 
-/**
- * The OpenStreetMap map: the embedded Leaflet page inside a WebView. It is what a tablet shows when the build has no Google
- * Maps key (see MapSurface.android.tsx), and what iOS shows. (The browser preview uses MapSurface.web.tsx, which hosts the very
- * same page in an iframe.)
- *
- * The page is loaded once. Each layer (helmets, fences, a fence being drawn, a route, the
- * playback marker) is sent when, and only when, its own data changes.
- */
 export function LeafletMapSurface(props: MapSurfaceProps) {
   const { helmets, alarms, selectedId, fences, selectedFenceId, dimFences, draft, track, cursor, fitKey, fitTarget, fitInsetBottom } = props
   const webview = useRef<MapWebViewHandle>(null)
@@ -93,7 +84,6 @@ export function LeafletMapSurface(props: MapSurfaceProps) {
       originWhitelist={['*']}
       onMessage={onMessage}
       onLoadStart={() => setReady(false)}
-      // Nothing in the map should navigate the WebView away from itself.
       onShouldStartLoadWithRequest={(request) => request.url === 'about:blank' || request.url.startsWith(MAP_BASE_URL)}
       javaScriptEnabled
       domStorageEnabled

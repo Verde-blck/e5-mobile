@@ -1,20 +1,8 @@
 import { Platform } from 'react-native'
 import * as SecureStore from 'expo-secure-store'
 
-/**
- * Small key/value store for the token and a few flags.
- *
- * On a phone this is the Keychain (iOS) / Keystore-backed storage (Android),
- * which is the right place for a bearer token — unlike the web dashboard's
- * localStorage, it isn't readable by other apps or by injected script.
- *
- * expo-secure-store has no web implementation, so `expo start --web` (handy
- * for a quick layout check) falls back to localStorage. Real builds never
- * take that branch.
- */
 const isWeb = Platform.OS === 'web'
 
-/** SecureStore keys may only contain letters, digits, '.', '-' and '_'. */
 export function safeKey(key: string): string {
   return key.replace(/[^A-Za-z0-9._-]/g, '_')
 }

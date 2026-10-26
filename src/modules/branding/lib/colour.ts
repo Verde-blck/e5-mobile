@@ -1,13 +1,5 @@
-/*
- * A company's own colours, applied safely.
- *
- * The app's look is five colours (see tailwind.config.js). A company can set a primary colour, and the other four are worked out
- * from it. Two safeguards keep a safety tool usable whatever is saved:
- *  - a primary that white text can't be read on is not applied;
- *  - a primary that looks like the alarm colours (red, orange, amber) is not applied, because alarms must stay the most
- *    noticeable thing on screen. (E5's own orange is deliberately not a UI colour for the same reason.)
- * The second company colour is never a UI colour: it is a small accent on the sign-in and company screens.
- */
+// Two safeguards for a safety tool: a primary that white text can't be read on is not applied, nor one that
+// looks like the alarm colours (red, orange, amber), which must stay the most noticeable thing on screen.
 
 export interface BrandColours {
   primary: string
@@ -17,10 +9,8 @@ export interface BrandColours {
   mint: string
 }
 
-/** The E5 look. Identical to the values in tailwind.config.js, which is where the app got them before they were variables. */
 export const DEFAULT_BRAND: BrandColours = { primary: '#0A6659', secondary: '#0C352F', tint: '#E6F2F0', soft: '#B9DAD4', mint: '#A3E2D7' }
 
-/** "#0b5cad", "0b5cad", "#0bc" or "0BC" to "#0B5CAD" / "#00BBCC", as the backend does; null if it isn't a colour. */
 export function normaliseColour(input: string): string | null {
   const value = input.trim().replace(/^#/, '')
   if (/^[0-9a-fA-F]{3}$/.test(value)) return `#${value.split('').map((c) => c + c).join('').toUpperCase()}`
@@ -36,7 +26,6 @@ function toHex([r, g, b]: [number, number, number]): string {
   return `#${[r, g, b].map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('').toUpperCase()}`
 }
 
-/** `amount` of `towards` mixed into `hex` (0 is hex, 1 is towards). */
 export function mix(hex: string, towards: string, amount: number): string {
   const a = rgb(hex)
   const b = rgb(towards)
@@ -51,12 +40,10 @@ function luminance(hex: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
-/** WCAG contrast of white text on this colour: 1 (invisible) to 21. */
 export function contrastWithWhite(hex: string): number {
   return 1.05 / (luminance(hex) + 0.05)
 }
 
-/** Hue in degrees (0 to 360) and saturation (0 to 1). */
 export function hueAndSaturation(hex: string): { hue: number; saturation: number } {
   const [r, g, b] = rgb(hex).map((v) => v / 255)
   const max = Math.max(r, g, b)
@@ -69,7 +56,6 @@ export function hueAndSaturation(hex: string): { hue: number; saturation: number
   return { hue: (Math.round(h * 60) + 360) % 360, saturation }
 }
 
-/** Red, orange and amber: the colours alarms use. */
 export function looksLikeAlarm(hex: string): boolean {
   const { hue, saturation } = hueAndSaturation(hex)
   return saturation > 0.4 && (hue <= 50 || hue >= 345)
@@ -77,7 +63,6 @@ export function looksLikeAlarm(hex: string): boolean {
 
 export type PrimaryProblem = 'unreadable' | 'alarm-like'
 
-/** Whether a company's primary colour can be used for the app, and if not, why. */
 export function primaryProblem(hex: string | null | undefined): PrimaryProblem | null {
   if (!hex) return null
   if (contrastWithWhite(hex) < 4.5) return 'unreadable'
@@ -85,7 +70,6 @@ export function primaryProblem(hex: string | null | undefined): PrimaryProblem |
   return null
 }
 
-/** The five colours for a company primary, or the E5 look if there is none or it can't be used. */
 export function brandFor(primary: string | null | undefined): BrandColours {
   const hex = primary ? normaliseColour(primary) : null
   if (!hex || hex === DEFAULT_BRAND.primary || primaryProblem(hex)) return DEFAULT_BRAND
@@ -98,16 +82,11 @@ export function brandFor(primary: string | null | undefined): BrandColours {
   }
 }
 
-/**
- * The colours of the drawn brand surfaces (the sign-in panel and the helmet mark). E5's own are exactly what they have always
- * been; a company's are worked out from its colour, so a blue company doesn't get a green panel under a blue button.
- */
 export function surfaceColours(brand: BrandColours): { mint: string; deep: string; panel: string; glow: string } {
   if (brand === DEFAULT_BRAND) return { mint: '#A7E5DA', deep: '#0C352F', panel: '#0B342E', glow: '#0F4F46' }
   return { mint: brand.mint, deep: brand.secondary, panel: brand.secondary, glow: mix(brand.primary, brand.secondary, 0.4) }
 }
 
-/** The values the app's styles read, as NativeWind variables. */
 export function brandVariables(colours: BrandColours): Record<string, string> {
   return {
     '--brand-primary': colours.primary,

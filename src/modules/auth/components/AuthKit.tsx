@@ -4,26 +4,15 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import { useBrandColours } from '@/modules/branding/hooks/useBranding'
 import { Text } from '@/shared/components/Text'
 
-/*
- * The pieces of the sign-in screen, drawn to match the web dashboard's sign-in page (AuthLayout.tsx) so the two look like one product.
- * They are used only by the sign-in screen: the rest of the app keeps its own fields and buttons (shared/components).
- *
- * Measurements are the web page's, read from it in a browser: a field is 44.5 tall with 8 px corners and a 1 px border, a label is
- * 13 px medium, the button is 46.5 tall, and so on. Colours are the web's too.
- */
-
 export const INK = '#1A2B28'
 export const PAGE = '#F2F8F7'
-/** The ink at a given strength, as the web page writes it (text-[#1A2B28]/70). */
 export const ink = (alpha: number) => `rgba(26, 43, 40, ${alpha})`
 
-/** "#0C352F" and 0.18 as "rgba(12, 53, 47, 0.18)". */
 export function rgba(hex: string, alpha: number): string {
   const v = hex.replace('#', '')
   return `rgba(${parseInt(v.slice(0, 2), 16)}, ${parseInt(v.slice(2, 4), 16)}, ${parseInt(v.slice(4, 6), 16)}, ${alpha})`
 }
 
-/** The product mark: a mint tile with a hard hat drawn as a line, as at the top of the web page's panel. */
 export function AuthHelmetMark({ colour }: { colour: string }) {
   const mint = useBrandColours().mint
   return (
@@ -49,11 +38,8 @@ function Glyph({ children, colour }: { children: React.ReactNode; colour: string
 interface AuthFieldProps extends Omit<TextInputProps, 'className' | 'style'> {
   label: string
   error?: string | null
-  /** A small picture at the left of the field, as on the web page. */
   icon?: 'user' | 'lock'
-  /** A password: hidden, with an eye button to show it. */
   secret?: boolean
-  /** The six-digit code: large, centred, spaced out. */
   code?: boolean
 }
 
@@ -75,7 +61,6 @@ export function AuthField({ label, error, icon, secret, code, ...input }: AuthFi
           borderWidth: 1,
           backgroundColor: '#FFFFFF',
           borderColor: error ? '#DC2626' : focused ? brand.primary : ink(0.15),
-          // The web page's focus ring: three pixels of mint round the field.
           boxShadow: focused ? '0 0 0 3px #A3E2D7' : undefined,
           justifyContent: 'center',
         }}
@@ -113,7 +98,6 @@ export function AuthField({ label, error, icon, secret, code, ...input }: AuthFi
           selectionColor={`${brand.primary}40`}
           accessibilityLabel={label}
           className={code ? 'font-mono' : 'font-sans'}
-          // minWidth 0: a browser input won't shrink below its intrinsic width, which the spaced code digits exceed.
           style={{
             flex: 1,
             minWidth: 0,
@@ -151,18 +135,12 @@ export function AuthField({ label, error, icon, secret, code, ...input }: AuthFi
   )
 }
 
-/** The brand colour at `amount` of its brightness: the web page darkens its button to 92% when you press or hover it. */
 function shade(hex: string, amount: number): string {
   const v = hex.replace('#', '')
   const channel = (i: number) => Math.round(parseInt(v.slice(i, i + 2), 16) * amount).toString(16).padStart(2, '0')
   return `#${channel(0)}${channel(2)}${channel(4)}`
 }
 
-/**
- * The sign-in button, as the web page's: 46.5 tall, 8 px corners, the brand colour with a soft glow beneath it, a touch darker and
- * one pixel lower while pressed, a spinner and a dimmer look while it works. Like the web's, it is not greyed out when the form is
- * empty: pressing it says what is missing.
- */
 export function AuthButton({ title, busyTitle, busy, disabled, onPress }: { title: string; busyTitle?: string; busy?: boolean; disabled?: boolean; onPress: () => void }) {
   const brand = useBrandColours()
   const inactive = !!busy || !!disabled
@@ -195,7 +173,6 @@ export function AuthButton({ title, busyTitle, busy, disabled, onPress }: { titl
   )
 }
 
-/** A text link under the form, in the brand colour: the web page's `authLink`. */
 export function AuthLink({ title, onPress }: { title: string; onPress: () => void }) {
   const brand = useBrandColours()
   return (

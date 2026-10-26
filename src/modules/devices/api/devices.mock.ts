@@ -1,9 +1,6 @@
 import { derivePresence } from '../lib/presence'
 import type { Worker, Device, FleetSummary } from '../types'
 
-// Sample fleet for EXPO_PUBLIC_USE_MOCKS=true. Times are relative to "now" so
-// the presence states (online / degraded / offline) are always realistic.
-
 const MIN = 60_000
 const HOUR = 60 * MIN
 
@@ -48,10 +45,8 @@ function helmet(
   }
 }
 
-// Which link each helmet is on after being switched, so the sample data follows the controls.
 const networkOverride = new Map<string, 'wifi' | '4g'>()
 
-// Who is assigned to which helmet, so the sample data follows the controls. null means removed.
 const workerOverride = new Map<string, Worker | null>([['866652022956404', { name: 'John Ade', staffId: 'E5-014', phone: '+2348031234567' }]])
 
 export function setMockWorker(id: string, worker: Worker | null): void {
@@ -80,7 +75,6 @@ export function getMockFleet(): Device[] {
       lng: 3.3958,
       gas: CLEAN_AIR,
       gasAt,
-      // Indoors: the position comes from the mobile network, so it's approximate.
       fixType: 'network',
       gpsLevel: -1,
       accuracyMeters: 640,
@@ -99,11 +93,9 @@ export function getMockFleet(): Device[] {
     helmet('866652022958277', 'Yard Patrol', 9 * MIN, { lat: 6.4335, lng: 3.426, batteryPercent: 17, isWorn: false }),
     helmet('866652022959020', null, 3 * HOUR, { batteryPercent: 52, lat: undefined, lng: undefined }),
     helmet('866652022959544', 'Spare Unit 1', 2 * 24 * HOUR, { lat: 6.458, lng: 3.3801, batteryPercent: 9 }, false),
-    // Never connected, so it has never reported a position either.
     helmet('866652022960011', 'Unboxed Unit', null, { batteryPercent: undefined, lat: undefined, lng: undefined }, true),
   ]
   return fleet.map((base) => {
-    // A helmet that is offline hasn't reported, so it is never "worn" (the backend sends null).
     const offline = derivePresence(base.lastSeenAt, Date.now()) === 'offline'
     const worker = workerOverride.get(base.id)
     const device: Device = { ...base, worker: worker ?? undefined, telemetry: offline ? { ...base.telemetry, isWorn: undefined } : base.telemetry }

@@ -17,7 +17,6 @@ async function main() {
       process.env.GOOGLE_MAPS_ANDROID_API_KEY = KEY; const on = cfg(); assert.equal(on.android?.config?.googleMaps?.apiKey, KEY); assert.equal(on.extra?.googleMapsEnabled, true)
       process.env.GOOGLE_MAPS_ANDROID_API_KEY = `  ${KEY}\n`; assert.equal(cfg().android?.config?.googleMaps?.apiKey, KEY, 'spaces and a newline around it are trimmed')
       assert.equal(cfg({ android: { config: { other: 7 } } }).android?.config?.other, 7, 'other Android config is kept'); assert.equal(warnings.length, 0, 'nothing wrong, nothing said')
-      // the wrong things: ignored, so the tablet keeps the OpenStreetMap map, and named without giving the key away
       for (const wrong of ['"' + KEY + '"', 'AIza-too-short', 'not a key at all', KEY + 'extra', 'aiza' + 'x'.repeat(35), 'AIza' + 'x'.repeat(34)]) {
         warnings.length = 0; process.env.GOOGLE_MAPS_ANDROID_API_KEY = wrong; const off = cfg()
         assert.equal(off.android?.config?.googleMaps, undefined, `"${wrong.slice(0, 12)}..." is not a key: ignored`); assert.equal(off.extra?.googleMapsEnabled, undefined, 'so the app is not told a Google map is possible')

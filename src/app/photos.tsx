@@ -14,7 +14,6 @@ import { useMediaList } from '@/modules/media/hooks/useMedia'
 import { photoColumns } from '@/modules/media/lib/layout'
 import type { MediaQuery } from '@/modules/media/types'
 
-/** Photo Record: pictures taken by the helmets, newest first, by helmet and by day. */
 function PhotosScreen() {
   const queryClient = useQueryClient()
   const { devices } = useDeviceViews()

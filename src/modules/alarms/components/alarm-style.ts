@@ -21,11 +21,7 @@ export const ALARM_ICONS: Record<AlarmType, IconName> = {
   other: 'bell',
 }
 
-/**
- * Red and amber are reserved for alarms in this app (the brand orange is kept
- * out of the UI chrome for exactly that reason), so a resolved alarm drops to
- * neutral: it has stopped asking for attention.
- */
+// Red and amber are reserved for alarms, which is why the brand orange is kept out of the UI chrome.
 export function alarmTone(alarm: Pick<Alarm, 'severity' | 'status'>) {
   if (alarm.status === 'resolved') {
     return { bg: 'bg-slate-100', icon: '#64748B', pill: 'bg-emerald-50', pillText: 'text-emerald-800', label: 'Resolved' }

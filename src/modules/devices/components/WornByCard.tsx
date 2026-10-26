@@ -10,10 +10,6 @@ import { useAssignWorker, useRemoveWorker } from '../hooks/useWorker'
 import { describeWorkerError, formFromWorker, validateWorker, workerPayload, type WorkerErrors, type WorkerForm } from '../lib/worker'
 import type { Device } from '../types'
 
-/**
- * Who a helmet is assigned to. Alarm notifications then say whose helmet it is ("SOS: John Ade (ES5 3)"). Anyone who can see the
- * helmet sees the name; changing it needs Monitoring Center management.
- */
 export function WornByCard({ device }: { device: Device }) {
   const canAssign = useCan('devices:write')
   const assign = useAssignWorker(device.id)

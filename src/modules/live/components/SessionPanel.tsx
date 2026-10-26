@@ -4,7 +4,6 @@ import { Text } from '@/shared/components/Text'
 import { cn } from '@/shared/lib/cn'
 import type { SessionState, SessionStatus } from '../types'
 
-/** Teal, not red: red in this app means an alarm. */
 export function StatusPill({ status }: { status: SessionStatus }) {
   if (status === 'live') {
     return (
@@ -31,7 +30,6 @@ function Waiting({ text, compact }: { text: string; compact?: boolean }) {
   )
 }
 
-/** What to say, over the picture, while there isn't one: waiting, offline, or failed, each with the way forward. */
 export function SessionMessage({ state, name, onRetry, onStartAgain, compact }: { state: SessionState; name: string; onRetry: () => void; onStartAgain: () => void; compact?: boolean }) {
   switch (state.status) {
     case 'requesting-media':

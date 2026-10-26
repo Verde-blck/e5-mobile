@@ -3,11 +3,8 @@ import { storage } from '@/shared/lib/storage'
 const KEY = 'push.installId'
 let cached: string | null = null
 
-/**
- * A random id for this installation of the app, kept across sign-outs. The backend keys a tablet's
- * registration on it, so signing in again (or a refreshed token) updates the same record instead
- * of piling up duplicates. It is an identifier, not a secret.
- */
+// The backend keys a tablet's registration on it, so signing in again (or a
+// refreshed token) updates the same record instead of piling up duplicates.
 export async function getInstallId(): Promise<string> {
   if (cached) return cached
   const saved = await storage.get(KEY)
@@ -19,7 +16,6 @@ export async function getInstallId(): Promise<string> {
   return id
 }
 
-/** For tests. */
 export function resetInstallIdCache(): void {
   cached = null
 }

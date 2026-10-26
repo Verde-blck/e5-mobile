@@ -1,25 +1,13 @@
 #!/usr/bin/env node
-/*
- * Finds the files a new zip didn't replace because they no longer belong to the project.
- *
- * Unpacking a zip over the project folder adds and replaces files but never deletes the ones that were removed or moved, so old
- * copies pile up (a screen that moved into the tab bar is left behind in its old place, and the router sees both). Every zip carries
- * `zip-manifest.txt`, the list of every file under src, tests and docs that belongs to it. This lists the files in those folders
- * that are NOT on that list, and deletes them only when run with --apply.
- *
- *   npm run prune                 shows what it would delete, deletes nothing
- *   npm run prune -- --apply      deletes them
- *
- * It only ever looks inside src, tests and docs, never touches node_modules, assets, .env, e5.local.json or anything else, and
- * refuses to run if the manifest is missing or looks truncated.
- */
+// Lists the files a new zip didn't replace because they no longer belong to the project, and deletes
+// them only with --apply (npm run prune -- --apply). Only src, tests and docs are ever looked at.
 import { existsSync, readFileSync, readdirSync, rmSync, rmdirSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const SCANNED = ['src', 'tests', 'docs']
 const MANIFEST = 'zip-manifest.txt'
-/** A manifest shorter than this is assumed to be damaged, because acting on it would delete real files. */
+// A manifest shorter than this is assumed to be damaged, because acting on it would delete real files.
 const MIN_ENTRIES = 10
 
 function walk(dir, found = []) {

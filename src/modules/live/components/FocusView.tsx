@@ -8,10 +8,6 @@ import type { HelmetSession } from '../lib/session'
 import { StatusPill } from './SessionPanel'
 import { StreamView } from './StreamView'
 
-/**
- * One wall tile, enlarged and with its sound. It uses the tile's own connection, so opening and closing it restarts
- * nothing; closing goes back to the wall without stopping the helmet, and puts the tile's sound back off.
- */
 export function FocusView({ name, session, onClose }: { name: string; session: HelmetSession | null; onClose: () => void }) {
   const state = useSessionState(session)
   const [muted, setMuted] = useState(false)
