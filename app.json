@@ -91,7 +91,8 @@
           "cameraPermission": "The camera is used for video calls with the person wearing a helmet.",
           "microphonePermission": "The microphone is used to talk with the person wearing a helmet."
         }
-      ]
+      ],
+      "./plugins/withTabletScreens"
     ],
     "primaryColor": "#0A6659"
   }

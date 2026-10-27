@@ -18,9 +18,8 @@ The **Group call** module is where helmets are called: tick one or up to 8, then
   remembered, and the next time the Group call page opens it checks (`GET /api/webrtc-group-call/{callId}`; 404 means it has
   ended) and offers to end it. Rejoining a running call isn't offered.
 
-**Beta.** This is the web dashboard's `GroupCallSession` ported, to the backend's guide of 13 Oct 2026. Whether the helmet app shows
-and plays several other participants hasn't been confirmed on real hardware (there is one test helmet), which is why the web
-calls it beta too. It needs `EXPO_PUBLIC_LIVE_ENABLED=true` like the other live features.
+**Beta.** This is the web dashboard's `GroupCallSession` ported, to the backend's guide of 13 Oct 2026. The web labels it beta, and the
+app keeps the label. It needs `EXPO_PUBLIC_LIVE_ENABLED=true` like the other live features.
 
 ## Voice messages: one helmet, from its own screen
 

@@ -3,6 +3,7 @@ docs/CALLS.md
 docs/GOOGLE_MAPS.md
 docs/GROUP_CALL.md
 docs/PUSH_SETUP.md
+docs/STORE_RELEASE.md
 docs/TABLETS_ONLY.md
 src/app/(tabs)/_layout.tsx
 src/app/(tabs)/admins.tsx
@@ -273,6 +274,7 @@ tests/stubs/expo-asset.ts
 tests/stubs/expo-secure-store.ts
 tests/stubs/react-native.ts
 tests/tabletgate.test.ts
+tests/tabletscreens.test.ts
 tests/track.test.ts
 tests/tsconfig.json
 tests/twofactor.test.ts

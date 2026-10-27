@@ -32,11 +32,9 @@ export const env = {
   tabletOnly: flagOr(process.env.EXPO_PUBLIC_TABLET_ONLY, true),
   googleMapId: cleanMapId(process.env.EXPO_PUBLIC_GOOGLE_MAPS_MAP_ID),
   mapEngine: process.env.EXPO_PUBLIC_MAP_ENGINE,
-  // Off until the backend can register tablets and send the push; while
-  // off, the app says plainly that alerts need the app to be open.
+  // Needs Firebase and the backend's push; while off, or with no Firebase on the tablet, the app says plainly that alerts need the app to be open.
   pushEnabled: parseFlag(process.env.EXPO_PUBLIC_PUSH_ENABLED),
-  // Written to the web's protocol but not yet tried on a real tablet with a real
-  // helmet, so a real build keeps live view and calls hidden until this is true.
+  // Live view, calls and group calls. Off unless a build turns it on: the production and live profiles do.
   liveEnabled: parseFlag(process.env.EXPO_PUBLIC_LIVE_ENABLED),
   // The backend has no push channel for the dashboard, so lists poll.
   pollIntervalMs: 10_000,

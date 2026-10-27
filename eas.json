@@ -18,10 +18,12 @@
     "production": {
       "autoIncrement": true,
       "android": {
-        "buildType": "apk"
+        "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_USE_MOCKS": "false"
+        "EXPO_PUBLIC_USE_MOCKS": "false",
+        "EXPO_PUBLIC_LIVE_ENABLED": "true",
+        "EXPO_PUBLIC_PUSH_ENABLED": "true"
       },
       "environment": "production"
     },
@@ -32,6 +34,14 @@
         "EXPO_PUBLIC_LIVE_ENABLED": "true"
       },
       "environment": "preview"
+    }
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
     }
   }
 }

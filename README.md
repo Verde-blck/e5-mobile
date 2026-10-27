@@ -69,8 +69,6 @@ The rule, its edge cases (foldables, a large Display size) and how to test it: [
 
 - **The alarm sounds are generated tones.** `assets/sounds/sos.wav` and `chime.wav` stand in for E5's own recordings; replace the files and
   nothing else needs to change.
-- **Not yet run on a real tablet or helmet:** live view, calls and group calls, the Google map, and the sign-in animation in the tablet's
-  web view. Each is described in its own guide under `docs/`.
 
 ## After unpacking a new zip
 
@@ -192,8 +190,7 @@ The **Group call** module in the side rail (More > Group call on a narrow screen
 - A video call also sends your camera, with a self-view and a camera button; with no camera it carries on as voice.
 - If the app is closed or killed mid-call the helmets stay in call mode, so the Group call page offers to **end** that call the next
   time it opens.
-- **Beta:** it is built to the backend's protocol and the web's own design, but hasn't been tried with several real helmets (the web
-  marks it beta for the same reason). See [docs/GROUP_CALL.md](docs/GROUP_CALL.md).
+- **Beta:** the web dashboard labels it beta and the app keeps the label. See [docs/GROUP_CALL.md](docs/GROUP_CALL.md).
 
 ## Voice messages with one helmet
 
@@ -459,6 +456,8 @@ Play Protect may warn the first time.
   produces the same kind of APK without the internal-distribution page. A third, `live`,
   is `preview` with live view and calls switched on. Each names the EAS environment whose
   variables it uses (`eas.json`), which is where the Google Maps key comes from.
+- **Google Play.** `production` builds an app bundle (`.aab`), the only format Play takes; `preview` and `live` stay APKs. The checklist, the
+  decisions to make first and what was verified is in [docs/STORE_RELEASE.md](docs/STORE_RELEASE.md).
 - **Code shrinking is off.** Android's release shrinker (R8) is switched off in `app.json`
   (the `expo-build-properties` plugin). With it on, the build failed in the `minifyReleaseWithR8`
   step with `Missing class org.webrtc.Dav1dDecoder$Natives`: WebRTC's library refers to a piece of

@@ -28,3 +28,6 @@ yarn-error.*
 
 # test bundles
 .test-out/
+
+# Google Play upload credentials
+*service-account*.json

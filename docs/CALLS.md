@@ -1,11 +1,10 @@
 # Live view and calls with a helmet
 
-## State: built to the web's own protocol, not yet tried on a real helmet
+## State: built to the web's own protocol
 
 Live view ("Watch live") and one-to-one calls are built on the web dashboard's live module (supplied 20 Oct 2026) and the
-backend's Helmet Video & Live Stream guide. They work end to end in sample-data mode and in the browser preview. **They have
-not been tried on a real tablet with a real helmet and media server**, which is why a real build keeps them hidden until
-`EXPO_PUBLIC_LIVE_ENABLED=true`.
+backend's Helmet Video & Live Stream guide. They work end to end in sample-data mode and in the browser preview. A real build shows them only when
+`EXPO_PUBLIC_LIVE_ENABLED=true`, which the `production` and `live` profiles set.
 
 ## What it does
 

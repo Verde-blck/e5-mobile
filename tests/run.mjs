@@ -16,6 +16,7 @@ const suites = [
   ['worker', {}],
   ['branding', {}],
   ['media', {}],
+  ['tabletscreens', {}], // the tablet-only declaration for Google Play
   ['tabletgate', {}],
   ['nativemap', {}],
   ['mapkey', {}],
