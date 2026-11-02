@@ -4,10 +4,12 @@ import {
   flag,
   num,
   parseGasData,
+  parseGasStatus,
+  type GasStatus,
   shortDeviceName,
   ts,
 } from '@/shared/lib/api-normalize'
-import { getMockDevice, getMockFleet, getMockSummary } from './devices.mock'
+import { getMockDevice, getMockFleet, getMockSummary, getMockGasStatus } from './devices.mock'
 import type { Device, FixType, FleetSummary, SimStatus } from '../types'
 
 interface ApiDevice {
@@ -94,6 +96,12 @@ export async function fetchDevice(id: string): Promise<Device | undefined> {
   if (env.useMocks) return getMockDevice(id)
   const { data } = await apiClient.get<ApiDevice>(`/devices/${id}`)
   return data ? toDevice(data) : undefined
+}
+
+export async function fetchGasStatus(id: string): Promise<GasStatus | undefined> {
+  if (env.useMocks) return getMockGasStatus(id)
+  const { data } = await apiClient.get<unknown>(`/devices/${id}/gas`)
+  return parseGasStatus(data)
 }
 
 interface ApiSummary {

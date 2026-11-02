@@ -75,6 +75,7 @@ src/modules/devices/components/SignalBars.tsx
 src/modules/devices/components/WornByCard.tsx
 src/modules/devices/hooks/useDevices.ts
 src/modules/devices/hooks/useWorker.ts
+src/modules/devices/lib/gasStatus.ts
 src/modules/devices/lib/location.ts
 src/modules/devices/lib/maps.ts
 src/modules/devices/lib/presence.ts
@@ -247,12 +248,14 @@ src/shared/lib/webAudio.ts
 src/shared/lib/withTimeout.ts
 src/shared/store/authStore.ts
 src/shared/store/selectionStore.ts
+tests/alarmtypes.test.ts
 tests/audio.test.ts
 tests/branding.test.ts
 tests/build.test.ts
 tests/calls.test.ts
 tests/fences.test.ts
 tests/flags.test.ts
+tests/gasstatus.test.ts
 tests/groupsession.test.ts
 tests/harness.ts
 tests/layout.test.ts

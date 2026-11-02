@@ -68,6 +68,35 @@ export function parseGasData(raw: unknown): GasReading[] {
     .filter((r): r is GasReading => r !== null)
 }
 
+/** Whether the helmet's gas reading is current: the three liveness fields of GET /api/devices/{id}/gas. */
+export interface GasStatus {
+  online?: boolean
+  ageSeconds?: number
+  live?: boolean
+}
+
+// Unlike flag(), which reads the helmet protocol's 1/0 codes and counts anything else as false, a missing or odd value stays unknown here.
+function bool(value: unknown): boolean | undefined {
+  if (typeof value === 'boolean') return value
+  if (value === 1 || value === '1') return true
+  if (value === 0 || value === '0') return false
+  if (typeof value === 'string') {
+    const v = value.trim().toLowerCase()
+    if (v === 'true') return true
+    if (v === 'false') return false
+  }
+  return undefined
+}
+
+// Anything that isn't clearly there is left undefined. "Offline" is only ever claimed when the server says live is false, never inferred from a missing field.
+export function parseGasStatus(raw: unknown): GasStatus | undefined {
+  if (typeof raw !== 'object' || raw === null) return undefined
+  const r = raw as Record<string, unknown>
+  const age = num(r.ageSeconds)
+  const status: GasStatus = { online: bool(r.online), ageSeconds: age !== undefined && age >= 0 ? age : undefined, live: bool(r.live) }
+  return status.online === undefined && status.ageSeconds === undefined && status.live === undefined ? undefined : status
+}
+
 // The API has no device name, only the IMEI, so it is shortened to
 // its last digits, which an operator can at least recognise.
 export function shortDeviceName(deviceId: string): string {

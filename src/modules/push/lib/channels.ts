@@ -21,7 +21,7 @@ export const CHANNELS: ChannelSpec[] = [
   {
     id: SOS_CHANNEL,
     name: 'SOS and critical alarms',
-    description: 'SOS, fall, near-electric, no-movement and silent alarms. Plays a siren.',
+    description: 'SOS, fall, near-electric, no-movement, silent and dangerous gas alarms. Plays a siren.',
     importance: 'max',
     sound: SIREN_SOUND,
     vibrationPattern: [0, 600, 300, 600, 300, 600],

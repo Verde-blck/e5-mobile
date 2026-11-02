@@ -81,10 +81,10 @@ async function main() {
     assert.equal(show(true, false, true), true, 'stream down: the notification is the only warning')
     assert.equal(show(false, true, true), true); assert.equal(show(false, false, true), true)
   })
-  await t('the backend calls more alarms critical than the app: gas at danger level is siren-worthy there, so the app must not hide its notification', () => {
+  await t('the backend can call an alarm critical that the app has no name for: then the app must not hide its notification', () => {
     const push = (alarmType: string, severity?: 'critical' | 'warning' | 'normal') => ({ kind: 'alarm' as const, alarmId: '1', alarmType, severity })
-    for (const code of ['7', 'manual_sos_button', '4', '11', '6']) assert.equal(appCoversAlarm(push(code, 'critical')), true, 'the app sirens for ' + code + ' itself')
-    assert.equal(appCoversAlarm(push('99', 'critical')), false, 'an alarm only the backend calls critical (a gas danger)')
+    for (const code of ['7', 'manual_sos_button', '4', '11', '6', 'gas_co', 'H2S_HIGH', 'ch4_lel', 'low_oxygen']) assert.equal(appCoversAlarm(push(code, 'critical')), true, 'the app sirens for ' + code + ' itself')
+    assert.equal(appCoversAlarm(push('99', 'critical')), false, 'an alarm only the backend calls critical, with a code the app has no name for yet')
     assert.equal(appCoversAlarm(push('99', 'warning')), true, 'a non-critical alarm: the app\'s toast covers it'); assert.equal(appCoversAlarm(push('99', 'normal')), true)
     assert.equal(appCoversAlarm({ kind: 'alarm-resolved', alarmId: '1' }), true); assert.equal(appCoversAlarm(null), false, 'unrecognisable: show it')
   })

@@ -16,6 +16,8 @@ const suites = [
   ['worker', {}],
   ['branding', {}],
   ['media', {}],
+  ['alarmtypes', {}], // the gas alarms: names, severity and icons
+  ['gasstatus', {}], // whether a gas reading is current or stale
   ['tabletscreens', {}], // the tablet-only declaration for Google Play
   ['tabletgate', {}],
   ['nativemap', {}],

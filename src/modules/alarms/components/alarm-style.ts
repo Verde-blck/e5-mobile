@@ -18,6 +18,10 @@ export const ALARM_ICONS: Record<AlarmType, IconName> = {
   'heart-rate': 'heart',
   'blood-pressure': 'activity',
   'voice-message': 'mic',
+  'gas-co': 'cloud',
+  'gas-h2s': 'droplet',
+  'gas-ch4': 'alert-triangle',
+  'gas-o2-low': 'wind',
   other: 'bell',
 }
 

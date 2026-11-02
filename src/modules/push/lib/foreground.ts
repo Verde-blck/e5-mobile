@@ -1,8 +1,8 @@
 import { alarmTypeFromCode, severityForType } from '@/modules/alarms/types'
 import type { PushMessage } from '../types'
 
-// The backend marks more alarms critical than the app does (it also sends danger-level gas alarms to the siren
-// channel), so for those the app alone would only chime and the system notification must still show.
+// The backend can call an alarm critical that the app has no name for yet (a code it doesn't recognise), and for
+// that the app alone would only chime, so the system notification must still show.
 export function appCoversAlarm(message: PushMessage | null): boolean {
   if (!message) return false
   if (message.kind === 'alarm-resolved') return true

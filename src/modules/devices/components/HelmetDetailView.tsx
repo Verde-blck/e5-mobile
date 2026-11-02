@@ -16,7 +16,8 @@ import { BatteryChip } from '@/modules/devices/components/BatteryChip'
 import { PresenceBadge } from '@/modules/devices/components/PresenceBadge'
 import { SignalBars } from '@/modules/devices/components/SignalBars'
 import { WornByCard } from '@/modules/devices/components/WornByCard'
-import { useDeviceViews } from '@/modules/devices/hooks/useDevices'
+import { useDeviceViews, useGasStatus } from '@/modules/devices/hooks/useDevices'
+import { gasFreshness } from '@/modules/devices/lib/gasStatus'
 import {
   describeFix,
   formatMeters,
@@ -35,6 +36,7 @@ export function HelmetDetailView({ id, embedded = false }: { id: string; embedde
   const device = devices.find((d) => d.id === id)
   const canReplay = useCan('trackPlayback:read')
   const canMessage = useCan('groupCall:read')
+  const { data: gasStatus } = useGasStatus(id)
 
   if (isLoading) {
     return (
@@ -66,6 +68,7 @@ export function HelmetDetailView({ id, embedded = false }: { id: string; embedde
   const gps = gpsLevelLabel(t.gpsLevel)
   const network = networkLabel(t.networkType)
   const gas = t.gas ?? []
+  const freshness = gasFreshness(gasStatus, t.gasAt, now)
   const showSim =
     t.simStatus !== undefined || t.simDataUsedMb !== undefined || t.simPhoneNumber !== undefined
 
@@ -196,12 +199,12 @@ export function HelmetDetailView({ id, embedded = false }: { id: string; embedde
                     index < gas.length - 1 && 'border-b border-slate-100'
                   )}
                 >
-                  <Text className="font-sans-medium text-sm">{reading.gas}</Text>
-                  <Text className="font-mono-medium text-sm tracking-wide">{reading.value}</Text>
+                  <Text className={cn('font-sans-medium text-sm', freshness.offline && 'text-slate-400')}>{reading.gas}</Text>
+                  <Text testID="gas-value" className={cn('font-mono-medium text-sm tracking-wide', freshness.offline && 'text-slate-400')}>{reading.value}</Text>
                 </View>
               ))}
-              <Text className="border-t border-slate-100 py-2.5 text-xs text-slate-400">
-                Taken {lastSeenLabel(t.gasAt, now)}
+              <Text testID="gas-taken" className={cn('border-t border-slate-100 py-2.5 text-xs', freshness.offline ? 'font-sans-medium text-slate-500' : 'text-slate-400')}>
+                {freshness.label ?? `Taken ${lastSeenLabel(t.gasAt, now)}`}
               </Text>
             </>
           )}

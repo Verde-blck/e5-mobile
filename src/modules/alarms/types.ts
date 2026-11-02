@@ -15,6 +15,10 @@ export type AlarmType =
   | 'heart-rate'
   | 'blood-pressure'
   | 'voice-message'
+  | 'gas-co'
+  | 'gas-h2s'
+  | 'gas-ch4'
+  | 'gas-o2-low'
   | 'other'
 
 export type AlarmSeverity = 'critical' | 'warning'
@@ -58,11 +62,35 @@ const CODE_TO_TYPE: Record<string, AlarmType> = {
   voice_message: 'voice-message',
 }
 
+// The backend's gas alarm codes weren't documented, so textual codes are recognised by the gas they name
+// (gas_co, H2S_HIGH, ch4_lel, low_oxygen...). Numeric ones would need adding to the table above.
+const GAS_TOKENS: [AlarmType, RegExp][] = [
+  ['gas-h2s', /^(h2s|hydrogen ?sul[pf]h?ide)$/],
+  ['gas-ch4', /^(ch4|methane|lel|combustible|flammable)$/],
+  ['gas-o2-low', /^(o2|oxygen)$/],
+  ['gas-co', /^(co|carbon ?monoxide)$/],
+]
+
+function gasTypeFromCode(code: string): AlarmType | null {
+  const tokens = code
+    .toLowerCase()
+    .replace(/carbon[_\s-]?monoxide/g, 'carbonmonoxide')
+    .replace(/hydrogen[_\s-]?sul[pf]h?ide/g, 'hydrogensulphide')
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+    .map((t) => t.replace('carbonmonoxide', 'carbon monoxide').replace('hydrogensulphide', 'hydrogen sulphide'))
+  for (const [type, pattern] of GAS_TOKENS) {
+    if (tokens.some((t) => pattern.test(t))) return type
+  }
+  return null
+}
+
 export function alarmTypeFromCode(code: unknown): AlarmType {
   if (code === null || code === undefined) return 'other'
+  const raw = String(code).trim()
   // Anything unrecognised becomes a generic event rather than being
   // dropped, firmware can raise codes this table doesn't know about yet.
-  return CODE_TO_TYPE[String(code).trim()] ?? 'other'
+  return CODE_TO_TYPE[raw] ?? gasTypeFromCode(raw) ?? 'other'
 }
 
 export const ALARM_LABELS: Record<AlarmType, string> = {
@@ -82,6 +110,10 @@ export const ALARM_LABELS: Record<AlarmType, string> = {
   'heart-rate': 'Abnormal heart rate',
   'blood-pressure': 'Abnormal blood pressure',
   'voice-message': 'Voice message',
+  'gas-co': 'Carbon monoxide',
+  'gas-h2s': 'Hydrogen sulphide',
+  'gas-ch4': 'Methane',
+  'gas-o2-low': 'Low oxygen',
   other: 'Other event',
 }
 
@@ -101,6 +133,10 @@ const CRITICAL: ReadonlySet<AlarmType> = new Set<AlarmType>([
   'fall',
   'near-electric',
   'silent',
+  'gas-co',
+  'gas-h2s',
+  'gas-ch4',
+  'gas-o2-low',
 ])
 
 export function severityForType(type: AlarmType): AlarmSeverity {

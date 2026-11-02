@@ -1,3 +1,4 @@
+import type { GasStatus } from '@/shared/lib/api-normalize'
 import { derivePresence } from '../lib/presence'
 import type { Worker, Device, FleetSummary } from '../types'
 
@@ -90,7 +91,8 @@ export function getMockFleet(): Device[] {
       gpsLevel: 0,
       accuracyMeters: 28,
     }),
-    helmet('866652022958277', 'Yard Patrol', 9 * MIN, { lat: 6.4335, lng: 3.426, batteryPercent: 17, isWorn: false }),
+    // Out of contact for 9 minutes, so its last gas reading is old and must not be shown as current.
+    helmet('866652022958277', 'Yard Patrol', 9 * MIN, { lat: 6.4335, lng: 3.426, batteryPercent: 17, isWorn: false, gas: CLEAN_AIR, gasAt: Date.now() - 9 * MIN }),
     helmet('866652022959020', null, 3 * HOUR, { batteryPercent: 52, lat: undefined, lng: undefined }),
     helmet('866652022959544', 'Spare Unit 1', 2 * 24 * HOUR, { lat: 6.458, lng: 3.3801, batteryPercent: 9 }, false),
     helmet('866652022960011', 'Unboxed Unit', null, { batteryPercent: undefined, lat: undefined, lng: undefined }, true),
@@ -106,6 +108,14 @@ export function getMockFleet(): Device[] {
 
 export function getMockDevice(id: string): Device | undefined {
   return getMockFleet().find((d) => d.id === id)
+}
+
+export function getMockGasStatus(id: string): GasStatus | undefined {
+  const device = getMockDevice(id)
+  if (!device?.telemetry.gasAt) return undefined
+  const online = derivePresence(device.lastSeenAt, Date.now()) === 'online'
+  const ageSeconds = Math.max(0, Math.round((Date.now() - device.telemetry.gasAt) / 1000))
+  return { online, ageSeconds, live: online && ageSeconds < 120 }
 }
 
 export function getMockSummary(): FleetSummary {

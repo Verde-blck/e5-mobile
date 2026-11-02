@@ -11,7 +11,8 @@ The tablet registers an **Expo push token** (`ExponentPushToken[...]`) with the 
 `PUT /api/push/registrations/{installId}`; signing out removes it. Two Android notification channels exist:
 `sos` (the siren in `assets/sounds/sos.wav`, alarm volume, can pass Do Not Disturb) and `alarm` (everything else).
 The backend decides which alarms are critical (SOS, fall, near-electric, no-movement/silent, **and gas at danger
-level**) and names the channel in each push.
+level**) and names the channel in each push. The app treats the four gas alarms (carbon monoxide, hydrogen
+sulphide, methane, low oxygen) as critical too, as the web dashboard does, so it shows its own banner and siren for them.
 
 Tapping an alert opens that alarm. While the app is open and its own alarm connection is live, the system
 notification is suppressed *only if the app itself will sound the siren for that alarm*; for a gas-danger alarm
