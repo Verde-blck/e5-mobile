@@ -1,7 +1,7 @@
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio'
 
 // sos.wav and chime.wav are generated tones: replace them in assets/sounds with E5's own recordings. Every call is
-// wrapped so a sound failure can never take the alert UI with it: the banner is the alert, the sound is the extra.
+// wrapped so a sound failure can never take the alert UI with it: the box is the alert, the sound is the extra.
 
 let siren: AudioPlayer | null = null
 let chime: AudioPlayer | null = null

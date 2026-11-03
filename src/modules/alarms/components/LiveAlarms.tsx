@@ -6,7 +6,7 @@ import { useAuthStore } from '@/shared/store/authStore'
 import { toAlarm } from '../api/alarms.api'
 import { subscribeMockStream } from '../api/alarms.mock'
 import type { ApiAlarm } from '../api/alarms.wire'
-import { useCriticalAlarms } from '../hooks/useAlarms'
+import { useAwaitingAlarms } from '../hooks/useAlarms'
 import { applyAlarm } from '../lib/alarm-cache'
 import { arrivalAlert } from '../lib/alert-policy'
 import { connectAlarmStream, streamStatus } from '../lib/alarmStream'
@@ -36,10 +36,10 @@ export function LiveAlarms() {
       void queryClient.invalidateQueries({ queryKey: ['fleet-summary'] })
       if (arrivalAlert(alarm, Date.now()) === 'chime') {
         void playChime()
-        useAlertStore.getState().showToast(alarm)
+        useAlertStore.getState().showBanner(alarm)
       }
     }
-    // The banner and siren follow the list, so updating it is all that's needed to clear them on this phone too.
+    // The box and siren follow the list, so updating it is all that's needed to clear them on this phone too.
     const handleUpdate = (raw: ApiAlarm) => applyAlarm(queryClient, toAlarm(raw))
 
     if (env.useMocks) {
@@ -55,9 +55,7 @@ export function LiveAlarms() {
     return () => connection.stop()
   }, [isAuthenticated, appActive, queryClient])
 
-  const critical = useCriticalAlarms()
-  const silenced = useAlertStore((s) => s.silenced)
-  const ringing = critical.some((a) => !silenced[a.id])
+  const ringing = useAwaitingAlarms().length > 0
 
   useEffect(() => {
     if (!ringing) return

@@ -9,8 +9,9 @@ import { useDeviceNames } from '@/modules/devices/hooks/useDevices'
 import { fetchAlarmDetail, fetchAlarms, setAlarmResolved } from '../api/alarms.api'
 import { FOOTAGE_POLL_MS, videoStatus } from '../footage'
 import { ALARMS_KEY } from '../lib/alarm-cache'
-import { criticalActive } from '../lib/alert-policy'
+import { awaitingAction } from '../lib/alert-policy'
 import { streamStatus } from '../lib/alarmStream'
+import { useAlertStore } from '../store/alertStore'
 import type { Alarm } from '../types'
 
 // While the stream is up, polling is only a slow safety net; while it is down,
@@ -59,9 +60,11 @@ export function useAlarms() {
   }
 }
 
-export function useCriticalAlarms(): Alarm[] {
+// Critical alarms nobody has acted on yet, newest first.
+export function useAwaitingAlarms(): Alarm[] {
   const { alarms, now } = useAlarms()
-  return useMemo(() => criticalActive(alarms, now), [alarms, now])
+  const handled = useAlertStore((s) => s.silenced)
+  return useMemo(() => awaitingAction(alarms, handled, now), [alarms, handled, now])
 }
 
 export function useAlarmDetail(id: string) {

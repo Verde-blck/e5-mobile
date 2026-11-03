@@ -38,14 +38,15 @@ src/modules/alarms/api/alarms.wire.ts
 src/modules/alarms/components/AlarmCard.tsx
 src/modules/alarms/components/AlarmChrome.tsx
 src/modules/alarms/components/AlarmDetailView.tsx
-src/modules/alarms/components/AlarmToast.tsx
+src/modules/alarms/components/CriticalAlarmModal.tsx
 src/modules/alarms/components/Footage.tsx
 src/modules/alarms/components/LiveAlarms.tsx
-src/modules/alarms/components/SosBanner.tsx
+src/modules/alarms/components/WarningBanner.tsx
 src/modules/alarms/components/alarm-style.ts
 src/modules/alarms/footage.ts
 src/modules/alarms/hooks/useAlarms.ts
 src/modules/alarms/lib/alarm-cache.ts
+src/modules/alarms/lib/alarm-copy.ts
 src/modules/alarms/lib/alarmSound.ts
 src/modules/alarms/lib/alarmStream.ts
 src/modules/alarms/lib/alert-policy.ts
@@ -248,6 +249,7 @@ src/shared/lib/webAudio.ts
 src/shared/lib/withTimeout.ts
 src/shared/store/authStore.ts
 src/shared/store/selectionStore.ts
+tests/alarmpopup.test.ts
 tests/alarmtypes.test.ts
 tests/audio.test.ts
 tests/branding.test.ts

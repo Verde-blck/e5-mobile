@@ -29,13 +29,13 @@ export function listPaneWidth(width: number): number {
   return Math.round(Math.min(420, Math.max(320, width * 0.36)))
 }
 
-// For code that runs outside a component (the banner, a toast), where a hook can't.
+// For code that runs outside a component (the warning banner), where a hook can't.
 export function isTwoPaneNow(): boolean {
   return Dimensions.get('window').width >= TWO_PANE_MIN_DP
 }
 
 // The pane only exists on a wide screen, and only if the account is allowed that tab:
-// otherwise a restricted account tapping the SOS banner would be sent to a tab it can't use.
+// otherwise a restricted account tapping a warning would be sent to a tab it can't use.
 export function detailGoesInPane(twoPane: boolean, tabAvailable: boolean): boolean {
   return twoPane && tabAvailable
 }

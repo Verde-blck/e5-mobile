@@ -10,7 +10,7 @@ export function appCoversAlarm(message: PushMessage | null): boolean {
   return severityForType(alarmTypeFromCode(message.alarmType ?? '')) === 'critical'
 }
 
-// While the alarm stream is connected the app already shows its banner and plays its siren, so a second
+// While the alarm stream is connected the app already shows its box and plays its siren, so a second
 // notification would double up, but only if the app really covers this alarm (see appCoversAlarm).
 export function shouldShowInForeground(state: { appActive: boolean; streamOpen: boolean; appCoversAlarm: boolean }): boolean {
   return !(state.appActive && state.streamOpen && state.appCoversAlarm)

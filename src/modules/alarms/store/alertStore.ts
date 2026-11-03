@@ -2,24 +2,25 @@ import { create } from 'zustand'
 import type { Alarm } from '../types'
 
 interface AlertState {
+  // Alarms someone has acted on (a button on the pop-up, or opening the alarm): their siren stops and their box goes away.
   silenced: Record<string, true>
-  toast: { alarm: Alarm; key: number } | null
+  banner: { alarm: Alarm; key: number } | null
   silence: (ids: string[]) => void
-  showToast: (alarm: Alarm) => void
-  dismissToast: () => void
+  showBanner: (alarm: Alarm) => void
+  dismissBanner: () => void
   reset: () => void
 }
 
-let toastKey = 0
+let bannerKey = 0
 
 export const useAlertStore = create<AlertState>((set) => ({
   silenced: {},
-  toast: null,
+  banner: null,
   silence: (ids) =>
     set((state) => ({
       silenced: { ...state.silenced, ...Object.fromEntries(ids.map((id) => [id, true as const])) },
     })),
-  showToast: (alarm) => set({ toast: { alarm, key: ++toastKey } }),
-  dismissToast: () => set({ toast: null }),
-  reset: () => set({ silenced: {}, toast: null }),
+  showBanner: (alarm) => set({ banner: { alarm, key: ++bannerKey } }),
+  dismissBanner: () => set({ banner: null }),
+  reset: () => set({ silenced: {}, banner: null }),
 }))

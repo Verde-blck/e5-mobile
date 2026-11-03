@@ -39,7 +39,7 @@ sample-data mode the media addresses are fake and answered with a generated test
    viewer, then close one and check the stream carries on.
 3. **Group call** > an **Audio call**, then a **Video call**: can you hear it and can it hear you, and does the wearer see you on a
    video call? Hang up and confirm the helmet leaves call mode. The first video call asks Android for camera access.
-4. **Join SOS call** from an SOS alarm, and from the banner.
+4. **Join SOS call** from an SOS alarm, and from the SOS box.
 5. Leave the app mid-call for 5 seconds: the helmet should leave call mode.
 6. Try it on the connection the tablets will really use (site Wi-Fi, and mobile data).
 

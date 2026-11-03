@@ -120,7 +120,7 @@ using split-screen changes it live:
   are the same components whether they fill a screen or sit in a pane.
 - **Nothing is selected by default.** Opening an alarm acknowledges it, which silences its
   siren, so auto-selecting the first alarm would silence the most urgent one unasked.
-- **`openAlarm` / `openHelmet`** work from anywhere (banner, toast, dashboard). They use the
+- **`openAlarm` / `openHelmet`** work from anywhere (the warning banner, the dashboard). They use the
   pane on a wide screen, and a full screen otherwise, or whenever the account lacks that tab.
 - **Checking it without a tablet.** Run the sample-data web preview and resize the browser to
   960 x 600 and 1280 x 800 (landscape) and 600 x 960 and 800 x 1280 (portrait). dp and CSS
@@ -289,7 +289,7 @@ alerts says so plainly. Full setup and turn-on steps: [docs/PUSH_SETUP.md](docs/
 
 ## Live view and calls with a helmet
 
-**Watch live** and **Voice messages** are on a helmet's own screen; **Join SOS call** is in the SOS banner and on an SOS alarm;
+**Watch live** and **Voice messages** are on a helmet's own screen; **Join SOS call** is in the SOS box and on an SOS alarm;
 ordinary calls (audio or video) are made from the **Group call** module. Built on the web's own live module, so it uses the same
 protocol: the helmet's picture and sound over WebRTC from the media server, and the tablet's microphone (and camera, for a video
 call) back. Who may: watching needs live view, calling needs live management, and anyone signed in can join an SOS. A call ends,
@@ -384,13 +384,19 @@ the web code, with the changes below.
   the app is in the foreground. It reconnects with `Last-Event-ID`, survives the
   server's 30-minute close, and notices silent stalls. Polling slows to every
   2 minutes while the stream is up and returns to 10 seconds if it drops.
-- **Critical alarms** (SOS, SOS button, fall, near electricity, no movement) put
-  a red banner on every screen and sound a looping siren with vibration, until
-  silenced, opened, or resolved. **Silence** is per phone; the banner stays until
-  the alarm is resolved. The alert window is 30 minutes, matching the backend's
-  rule for joining an SOS call. Everything about this lives in
-  `modules/alarms/lib/alert-policy.ts`.
-- **Other alarms** get one chime and a toast.
+- **Critical alarms** (SOS, SOS button, fall, near electricity, no movement, and the four gas alarms)
+  open a large red box in the middle of the screen, over everything, and sound a looping siren with
+  vibration. The box stays until someone acts. It shows a short title ("SOS pressed", "Carbon monoxide"),
+  the wearer and helmet, and a line of detail (a gas alarm also shows the helmet's latest reading of
+  that gas). Its buttons are **View on map** (if the account may open the Live Map), **Join call**
+  (SOS only, and only if the account may call) and **Close**. Any button, or opening the alarm, counts
+  as acting: it stops that alarm's siren and brings up the next one waiting, so several alarms at once
+  each get their turn (the box says "Alarm 1 of 2"). Acting is per tablet. The alarm stays in the
+  Alarms list, and on the tab's badge, until it is resolved. The alert window is 30 minutes, matching
+  the backend's rule for joining an SOS call. The rules are in `modules/alarms/lib/alert-policy.ts`
+  and the wording in `modules/alarms/lib/alarm-copy.ts`.
+- **Warnings** get one chime and a small banner at the top centre with the same three parts. It goes
+  by itself after 6 seconds, and tapping it opens the alarm.
 - **Footage** comes from `GET /alarms/{id}`. The screen re-checks every 30 seconds
   while clips are still uploading.
 - **Background:** a phone that is locked or in another app is not reached by any

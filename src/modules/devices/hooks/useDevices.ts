@@ -5,6 +5,7 @@ import { useAuthStore } from '@/shared/store/authStore'
 import { useNow } from '@/shared/lib/useNow'
 import { fetchDevices, fetchFleetSummary, fetchGasStatus } from '../api/devices.api'
 import { toDeviceView } from '../lib/presence'
+import type { Device } from '../types'
 
 // The backend's WebSocket belongs to the helmets, not to
 // dashboards, so a dashboard has nothing to subscribe to, it
@@ -52,6 +53,13 @@ export function useFleetSummary() {
     queryFn: fetchFleetSummary,
     refetchInterval: env.pollIntervalMs,
   })
+}
+
+// One helmet from the cached list, for the pop-up to name the wearer. Gated on being signed in like the names are.
+export function useDeviceById(id: string | undefined): Device | undefined {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const { data } = useQuery({ queryKey: ['devices'], queryFn: fetchDevices, enabled: isAuthenticated && !!id, staleTime: 5 * 60_000 })
+  return useMemo(() => (isAuthenticated && id ? data?.find((d) => d.id === id) : undefined), [data, id, isAuthenticated])
 }
 
 export function useDeviceNames(): Map<string, string> {
