@@ -242,6 +242,7 @@ src/shared/lib/errors.ts
 src/shared/lib/format.ts
 src/shared/lib/layout.ts
 src/shared/lib/permissions.ts
+src/shared/lib/privacyPolicy.ts
 src/shared/lib/query-client.ts
 src/shared/lib/session.ts
 src/shared/lib/storage.ts
@@ -278,6 +279,7 @@ tests/mock.test.ts
 tests/nativemap.test.ts
 tests/passwordchange.test.ts
 tests/plexus.test.ts
+tests/privacypolicy.test.ts
 tests/prune.test.ts
 tests/push.test.ts
 tests/run.mjs

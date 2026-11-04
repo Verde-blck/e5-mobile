@@ -6,7 +6,8 @@ import { useBrandColours, useBranding } from '@/modules/branding/hooks/useBrandi
 import { BrandConstellation } from '@/shared/components/BrandConstellation'
 import { CompanyLogo } from '@/shared/components/Logo'
 import { Text } from '@/shared/components/Text'
-import { AuthHelmetMark, INK, PAGE, ink, rgba } from './AuthKit'
+import { openPrivacyPolicy } from '@/shared/lib/privacyPolicy'
+import { AuthHelmetMark, AuthLink, INK, PAGE, ink, rgba } from './AuthKit'
 
 /*
  * The layout of the signed-out screens, as the web dashboard's sign-in page (AuthLayout.tsx), so the two look like one product. Every
@@ -96,6 +97,9 @@ export function AuthScreen({ children, footer }: { children: ReactNode; footer?:
     <View style={{ alignSelf: 'center', width: '100%', maxWidth: 400 }}>
       {cardBox}
       {footer}
+      <View style={{ marginTop: 4 }}>
+        <AuthLink title="Privacy policy" onPress={openPrivacyPolicy} />
+      </View>
     </View>
   )
 

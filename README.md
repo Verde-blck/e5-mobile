@@ -215,6 +215,14 @@ disconnected helmet never shows "Yes"). The raw wear code is not read for a helm
 helmet maker's protocol `1` is not worn and `2` is worn, so "Worn" was the wrong way round against the live backend. Telemetry
 history rows carry no `worn` field, so those are read by that protocol.
 
+## Privacy policy
+
+Google Play wants the privacy policy reachable inside the app as well as on the store page. The app links to it from the **More**
+screen (under About) and from the signed-out screens (sign-in and the new-password screen, which share a layout). The address is E5's,
+`https://e5energyng.com/privacy-policy/`, the same one set in Play Console. To use another, set `EXPO_PUBLIC_PRIVACY_POLICY_URL` when
+building; only a plain `https://` address is accepted, anything else falls back to E5's. If the tablet has no browser, the address is
+shown instead. See `src/shared/lib/privacyPolicy.ts`.
+
 ## A temporary password
 
 An account whose password was just issued, or reset by an administrator, has to choose its own before it can use anything. The

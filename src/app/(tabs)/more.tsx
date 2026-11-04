@@ -12,6 +12,7 @@ import { Screen } from '@/shared/components/Screen'
 import { Text } from '@/shared/components/Text'
 import type { IconName } from '@/shared/constants/modules'
 import { confirmAction } from '@/shared/lib/confirm'
+import { openPrivacyPolicy } from '@/shared/lib/privacyPolicy'
 import { endSession } from '@/shared/lib/session'
 import { useBrandColours, useBranding } from '@/modules/branding/hooks/useBranding'
 import { useLayout } from '@/shared/lib/layout'
@@ -167,6 +168,9 @@ export default function MoreScreen() {
           <Row label="App version" value={Constants.expoConfig?.version ?? '—'} />
           <Row label="Data source" value={env.useMocks ? 'Sample data' : 'Live backend'} last />
         </Card>
+        <View className="mt-3">
+          <MenuRow icon="file-text" label="Privacy policy" hint="How E5 handles your data" onPress={openPrivacyPolicy} />
+        </View>
 
         {env.useMocks ? (
           <>

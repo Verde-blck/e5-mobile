@@ -14,6 +14,15 @@ export function flagOr(value: string | undefined, fallback: boolean): boolean {
 
 // Trimmed first: a stray space at the end of a pasted setting is
 // invisible and would make Google quietly ignore the ID.
+// The privacy policy E5 published; the same address is set in Google Play Console.
+export const DEFAULT_PRIVACY_POLICY_URL = 'https://e5energyng.com/privacy-policy/'
+
+/** A secure web address, with the quotes and spaces a pasted setting tends to carry removed. Anything else is not used. */
+export function cleanHttpsUrl(value: string | undefined): string | undefined {
+  const v = (value ?? '').trim().replace(/^["']|["']$/g, '').trim()
+  return /^https:\/\/[^\s/]+\S*$/i.test(v) ? v : undefined
+}
+
 export function cleanMapId(value: string | undefined): string | undefined {
   const id = (value ?? '').trim().replace(/^["']|["']$/g, '').trim()
   return /^[0-9a-f]{16,40}$/i.test(id) ? id : undefined
@@ -32,6 +41,7 @@ export const env = {
   tabletOnly: flagOr(process.env.EXPO_PUBLIC_TABLET_ONLY, true),
   googleMapId: cleanMapId(process.env.EXPO_PUBLIC_GOOGLE_MAPS_MAP_ID),
   mapEngine: process.env.EXPO_PUBLIC_MAP_ENGINE,
+  privacyPolicyUrl: cleanHttpsUrl(process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL) ?? DEFAULT_PRIVACY_POLICY_URL,
   // Needs Firebase and the backend's push; while off, or with no Firebase on the tablet, the app says plainly that alerts need the app to be open.
   pushEnabled: parseFlag(process.env.EXPO_PUBLIC_PUSH_ENABLED),
   // Live view, calls and group calls. Off unless a build turns it on: the production and live profiles do.

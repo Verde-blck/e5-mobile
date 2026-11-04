@@ -33,7 +33,7 @@ Not checkable from here: Google's review of the listing and of the first release
 2. Create the app: name, default language, app (not game), free.
 3. Complete the dashboard tasks:
    - Store listing: short description (80 characters), full description (4,000), icon 512 x 512, feature graphic 1024 x 500, at least two screenshots, ideally 7 inch and 10 inch tablet ones taken on a real tablet.
-   - Privacy policy URL. The app handles worker names and phone numbers, helmet locations, microphone and camera.
+   - Privacy policy URL. The app handles worker names and phone numbers, helmet locations, microphone and camera. The app links to it from inside (More, and the signed-out screens), as Google requires.
    - App access: Google reviewers need a working login, and a note that live view and calls need a helmet. Ask Cypher for a reviewer account on the real backend.
    - Ads: none. Target audience: adults. Content rating questionnaire. Data safety form.
 4. Before the production build, have push ready (docs/PUSH_SETUP.md): a Firebase project for `com.e5energy.smarthelmet`, its `google-services.json` added as the file variable `GOOGLE_SERVICES_JSON` in the Production environment, and the FCM V1 key uploaded with `eas credentials`. Without them the app builds, and tells each tablet that alerts can't be received.
