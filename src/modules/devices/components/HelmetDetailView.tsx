@@ -13,6 +13,7 @@ import { cn } from '@/shared/lib/cn'
 import { useCan } from '@/shared/lib/permissions'
 import { formatCoord, formatDateTime } from '@/shared/lib/format'
 import { BatteryChip } from '@/modules/devices/components/BatteryChip'
+import { AlarmPill } from '@/modules/devices/components/AlarmPill'
 import { PresenceBadge } from '@/modules/devices/components/PresenceBadge'
 import { SignalBars } from '@/modules/devices/components/SignalBars'
 import { WornByCard } from '@/modules/devices/components/WornByCard'
@@ -85,7 +86,10 @@ export function HelmetDetailView({ id, embedded = false }: { id: string; embedde
               </Text>
               <Text className="mt-1 font-mono text-xs text-slate-500">{device.id}</Text>
             </View>
-            <PresenceBadge presence={device.presence} />
+            <View className="items-end gap-1.5">
+              {device.activeAlarm ? <AlarmPill severity={device.activeAlarm} /> : null}
+              <PresenceBadge presence={device.presence} />
+            </View>
           </View>
           <Text className="mt-3 text-sm text-slate-500">
             Last seen {lastSeenLabel(device.lastSeenAt, now)}

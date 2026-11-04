@@ -23,6 +23,15 @@ const { t, report } = createRunner()
 async function main() {
   assert.equal(env.useMocks, true)
 
+  await t('the sample account NEW-001 must choose a password, until it has: then it is let in, and it stays done', async () => {
+    assert.equal(mockUserFor('NEW-001').mustChangePassword, true); assert.equal(mockUserFor('new-001').mustChangePassword, true, 'in any case')
+    assert.equal(mockUserFor('ADM-001').mustChangePassword, false, 'other accounts are not asked')
+    await assert.rejects(auth.changeOwnPassword({ currentPassword: 'wrong', newPassword: 'abcdefgh' }, 'NEW-001'), (error) => auth.passwordChangeError(error) === "That current password isn't right.")
+    assert.equal(mockUserFor('NEW-001').mustChangePassword, true, 'a refused change changes nothing')
+    await auth.changeOwnPassword({ currentPassword: 'anything', newPassword: 'abcdefgh' }, 'new-001')
+    assert.equal(mockUserFor('NEW-001').mustChangePassword, false)
+  })
+
   await t('ADM-001 is a super admin and signs straight in; no token is stored', async () => {
     const r = await auth.login({ username: 'adm-001', password: 'anything' })
     assert.equal(r.status, 'signed-in')

@@ -19,6 +19,7 @@ src/app/_layout.tsx
 src/app/admin/[id].tsx
 src/app/alarm/[id].tsx
 src/app/call/[deviceId].tsx
+src/app/change-password.tsx
 src/app/conference.tsx
 src/app/fence/[id].tsx
 src/app/fences.tsx
@@ -54,7 +55,9 @@ src/modules/alarms/store/alertStore.ts
 src/modules/alarms/types.ts
 src/modules/auth/api/auth.api.ts
 src/modules/auth/components/AuthKit.tsx
+src/modules/auth/components/AuthScreen.tsx
 src/modules/auth/components/SecurityScreen.tsx
+src/modules/auth/lib/password.ts
 src/modules/auth/mock-data.ts
 src/modules/branding/api/branding.api.ts
 src/modules/branding/components/BrandTheme.tsx
@@ -68,6 +71,7 @@ src/modules/calls/lib/access.ts
 src/modules/devices/api/devices.api.ts
 src/modules/devices/api/devices.mock.ts
 src/modules/devices/api/worker.api.ts
+src/modules/devices/components/AlarmPill.tsx
 src/modules/devices/components/BatteryChip.tsx
 src/modules/devices/components/DeviceCard.tsx
 src/modules/devices/components/HelmetDetailView.tsx
@@ -76,6 +80,7 @@ src/modules/devices/components/SignalBars.tsx
 src/modules/devices/components/WornByCard.tsx
 src/modules/devices/hooks/useDevices.ts
 src/modules/devices/hooks/useWorker.ts
+src/modules/devices/lib/alarmState.ts
 src/modules/devices/lib/gasStatus.ts
 src/modules/devices/lib/location.ts
 src/modules/devices/lib/maps.ts
@@ -99,6 +104,7 @@ src/modules/live/components/FocusView.tsx
 src/modules/live/components/GroupCallScreen.tsx
 src/modules/live/components/LiveButton.tsx
 src/modules/live/components/LiveViewScreen.tsx
+src/modules/live/components/NoSoundNotice.tsx
 src/modules/live/components/RoundButton.tsx
 src/modules/live/components/SessionPanel.tsx
 src/modules/live/components/StreamView.tsx
@@ -107,6 +113,7 @@ src/modules/live/components/WallTile.tsx
 src/modules/live/hooks/useGroupCall.ts
 src/modules/live/hooks/useHelmetSession.ts
 src/modules/live/hooks/useSessionState.ts
+src/modules/live/hooks/useStreamHasAudio.ts
 src/modules/live/hooks/useWallSessions.ts
 src/modules/live/lib/defaultDeps.ts
 src/modules/live/lib/format.ts
@@ -250,6 +257,7 @@ src/shared/lib/withTimeout.ts
 src/shared/store/authStore.ts
 src/shared/store/selectionStore.ts
 tests/alarmpopup.test.ts
+tests/alarmstate.test.ts
 tests/alarmtypes.test.ts
 tests/audio.test.ts
 tests/branding.test.ts
@@ -268,6 +276,7 @@ tests/media.test.ts
 tests/messages.test.ts
 tests/mock.test.ts
 tests/nativemap.test.ts
+tests/passwordchange.test.ts
 tests/plexus.test.ts
 tests/prune.test.ts
 tests/push.test.ts

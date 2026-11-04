@@ -36,6 +36,7 @@ interface AuthState {
   setBootstrapping: (v: boolean) => void
   clearUser: () => void
   requireSetup: () => void
+  requirePasswordChange: () => void
 }
 
 // Ending a session properly also has to clear the token and the query
@@ -48,4 +49,5 @@ export const useAuthStore = create<AuthState>((set) => ({
   setBootstrapping: (v) => set({ isBootstrapping: v }),
   clearUser: () => set({ user: null, isAuthenticated: false }),
   requireSetup: () => set((s) => (s.user && !s.user.mustSetup2fa ? { user: { ...s.user, mustSetup2fa: true } } : s)),
+  requirePasswordChange: () => set((s) => (s.user && !s.user.mustChangePassword ? { user: { ...s.user, mustChangePassword: true } } : s)),
 }))

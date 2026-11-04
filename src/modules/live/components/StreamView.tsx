@@ -4,7 +4,8 @@ import type { StreamLike } from '../types'
 
 // The helmet's sound plays by itself through the speaker; `muted` switches the audio track off
 // rather than the view, because that is what the stream's sound actually comes from.
-export function StreamView({ stream, muted, mirrored = false, overlay = false }: { stream: StreamLike | null; muted: boolean; mirrored?: boolean; overlay?: boolean }) {
+// The tablet never refuses a stream its sound, so `onAutoplayBlocked` exists only to match the browser preview's version of this view.
+export function StreamView({ stream, muted, mirrored = false, overlay = false }: { stream: StreamLike | null; muted: boolean; mirrored?: boolean; overlay?: boolean; onAutoplayBlocked?: () => void }) {
   useEffect(() => {
     // A self-view shows our own stream, whose audio track is our microphone: it must
     // never be touched here, or showing the picture would mute the person speaking.

@@ -1,25 +1,13 @@
-import { useState, type ReactNode } from 'react'
-import { KeyboardAvoidingView, Platform, ScrollView, useWindowDimensions, View } from 'react-native'
-import { StatusBar } from 'expo-status-bar'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import {
-  describeAuthError,
-  login,
-  verifyTwoFactorLogin,
-  type TwoFactorChallenge,
-} from '@/modules/auth/api/auth.api'
-import { AuthButton, AuthField, AuthHelmetMark, AuthLink, INK, PAGE, ink, rgba } from '@/modules/auth/components/AuthKit'
+import { useState } from 'react'
+import { View } from 'react-native'
+import { describeAuthError, login, verifyTwoFactorLogin, type TwoFactorChallenge } from '@/modules/auth/api/auth.api'
+import { AuthButton, AuthField, AuthLink } from '@/modules/auth/components/AuthKit'
+import { AuthFooterText, AuthHeading, AuthScreen, AuthSubheading } from '@/modules/auth/components/AuthScreen'
 import { env } from '@/config/env'
-import { BrandConstellation } from '@/shared/components/BrandConstellation'
-import { useBrandColours, useBranding } from '@/modules/branding/hooks/useBranding'
-import { CompanyLogo } from '@/shared/components/Logo'
 import { Text } from '@/shared/components/Text'
 import { useAuthStore } from '@/shared/store/authStore'
 
 export default function SignInScreen() {
-  const branding = useBranding()
-  const brand = useBrandColours()
-  const insets = useSafeAreaInsets()
   const setUser = useAuthStore((s) => s.setUser)
 
   const [username, setUsername] = useState('')
@@ -85,64 +73,12 @@ export default function SignInScreen() {
     setPasswordError(null)
   }
 
-  const { width } = useWindowDimensions()
-  const sm = width >= 640
-  const split = width >= 1024
-
-  const hero = (
-    <View
-      testID="signin-hero"
-      style={[
-        { backgroundColor: brand.secondary, overflow: 'hidden' },
-        split ? { flex: 5 } : { height: (sm ? 256 : 224) + insets.top },
-      ]}
-    >
-      <BrandConstellation />
-      <View
-        style={{
-          flex: 1,
-          justifyContent: 'space-between',
-          paddingHorizontal: split ? 48 : sm ? 32 : 24,
-          paddingTop: insets.top + (split ? 40 : 20),
-          paddingBottom: split ? 40 : sm ? 80 : 72,
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <AuthHelmetMark colour={brand.secondary} />
-          <Text className="font-sans-medium" style={{ fontSize: 14, lineHeight: 20, color: 'rgba(255, 255, 255, 0.9)' }}>
-            {branding.companyName ?? 'E5 Energy'}
-          </Text>
-        </View>
-
-        <View style={{ maxWidth: 448 }}>
-          {(() => {
-            const size = split ? 52 : sm ? 40 : 32
-            return (
-              <Text testID="signin-title" className="font-display" style={{ fontSize: size, lineHeight: size * 1.05, letterSpacing: -0.02 * size, color: '#FFFFFF' }}>
-                Command Centre
-              </Text>
-            )
-          })()}
-          {sm ? (
-            <Text style={{ marginTop: 12, maxWidth: 384, fontSize: 15, lineHeight: 24.375, color: brand.mint }}>
-              Live location, alarms and gas readings for every helmet in the fleet.
-            </Text>
-          ) : null}
-        </View>
-      </View>
-    </View>
-  )
-
   const card = (
     <>
-      <View style={{ marginBottom: 24 }}>
-        <CompanyLogo width={sm ? 86 : 79} />
-        {branding.secondaryColor ? <View accessibilityLabel="Company accent" style={{ marginTop: 8, height: 3, width: 44, borderRadius: 2, backgroundColor: branding.secondaryColor }} /> : null}
-      </View>
       {challenge ? (
         <>
-          <Heading>Two-step verification</Heading>
-          <Subheading>Enter the 6-digit code from your authenticator app for {challenge.username}.</Subheading>
+          <AuthHeading>Two-step verification</AuthHeading>
+          <AuthSubheading>Enter the 6-digit code from your authenticator app for {challenge.username}.</AuthSubheading>
           <AuthField
             label="Authentication code"
             value={code}
@@ -163,8 +99,8 @@ export default function SignInScreen() {
         </>
       ) : (
         <>
-          <Heading>Sign in</Heading>
-          <Subheading>Use the username and password your administrator gave you.</Subheading>
+          <AuthHeading>Sign in</AuthHeading>
+          <AuthSubheading>Use the username and password your administrator gave you.</AuthSubheading>
           <AuthField
             label="Username"
             icon="user"
@@ -212,75 +148,17 @@ export default function SignInScreen() {
           </Text>
           <Text style={{ marginTop: 4, fontSize: 12, lineHeight: 20, color: '#92400E' }}>
             ADM-001 (full access), AD-001 (administers, not a super admin), OP-014 (restricted),
-            RO-001 (view-only settings), MFA-001 (two-step; code 123456), SETUP-001 (must set up two-step). Any password works.
+            RO-001 (view-only settings), MFA-001 (two-step; code 123456), SETUP-001 (must set up two-step),
+            NEW-001 (must set their own password). Any password works.
           </Text>
         </View>
       ) : null}
 
-      <Text style={{ marginTop: 20, paddingHorizontal: 4, textAlign: 'center', fontSize: 13, lineHeight: 21.125, color: ink(0.7) }}>
+      <AuthFooterText>
         {challenge ? 'Lost access to your authenticator app? Your administrator can reset it.' : 'Accounts are issued by your administrator.'}
-      </Text>
+      </AuthFooterText>
     </>
   )
 
-  const cardBox = (
-    <View
-      testID="signin-card"
-      style={{
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: ink(0.06),
-        backgroundColor: '#FFFFFF',
-        padding: sm ? 32 : 24,
-        boxShadow: `0 1px 2px ${rgba(brand.secondary, 0.06)}, 0 12px 32px -12px ${rgba(brand.secondary, 0.18)}`,
-      }}
-    >
-      {card}
-    </View>
-  )
-
-  const column = (
-    <View style={{ alignSelf: 'center', width: '100%', maxWidth: 400 }}>
-      {cardBox}
-      {footer}
-    </View>
-  )
-
-  if (split) {
-    return (
-      <View style={{ flex: 1, flexDirection: 'row', backgroundColor: PAGE }}>
-        <StatusBar style="light" />
-        {hero}
-        <KeyboardAvoidingView style={{ flex: 7 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 48 }}>
-            {column}
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </View>
-    )
-  }
-
-  return (
-    <View style={{ flex: 1, backgroundColor: PAGE }}>
-      <StatusBar style="light" />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView keyboardShouldPersistTaps="handled" bounces={false} contentContainerStyle={{ flexGrow: 1 }}>
-          {hero}
-          <View style={{ marginTop: -40, paddingHorizontal: sm ? 24 : 16, paddingBottom: 48 }}>{column}</View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
-  )
-}
-
-function Heading({ children }: { children: ReactNode }) {
-  return (
-    <Text testID="signin-heading" accessibilityRole="header" className="font-display" style={{ fontSize: 26, lineHeight: 32.5, letterSpacing: -0.26, color: INK }}>
-      {children}
-    </Text>
-  )
-}
-
-function Subheading({ children }: { children: ReactNode }) {
-  return <Text style={{ marginTop: 6, marginBottom: 28, fontSize: 14, lineHeight: 22.75, color: ink(0.7) }}>{children}</Text>
+  return <AuthScreen footer={footer}>{card}</AuthScreen>
 }

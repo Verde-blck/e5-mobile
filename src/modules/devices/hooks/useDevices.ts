@@ -2,9 +2,14 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { env } from '@/config/env'
 import { useAuthStore } from '@/shared/store/authStore'
+import { isForbidden } from '@/shared/lib/errors'
+import { useCan } from '@/shared/lib/permissions'
 import { useNow } from '@/shared/lib/useNow'
+import { fetchAlarms } from '@/modules/alarms/api/alarms.api'
+import { ALARMS_KEY } from '@/modules/alarms/lib/alarm-cache'
 import { fetchDevices, fetchFleetSummary, fetchGasStatus } from '../api/devices.api'
 import { toDeviceView } from '../lib/presence'
+import { withAlarmState, worstOpenAlarms } from '../lib/alarmState'
 import type { Device } from '../types'
 
 // The backend's WebSocket belongs to the helmets, not to
@@ -20,9 +25,21 @@ export function useDeviceViews() {
   // Presence is resolved against a ticking clock rather than inside `select`: a helmet that has gone quiet
   // produces no new data, so nothing would ever re-run a select, and it would stay "online" forever.
   const now = useNow(10_000)
+  // The same cached list the Alarms screen reads, not useAlarms itself, which imports these hooks.
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const canReadAlarms = useCan('alarms:read')
+  const { data: alarms } = useQuery({
+    queryKey: ALARMS_KEY,
+    queryFn: fetchAlarms,
+    enabled: isAuthenticated && canReadAlarms,
+    staleTime: 30_000,
+    retry: (count, error) => !isForbidden(error) && count < 1,
+  })
+  const worstAlarms = useMemo(() => worstOpenAlarms(isAuthenticated ? (alarms ?? []) : []), [alarms, isAuthenticated])
+
   const devices = useMemo(
-    () => (query.data ?? []).map((device) => toDeviceView(device, now)),
-    [query.data, now]
+    () => (query.data ?? []).map((device) => withAlarmState(toDeviceView(device, now), worstAlarms)),
+    [query.data, now, worstAlarms]
   )
 
   return {

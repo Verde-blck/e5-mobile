@@ -8,6 +8,7 @@ import { Text } from '@/shared/components/Text'
 import { useDeviceViews } from '@/modules/devices/hooks/useDevices'
 import { endLiveForEveryone } from '../api/live.api'
 import { useHelmetSession } from '../hooks/useHelmetSession'
+import { NoSoundNotice } from './NoSoundNotice'
 import { SessionMessage, StatusPill } from './SessionPanel'
 import { StreamView } from './StreamView'
 
@@ -55,6 +56,8 @@ export function LiveViewScreen({ deviceId }: { deviceId: string }) {
             </View>
           ) : null}
         </View>
+
+        <NoSoundNotice className="mt-3" stream={state?.remoteStream ?? null} live={status === 'live'} />
 
         <View className="mt-3 flex-row items-center justify-between">
           <Pressable

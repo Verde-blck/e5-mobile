@@ -22,6 +22,10 @@ export function isSetupRequired(error: unknown): boolean {
   return statusOf(error) === 403 && bodyOf(error)?.error === '2fa_setup_required'
 }
 
+export function isPasswordChangeRequired(error: unknown): boolean {
+  return statusOf(error) === 403 && bodyOf(error)?.error === 'password_change_required'
+}
+
 export function missingPermission(error: unknown): string | undefined {
   const permission = bodyOf(error)?.permission
   return typeof permission === 'string' ? permission : undefined

@@ -1,8 +1,8 @@
 import axios from 'axios'
 import { env } from '@/config/env'
-import { isForbidden, isSetupRequired } from './errors'
+import { isForbidden, isPasswordChangeRequired, isSetupRequired } from './errors'
 import { tokenStore } from './token'
-import { emitSetupRequired, emitUnauthorized } from './unauthorized'
+import { emitPasswordChangeRequired, emitSetupRequired, emitUnauthorized } from './unauthorized'
 
 export const apiClient = axios.create({
   baseURL: env.apiBaseUrl,
@@ -18,7 +18,7 @@ apiClient.interceptors.request.use((config) => {
 
 // A 401 from these means the code or password was wrong, not that the session died:
 // treating it as a dead session would sign the person out for mistyping a code.
-const WRONG_INPUT_ENDPOINTS = ['/auth/login', '/auth/2fa/confirm', '/auth/2fa/disable']
+const WRONG_INPUT_ENDPOINTS = ['/auth/login', '/auth/2fa/confirm', '/auth/2fa/disable', '/auth/change-password']
 
 apiClient.interceptors.response.use(
   (res) => res,
@@ -29,6 +29,10 @@ apiClient.interceptors.response.use(
     // A 401, or a 403 without the backend's {"error":"forbidden"} body, means the token has expired.
     if (isSetupRequired(error)) {
       emitSetupRequired()
+      return Promise.reject(error)
+    }
+    if (isPasswordChangeRequired(error)) {
+      emitPasswordChangeRequired()
       return Promise.reject(error)
     }
     const sessionDead = status === 401 || (status === 403 && !isForbidden(error))

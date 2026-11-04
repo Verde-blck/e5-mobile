@@ -29,3 +29,18 @@ export function onSetupRequired(listener: Listener): () => void {
 export function emitSetupRequired(): void {
   setupListeners.forEach((listener) => listener())
 }
+
+// An admin resetting this person's password while they are signed in makes the backend refuse everything with
+// 403 password_change_required until they choose their own. Like the 2FA case it is not a dead session.
+const passwordListeners = new Set<Listener>()
+
+export function onPasswordChangeRequired(listener: Listener): () => void {
+  passwordListeners.add(listener)
+  return () => {
+    passwordListeners.delete(listener)
+  }
+}
+
+export function emitPasswordChangeRequired(): void {
+  passwordListeners.forEach((listener) => listener())
+}

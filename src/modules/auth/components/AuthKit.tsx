@@ -135,6 +135,16 @@ export function AuthField({ label, error, icon, secret, code, ...input }: AuthFi
   )
 }
 
+/** Something wrong with the form as a whole, e.g. the server refused it. Announced to screen readers. */
+export function AuthFormError({ message }: { message: string | null }) {
+  if (!message) return null
+  return (
+    <View accessibilityRole="alert" style={{ marginBottom: 16, borderRadius: 12, borderWidth: 1, borderColor: '#FECACA', backgroundColor: '#FEF2F2', paddingHorizontal: 14, paddingVertical: 12 }}>
+      <Text style={{ fontSize: 14, lineHeight: 20, color: '#991B1B' }}>{message}</Text>
+    </View>
+  )
+}
+
 function shade(hex: string, amount: number): string {
   const v = hex.replace('#', '')
   const channel = (i: number) => Math.round(parseInt(v.slice(i, i + 2), 16) * amount).toString(16).padStart(2, '0')

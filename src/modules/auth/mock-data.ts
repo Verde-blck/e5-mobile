@@ -96,6 +96,12 @@ export function setMockTwoFactor(username: string, on: boolean): void {
   twoFactor.set(username.trim().toUpperCase(), on)
 }
 
+const passwordChanged = new Set<string>()
+
+export function setMockPasswordChanged(username: string): void {
+  passwordChanged.add(username.trim().toUpperCase())
+}
+
 export function mockUserFor(username: string): AuthUser {
   const id = username.trim().toUpperCase()
   const base = id.startsWith('OP')
@@ -110,5 +116,5 @@ export function mockUserFor(username: string): AuthUser {
           ? mockSetupRequired
           : mockAdmin
   const on = mockTwoFactorOn(id)
-  return { ...base, username: id || base.username, twoFactorEnabled: on, mustSetup2fa: (base.mustSetup2fa === true || requireTwoFactor) && !on }
+  return { ...base, username: id || base.username, twoFactorEnabled: on, mustChangePassword: base.mustChangePassword === true && !passwordChanged.has(id), mustSetup2fa: (base.mustSetup2fa === true || requireTwoFactor) && !on }
 }

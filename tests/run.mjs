@@ -16,6 +16,8 @@ const suites = [
   ['worker', {}],
   ['branding', {}],
   ['media', {}],
+  ['passwordchange', {}], // choosing your own password: the rules, the signal, the wording
+  ['alarmstate', {}], // a helmet's alarm state, from the open alarms
   ['alarmpopup', {}], // the pop-up's words, and which alarms wait for someone
   ['alarmtypes', {}], // the gas alarms: names, severity and icons
   ['gasstatus', {}], // whether a gas reading is current or stale

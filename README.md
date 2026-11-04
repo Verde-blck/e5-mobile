@@ -16,7 +16,7 @@ npx expo start              # press a / i, or scan with Expo Go
 
 Set `EXPO_PUBLIC_USE_MOCKS=true` to run on sample data with no backend.
 Mock sign-ins: `ADM-001` (super admin), `OP-014` (read-only: no Dashboard, can't
-resolve alarms), `RO-001` (can view settings, not change them), `MFA-001` (two-step; code `123456`), `SETUP-001` (must set up two-step before it can use the app). Any password works. In
+resolve alarms), `RO-001` (can view settings, not change them), `MFA-001` (two-step; code `123456`), `SETUP-001` (must set up two-step before it can use the app), `NEW-001` (must choose its own password first; typing `wrong` as the current one shows the refusal). Any password works. In
 sample-data mode the **More** tab has buttons that fire a fake SOS, fall or
 helmet-removed alarm through the same path a real one takes.
 
@@ -215,6 +215,16 @@ disconnected helmet never shows "Yes"). The raw wear code is not read for a helm
 helmet maker's protocol `1` is not worn and `2` is worn, so "Worn" was the wrong way round against the live backend. Telemetry
 history rows carry no `worn` field, so those are read by that protocol.
 
+## A temporary password
+
+An account whose password was just issued, or reset by an administrator, has to choose its own before it can use anything. The
+backend says so with `mustChangePassword` on `/auth/me`, and, if the reset happens while someone is signed in, by answering other
+requests with `403 password_change_required`. Neither is a sign-out. The app shows **Set your own password** (current, new and
+confirm; at least 8 characters, matching, and different from the current one) in place of the app, on the same layout as sign-in
+(`modules/auth/components/AuthScreen.tsx`), with a **Sign out** link. The alarm stream and push alerts stay off until it is done.
+If two-step set-up is also outstanding, the password comes first. The rules are in `modules/auth/lib/password.ts`, the screen is
+`app/change-password.tsx`, and a wrong current password, a too-short one or an unreachable server each get their own wording.
+
 ## Two-step verification
 
 **Account security** (More) turns two-step verification on or off for your own account. Turning it off needs a current code, and
@@ -302,7 +312,8 @@ known from here are in [docs/CALLS.md](docs/CALLS.md).
 The **Live wall** module (needs live view, `live:read`): up to six helmets live side by side, like the web's wall. Choose helmets
 from the list (a deactivated one can't be added, and a seventh is refused with the reason), and each gets its own tile with its own
 connection, so one weak signal never affects the others. Every tile is muted; **enlarge** one to hear it, so only one helmet ever
-talks. **Start all** and **Stop all**; removing a tile only closes this tablet's view and never stops the helmet for everyone.
+talks. If the picture arrives but no sound track does (it can take a moment to appear), the enlarged view, and the single helmet's
+live screen, say so after three seconds, so a silent stream isn't mistaken for a muted tablet. **Start all** and **Stop all**; removing a tile only closes this tablet's view and never stops the helmet for everyone.
 Leaving the wall disconnects from every helmet (they cost the helmets' mobile data, about 0.9 GB an hour each), and coming back
 reconnects the same ones; a tablet can't stream from the background, so leaving the app does the same. The web's pop-out window
 for a second screen isn't ported: a tablet has no second window. Like the other live features it is hidden in a real build until
@@ -397,6 +408,8 @@ the web code, with the changes below.
   and the wording in `modules/alarms/lib/alarm-copy.ts`.
 - **Warnings** get one chime and a small banner at the top centre with the same three parts. It goes
   by itself after 6 seconds, and tapping it opens the alarm.
+- **A helmet with an open alarm** shows a red **Alarm** or an amber **Warning** pill on its card and on its own page. The backend's
+  helmet list carries no alarm state, so it is worked out from the open alarms (`modules/devices/lib/alarmState.ts`).
 - **Footage** comes from `GET /alarms/{id}`. The screen re-checks every 30 seconds
   while clips are still uploading.
 - **Background:** a phone that is locked or in another app is not reached by any

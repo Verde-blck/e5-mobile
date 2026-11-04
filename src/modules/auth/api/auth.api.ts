@@ -7,7 +7,7 @@ import { expandPermissions } from '@/shared/constants/backend-permissions'
 import { ALL_PERMISSIONS, type Permission } from '@/shared/constants/modules'
 import { withTimeout } from '@/shared/lib/withTimeout'
 import type { AuthUser } from '@/shared/store/authStore'
-import { mockTwoFactorOn, mockUserFor, setMockTwoFactor, mockRequire2fa } from '../mock-data'
+import { mockTwoFactorOn, mockUserFor, setMockPasswordChanged, setMockTwoFactor, mockRequire2fa } from '../mock-data'
 
 export { statusOf }
 
@@ -26,6 +26,7 @@ interface ApiProfile {
   deviceIds?: string[]
   twoFactorEnabled?: boolean
   mustSetup2fa?: boolean
+  mustChangePassword?: boolean
 }
 
 export function userFromProfile(profile: ApiProfile, fallbackUsername: string): AuthUser {
@@ -42,6 +43,7 @@ export function userFromProfile(profile: ApiProfile, fallbackUsername: string): 
     deviceIds: profile.deviceIds ?? [],
     twoFactorEnabled: profile.twoFactorEnabled === true,
     mustSetup2fa: profile.mustSetup2fa === true,
+    mustChangePassword: profile.mustChangePassword === true,
     scope: { allSites: true, sites: [] },
   }
 }
@@ -203,6 +205,34 @@ export async function disableTwoFactor(username: string, code: string): Promise<
     return
   }
   await apiClient.post('/auth/2fa/disable', { code })
+}
+
+// The username is only for sample mode, which remembers who has chosen their own password.
+export async function changeOwnPassword(input: { currentPassword: string; newPassword: string }, username: string): Promise<void> {
+  if (env.useMocks) {
+    await delay(400)
+    if (input.currentPassword === 'wrong') throw httpError(401, { error: 'wrong_current_password' })
+    setMockPasswordChanged(username)
+    return
+  }
+  await apiClient.post('/auth/change-password', input)
+}
+
+/** The backend's reason for refusing a password change, in words a person can act on. */
+export function passwordChangeError(error: unknown): string {
+  const code = (error as { response?: { data?: { error?: string } } })?.response?.data?.error
+  switch (code) {
+    case 'wrong_current_password':
+      return "That current password isn't right."
+    case 'password_too_short':
+      return 'Your new password needs at least 8 characters.'
+    case 'same_password':
+      return "Choose a new password that's different from your current one."
+  }
+  const status = statusOf(error)
+  if (status === undefined) return 'Could not reach the server. Check your connection and try again.'
+  if (status === 401) return "That current password isn't right."
+  return 'Could not change your password. Please try again.'
 }
 
 // A 401 (or a 403 that isn't a permission refusal) means the token is dead. With no

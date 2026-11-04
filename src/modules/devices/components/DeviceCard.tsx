@@ -8,6 +8,7 @@ import { useAuthStore } from '@/shared/store/authStore'
 import { useSelectionStore } from '@/shared/store/selectionStore'
 import type { DeviceView } from '../types'
 import { lastSeenLabel } from '../lib/presence'
+import { AlarmPill } from './AlarmPill'
 import { BatteryChip } from './BatteryChip'
 import { PresenceBadge } from './PresenceBadge'
 
@@ -36,7 +37,7 @@ export function DeviceCard({
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected: !!selected }}
-      accessibilityLabel={`${device.name}, ${device.presence}`}
+      accessibilityLabel={`${device.name}, ${device.presence}${device.activeAlarm ? ', active alarm' : ''}`}
       onPress={() => (onOpen ? onOpen(device.id) : openHelmet(device.id))}
       className={cn(
         'mb-3 rounded-2xl border p-4 active:bg-slate-50',
@@ -57,7 +58,10 @@ export function DeviceCard({
           )}
           {device.worker ? <Text className="mt-0.5 text-xs text-slate-500" numberOfLines={1}>Worn by {device.worker.name}</Text> : null}
         </View>
-        <PresenceBadge presence={device.presence} />
+        <View className="items-end gap-1.5">
+          {device.activeAlarm ? <AlarmPill severity={device.activeAlarm} /> : null}
+          <PresenceBadge presence={device.presence} />
+        </View>
       </View>
 
       <View className="mt-3 flex-row items-center justify-between border-t border-slate-100 pt-3">

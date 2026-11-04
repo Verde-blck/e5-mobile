@@ -31,7 +31,7 @@ import { useTabletGate } from '@/shared/lib/useTabletGate'
 import { prefetchBranding } from '@/modules/branding/hooks/useBranding'
 import { queryClient } from '@/shared/lib/query-client'
 import { endSession } from '@/shared/lib/session'
-import { onSetupRequired, onUnauthorized } from '@/shared/lib/unauthorized'
+import { onPasswordChangeRequired, onSetupRequired, onUnauthorized } from '@/shared/lib/unauthorized'
 import { useAuthStore } from '@/shared/store/authStore'
 
 // Hold the native splash screen until fonts and the saved session are ready, so
@@ -68,8 +68,10 @@ export default function RootLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   // Until 2FA is set up the backend refuses everything but sign-in and the profile, so only
   // the set-up screen shows and nothing that would be refused (alarm stream, push) runs.
+  // The same goes for a temporary password: the backend refuses everything until the person has chosen their own.
   const mustSetup = useAuthStore((s) => s.user?.mustSetup2fa === true)
-  const usable = isAuthenticated && !mustSetup
+  const mustChange = useAuthStore((s) => s.user?.mustChangePassword === true)
+  const usable = isAuthenticated && !mustSetup && !mustChange
 
   useEffect(() => {
     if (gate.blocked) {
@@ -95,6 +97,7 @@ export default function RootLayout() {
 
   // "Set up 2FA first" is not a dead token: send the person to set it up, never sign them out.
   useEffect(() => onSetupRequired(() => useAuthStore.getState().requireSetup()), [])
+  useEffect(() => onPasswordChangeRequired(() => useAuthStore.getState().requirePasswordChange()), [])
 
   const ready = (fontsLoaded || !!fontError) && !isBootstrapping
 
@@ -146,7 +149,11 @@ export default function RootLayout() {
               options={{ headerShown: true, title: 'Account security', ...HEADER }}
             />
           </Stack.Protected>
-          <Stack.Protected guard={isAuthenticated && mustSetup}>
+          {/* A temporary password comes first: it is the account's most basic safeguard, and two-step set-up is asked for after it. */}
+          <Stack.Protected guard={isAuthenticated && mustChange}>
+            <Stack.Screen name="change-password" />
+          </Stack.Protected>
+          <Stack.Protected guard={isAuthenticated && mustSetup && !mustChange}>
             <Stack.Screen name="setup-2fa" />
           </Stack.Protected>
           <Stack.Protected guard={!isAuthenticated}>
