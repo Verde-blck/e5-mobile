@@ -12,8 +12,6 @@ export function flagOr(value: string | undefined, fallback: boolean): boolean {
   return !['false', '0', 'no', 'off'].includes(v)
 }
 
-// Trimmed first: a stray space at the end of a pasted setting is
-// invisible and would make Google quietly ignore the ID.
 // The privacy policy E5 published; the same address is set in Google Play Console.
 export const DEFAULT_PRIVACY_POLICY_URL = 'https://e5energyng.com/privacy-policy/'
 
@@ -23,15 +21,49 @@ export function cleanHttpsUrl(value: string | undefined): string | undefined {
   return /^https:\/\/[^\s/]+\S*$/i.test(v) ? v : undefined
 }
 
+// Trimmed first: a stray space at the end of a pasted setting is
+// invisible and would make Google quietly ignore the ID.
 export function cleanMapId(value: string | undefined): string | undefined {
   const id = (value ?? '').trim().replace(/^["']|["']$/g, '').trim()
   return /^[0-9a-f]{16,40}$/i.test(id) ? id : undefined
 }
 
+// What a developer's copy uses when nothing is set, so it runs with no set-up. A release build never falls back to it.
+export const DEFAULT_API_BASE_URL = 'https://e5energy-production.up.railway.app/api'
+
+export interface ApiBaseUrl {
+  url: string
+  problem: string | null
+}
+
+/**
+ * The server address the app talks to, tidied: quotes, spaces and trailing slashes removed, because paths are joined onto it. A release
+ * build has to be given a secure address, and says so plainly when it has none or a bad one, rather than quietly using a default
+ * or starting with an address that cannot work. Sample-data builds never contact a server, so they have nothing to complain about.
+ */
+export function resolveApiBaseUrl(raw: string | undefined, { release, useMocks }: { release: boolean; useMocks: boolean }): ApiBaseUrl {
+  const url = (raw ?? '').trim().replace(/^["']|["']$/g, '').trim().replace(/\/+$/, '')
+  if (url === '') {
+    if (!release) return { url: DEFAULT_API_BASE_URL, problem: null }
+    return {
+      url: '',
+      problem: useMocks ? null : 'This build has no server address. It was built without the EXPO_PUBLIC_API_BASE_URL setting, so it does not know which E5 server to talk to.',
+    }
+  }
+  const valid = new RegExp(`^${release ? 'https' : 'https?'}://[^\\s/?#]+(/[^\\s?#]*)?$`, 'i').test(url)
+  if (valid || useMocks) return { url, problem: null }
+  const shown = url.length > 80 ? `${url.slice(0, 77)}...` : url
+  return { url, problem: `The server address in this build, "${shown}", is not valid. It must be a full address that starts with ${release ? 'https://' : 'http:// or https://'}, for example https://example.com/api.` }
+}
+
+const useMocks = parseFlag(process.env.EXPO_PUBLIC_USE_MOCKS)
+const api = resolveApiBaseUrl(process.env.EXPO_PUBLIC_API_BASE_URL, { release: process.env.NODE_ENV === 'production', useMocks })
+
 export const env = {
-  apiBaseUrl:
-    process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://e5energy-production.up.railway.app/api',
-  useMocks: parseFlag(process.env.EXPO_PUBLIC_USE_MOCKS),
+  apiBaseUrl: api.url,
+  // Set when this build cannot work as configured. The app then shows that instead of starting.
+  configProblem: api.problem,
+  useMocks,
   // The default is OpenStreetMap's public server: fine for development, but its usage policy doesn't suit
   // a fleet in daily use. For production, point this at a tile provider E5 has an account with.
   mapTileUrl:

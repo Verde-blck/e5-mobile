@@ -16,6 +16,7 @@ const suites = [
   ['worker', {}],
   ['branding', {}],
   ['media', {}],
+  ['apiurl', {}], // the server address: tidied, and never guessed in a release
   ['privacypolicy', {}], // the address the app links to
   ['passwordchange', {}], // choosing your own password: the rules, the signal, the wording
   ['alarmstate', {}], // a helmet's alarm state, from the open alarms

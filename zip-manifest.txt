@@ -220,6 +220,7 @@ src/shared/components/BrandMark.tsx
 src/shared/components/Button.tsx
 src/shared/components/Card.tsx
 src/shared/components/Chip.tsx
+src/shared/components/ConfigProblemScreen.tsx
 src/shared/components/Container.tsx
 src/shared/components/Logo.tsx
 src/shared/components/PageTitle.tsx
@@ -250,6 +251,7 @@ src/shared/lib/tabletGate.ts
 src/shared/lib/token.ts
 src/shared/lib/unauthorized.ts
 src/shared/lib/uploadError.ts
+src/shared/lib/url.ts
 src/shared/lib/useNow.ts
 src/shared/lib/useTabletGate.ts
 src/shared/lib/wav.ts
@@ -260,6 +262,7 @@ src/shared/store/selectionStore.ts
 tests/alarmpopup.test.ts
 tests/alarmstate.test.ts
 tests/alarmtypes.test.ts
+tests/apiurl.test.ts
 tests/audio.test.ts
 tests/branding.test.ts
 tests/build.test.ts

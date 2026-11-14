@@ -215,6 +215,16 @@ disconnected helmet never shows "Yes"). The raw wear code is not read for a helm
 helmet maker's protocol `1` is not worn and `2` is worn, so "Worn" was the wrong way round against the live backend. Telemetry
 history rows carry no `worn` field, so those are read by that protocol.
 
+## The server address
+
+`EXPO_PUBLIC_API_BASE_URL` says which backend the app talks to. A release build must be given a full `https://` address, and `eas.json`
+sets it for the `preview` and `production` profiles, so a store build no longer relies on a hidden default. A build without a valid
+address does not start: it shows **This build is not set up** with the reason, instead of quietly using the production server or
+failing oddly later. Quotes, spaces and trailing slashes are removed, so `https://host/api/` and `https://host/api` behave the same,
+and the alarm stream address is built by a join that cannot double a slash. A developer build with nothing set uses the default, and a
+sample-data build (`EXPO_PUBLIC_USE_MOCKS=true`) never contacts a server, so it ignores all of this. The rules are in
+`src/config/env.ts` (`resolveApiBaseUrl`) and `src/shared/lib/url.ts`.
+
 ## Privacy policy
 
 Google Play wants the privacy policy reachable inside the app as well as on the store page. The app links to it from the **More**

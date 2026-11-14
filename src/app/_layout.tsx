@@ -1,3 +1,4 @@
+import { env } from '@/config/env'
 import '../../global.css'
 
 import { useEffect } from 'react'
@@ -26,6 +27,7 @@ import { AlarmChrome } from '@/modules/alarms/components/AlarmChrome'
 import { LiveAlarms } from '@/modules/alarms/components/LiveAlarms'
 import { PushRuntime } from '@/modules/push/components/PushRuntime'
 import { BrandTheme } from '@/modules/branding/components/BrandTheme'
+import { ConfigProblemScreen } from '@/shared/components/ConfigProblemScreen'
 import { PhoneBlockedScreen } from '@/shared/components/PhoneBlockedScreen'
 import { useTabletGate } from '@/shared/lib/useTabletGate'
 import { prefetchBranding } from '@/modules/branding/hooks/useBranding'
@@ -106,6 +108,7 @@ export default function RootLayout() {
   }, [ready])
 
   if (!ready) return null
+  if (env.configProblem) return <ConfigProblemScreen problem={env.configProblem} />
   if (gate.blocked) return <PhoneBlockedScreen smallestDp={gate.smallestDp} />
 
   return (
