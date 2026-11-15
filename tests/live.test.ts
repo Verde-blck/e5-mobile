@@ -34,7 +34,7 @@ const VIEWER_ME = { username: 'roletest', roleName: 'Viewer', superAdmin: false,
 
 async function main() {
   assert.equal(env.useMocks, false, 'live suite must run with mocks off')
-  assert.equal(env.apiBaseUrl, 'https://e5energy-production.up.railway.app/api')
+  assert.equal(env.apiBaseUrl, 'https://api.e5.test/api')
 
   await t('num/flag/ts behave like the web versions', () => {
     assert.equal(num('83'), 83); assert.equal(num(''), undefined); assert.equal(num('abc'), undefined)
@@ -96,7 +96,7 @@ async function main() {
     assert.equal(r.user.superAdmin, true); assert.equal(r.user.role, 'Super admin')
     assert.equal(r.user.permissions.length, ALL_PERMISSIONS.length); assert.equal(r.user.twoFactorEnabled, true)
     assert.deepEqual(http.calls.map((c) => `${c.method} ${c.url}`), ['POST /auth/login', 'GET /auth/me'])
-    assert.equal(http.calls[0].baseURL, 'https://e5energy-production.up.railway.app/api')
+    assert.equal(http.calls[0].baseURL, 'https://api.e5.test/api')
     assert.equal(http.calls[1].auth, `Bearer ${adminToken}`)
     assert.equal(tokenStore.get(), adminToken)
   })

@@ -28,23 +28,21 @@ export function cleanMapId(value: string | undefined): string | undefined {
   return /^[0-9a-f]{16,40}$/i.test(id) ? id : undefined
 }
 
-// What a developer's copy uses when nothing is set, so it runs with no set-up. A release build never falls back to it.
-export const DEFAULT_API_BASE_URL = 'https://e5energy-production.up.railway.app/api'
-
 export interface ApiBaseUrl {
   url: string
   problem: string | null
 }
 
 /**
- * The server address the app talks to, tidied: quotes, spaces and trailing slashes removed, because paths are joined onto it. A release
- * build has to be given a secure address, and says so plainly when it has none or a bad one, rather than quietly using a default
- * or starting with an address that cannot work. Sample-data builds never contact a server, so they have nothing to complain about.
+ * The server address the app talks to, tidied: quotes, spaces and trailing slashes removed, because paths are joined onto it.
+ * Every build that talks to a server must be given one. There is no default in any kind of build, because a build that quietly
+ * falls back to the production server is how test data ends up there. A release build also needs it to be https. A missing or bad
+ * address is reported here, and the app then shows it instead of starting. Sample-data builds never contact a server, so they have
+ * nothing to complain about.
  */
 export function resolveApiBaseUrl(raw: string | undefined, { release, useMocks }: { release: boolean; useMocks: boolean }): ApiBaseUrl {
   const url = (raw ?? '').trim().replace(/^["']|["']$/g, '').trim().replace(/\/+$/, '')
   if (url === '') {
-    if (!release) return { url: DEFAULT_API_BASE_URL, problem: null }
     return {
       url: '',
       problem: useMocks ? null : 'This build has no server address. It was built without the EXPO_PUBLIC_API_BASE_URL setting, so it does not know which E5 server to talk to.',

@@ -76,7 +76,8 @@ export default function RootLayout() {
   const usable = isAuthenticated && !mustSetup && !mustChange
 
   useEffect(() => {
-    if (gate.blocked) {
+    // Nothing is restored or fetched until the build is known to have a usable address.
+    if (gate.blocked || env.configProblem) {
       useAuthStore.getState().setBootstrapping(false)
       return
     }

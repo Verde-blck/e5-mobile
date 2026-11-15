@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { DEFAULT_API_BASE_URL, env, resolveApiBaseUrl } from '@/config/env'
+import { env, resolveApiBaseUrl } from '@/config/env'
 import { connectAlarmStream } from '@/modules/alarms/lib/alarmStream'
 import { joinUrl } from '@/shared/lib/url'
 import { createRunner } from './harness'
@@ -22,8 +22,11 @@ async function main() {
       assert.equal(r.url, '', JSON.stringify(raw)); assert.match(r.problem ?? '', /no server address/, JSON.stringify(raw))
     }
   })
-  await t('a developer build with nothing set still runs, using the default', () => {
-    for (const raw of [undefined, '', '  ']) assert.deepEqual(resolveApiBaseUrl(raw, dev), { url: DEFAULT_API_BASE_URL, problem: null })
+  await t('a developer build with no address is refused too: there is no fallback to the production server in any build', () => {
+    for (const raw of [undefined, '', '  ', '""']) {
+      const r = resolveApiBaseUrl(raw, dev)
+      assert.equal(r.url, '', JSON.stringify(raw)); assert.match(r.problem ?? '', /no server address/, JSON.stringify(raw))
+    }
   })
   await t('trailing slashes, spaces and quotes are removed, so the address is always joined onto cleanly', () => {
     for (const raw of ['https://h.example/api', 'https://h.example/api/', 'https://h.example/api///', '  https://h.example/api/  ', '"https://h.example/api/"', " 'https://h.example/api/' "]) {
@@ -71,7 +74,7 @@ async function main() {
     assert.equal(asked, `${env.apiBaseUrl}/alarms/stream`); assert.ok(!asked.replace('https://', '').includes('//'), asked)
   })
 
-  await t('every release build profile sets a valid server address itself, so none relies on a hidden default', () => {
+  await t('every build profile sets a valid server address itself, because no build has a default', () => {
     const eas = JSON.parse(readFileSync(resolve(process.cwd(), 'eas.json'), 'utf8')).build as Record<string, { extends?: string; env?: Record<string, string> }>
     const effective = (name: string): Record<string, string> => ({ ...(eas[name].extends ? effective(eas[name].extends as string) : {}), ...(eas[name].env ?? {}) })
     for (const name of Object.keys(eas)) {
@@ -79,7 +82,7 @@ async function main() {
       assert.ok(raw, `${name} sets EXPO_PUBLIC_API_BASE_URL`)
       assert.deepEqual(resolveApiBaseUrl(raw, release), { url: raw.replace(/\/+$/, ''), problem: null }, `${name} has a valid address`)
     }
-    assert.equal(eas.production.env?.EXPO_PUBLIC_API_BASE_URL, DEFAULT_API_BASE_URL, 'production keeps pointing where it always has')
+    assert.equal(eas.production.env?.EXPO_PUBLIC_API_BASE_URL, 'https://e5energy-production.up.railway.app/api', 'production keeps pointing where it always has')
   })
 }
 main().then(report)

@@ -267,6 +267,7 @@ tests/audio.test.ts
 tests/branding.test.ts
 tests/build.test.ts
 tests/calls.test.ts
+tests/configproblem.test.ts
 tests/fences.test.ts
 tests/flags.test.ts
 tests/gasstatus.test.ts

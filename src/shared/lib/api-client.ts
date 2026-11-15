@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { env } from '@/config/env'
-import { isForbidden, isPasswordChangeRequired, isSetupRequired } from './errors'
+import { ConfigProblemError, isForbidden, isPasswordChangeRequired, isSetupRequired } from './errors'
 import { tokenStore } from './token'
 import { emitPasswordChangeRequired, emitSetupRequired, emitUnauthorized } from './unauthorized'
 
@@ -13,6 +13,13 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use((config) => {
   const token = tokenStore.get()
   if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
+})
+
+// Registered after the token one on purpose: axios runs request interceptors last in, first out, so this one runs first. A build with no
+// usable server address stops here, before a saved login is attached and before anything is sent anywhere.
+apiClient.interceptors.request.use((config) => {
+  if (env.configProblem) throw new ConfigProblemError(env.configProblem)
   return config
 })
 

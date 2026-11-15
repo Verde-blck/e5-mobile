@@ -217,13 +217,17 @@ history rows carry no `worn` field, so those are read by that protocol.
 
 ## The server address
 
-`EXPO_PUBLIC_API_BASE_URL` says which backend the app talks to. A release build must be given a full `https://` address, and `eas.json`
-sets it for the `preview` and `production` profiles, so a store build no longer relies on a hidden default. A build without a valid
-address does not start: it shows **This build is not set up** with the reason, instead of quietly using the production server or
-failing oddly later. Quotes, spaces and trailing slashes are removed, so `https://host/api/` and `https://host/api` behave the same,
-and the alarm stream address is built by a join that cannot double a slash. A developer build with nothing set uses the default, and a
-sample-data build (`EXPO_PUBLIC_USE_MOCKS=true`) never contacts a server, so it ignores all of this. The rules are in
-`src/config/env.ts` (`resolveApiBaseUrl`) and `src/shared/lib/url.ts`.
+`EXPO_PUBLIC_API_BASE_URL` says which backend the app talks to. Every build that talks to a server must be given one. There is no
+default in any kind of build, developer builds included, so a build can never quietly end up on the production server. `eas.json` sets
+it for the `preview`, `production` and `live` profiles, and a developer sets it in their `.env` (see `.env.example`). A release build
+also needs a full `https://` address.
+
+A build without a valid address does not start: it shows **This build is not set up** with the reason. The check happens before
+anything else. The app does not restore a saved login, fetch branding or open the alarm stream, and the API client refuses to send
+any request, so a saved login cannot be sent anywhere. Quotes, spaces and trailing slashes are removed, so `https://host/api/` and
+`https://host/api` behave the same, and the alarm stream address is built by a join that cannot double a slash. A sample-data build
+(`EXPO_PUBLIC_USE_MOCKS=true`) never contacts a server, so it ignores all of this. The rules are in `src/config/env.ts`
+(`resolveApiBaseUrl`), `src/shared/lib/api-client.ts` and `src/shared/lib/url.ts`.
 
 ## Privacy policy
 

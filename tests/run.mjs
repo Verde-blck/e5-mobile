@@ -5,6 +5,9 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
+// There is no default address, so every suite is given one; the config-problem suite overrides it with nothing.
+const TEST_API_URL = 'https://api.e5.test/api'
+
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const suites = [
   ['live', {}],
@@ -16,7 +19,8 @@ const suites = [
   ['worker', {}],
   ['branding', {}],
   ['media', {}],
-  ['apiurl', {}], // the server address: tidied, and never guessed in a release
+  ['apiurl', {}], // the server address: tidied, and never guessed
+  ['configproblem', { EXPO_PUBLIC_API_BASE_URL: '' }], // a build with no address sends nothing at all
   ['privacypolicy', {}], // the address the app links to
   ['passwordchange', {}], // choosing your own password: the rules, the signal, the wording
   ['alarmstate', {}], // a helmet's alarm state, from the open alarms
@@ -66,7 +70,7 @@ for (const [name, env] of suites) {
   console.log(`\n== ${name} suite ==`)
   const run = spawnSync(process.execPath, [outfile], {
     stdio: 'inherit',
-    env: { ...process.env, ...env, NODE_PATH: path.join(root, 'node_modules') },
+    env: { ...process.env, EXPO_PUBLIC_API_BASE_URL: TEST_API_URL, ...env, NODE_PATH: path.join(root, 'node_modules') },
   })
   if (run.status !== 0) failed = true
 }

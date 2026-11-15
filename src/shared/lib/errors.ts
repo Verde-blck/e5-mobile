@@ -22,6 +22,18 @@ export function isSetupRequired(error: unknown): boolean {
   return statusOf(error) === 403 && bodyOf(error)?.error === '2fa_setup_required'
 }
 
+/** Thrown instead of sending a request when this build has no usable server address. */
+export class ConfigProblemError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ConfigProblemError'
+  }
+}
+
+export function isConfigProblem(error: unknown): boolean {
+  return error instanceof ConfigProblemError
+}
+
 export function isPasswordChangeRequired(error: unknown): boolean {
   return statusOf(error) === 403 && bodyOf(error)?.error === 'password_change_required'
 }

@@ -100,6 +100,8 @@ export function backoffMs(attempt: number, random: number = Math.random()): numb
 // Stops by itself only when retrying can't help: a dead token (401, or a 403 without the
 // "forbidden" body), which ends the session, or an account that isn't allowed the stream.
 export function connectAlarmStream(options: AlarmStreamOptions): { stop(): void } {
+  // This is a request that does not go through the API client, so it checks the address itself.
+  if (env.configProblem) return { stop() {} }
   const url = options.url ?? joinUrl(env.apiBaseUrl, 'alarms/stream')
   const doFetch = options.fetchImpl ?? ((input, init) => fetch(input, init))
   const getToken = options.getToken ?? (() => tokenStore.get())
