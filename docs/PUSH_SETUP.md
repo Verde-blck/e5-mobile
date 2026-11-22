@@ -70,7 +70,8 @@ Until step 1 the app says plainly that alerts need the app to be open, and nothi
 - **Clearing a resolved alarm's notification** (a data-only push) works while the app is open. With the app in the
   background Android doesn't run app code for it, so the notification stays until dismissed. A background task could
   fix that; it isn't built.
-- **No collapse tag:** Expo has none, so a repeat push for the same alarm can stack.
+- **Repeat pushes can stack.** Expo's reference now lists a `collapseId` (Android and iOS). The backend does not set it yet; ask Cypher to use the alarm id.
+- **iPad:** alerts for a locked iPad are a separate switch with their own set-up. See `docs/IPAD.md`.
 - **A lost tablet** is cut off by deleting the account (`DELETE /api/admins/{id}`; its token then gets 401 and its push
   registrations are dropped). Logout, revoke-sessions and disable endpoints aren't built.
 - The siren on the lock screen comes from the channel. A person can lower or silence a channel in the tablet's

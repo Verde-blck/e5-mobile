@@ -1,15 +1,16 @@
-import { View } from 'react-native'
+import { Platform, View } from 'react-native'
 import Feather from '@expo/vector-icons/Feather'
 import { env } from '@/config/env'
 import { Button } from '@/shared/components/Button'
 import { Text } from '@/shared/components/Text'
 import { describeStatus } from '../lib/describe'
+import { isPushEnabled } from '../lib/enabled'
 import { usePushStore } from '../store/pushStore'
 import { perform } from './AlertsCard'
 
 export function AlertsBanner() {
   const status = usePushStore((s) => s.status)
-  if (!env.pushEnabled || (status !== 'needs-permission' && status !== 'blocked' && status !== 'error')) return null
+  if (!isPushEnabled(Platform.OS, env) || (status !== 'needs-permission' && status !== 'blocked' && status !== 'error')) return null
   const copy = describeStatus(status)
   return (
     <View accessibilityRole="alert" className="mb-4 rounded-2xl bg-amber-50 p-4">

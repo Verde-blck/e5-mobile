@@ -2,6 +2,7 @@ docs/BRANDING.md
 docs/CALLS.md
 docs/GOOGLE_MAPS.md
 docs/GROUP_CALL.md
+docs/IPAD.md
 docs/PUSH_SETUP.md
 docs/STORE_RELEASE.md
 docs/TABLETS_ONLY.md
@@ -127,11 +128,13 @@ src/modules/live/lib/wall.ts
 src/modules/live/lib/webrtc.ts
 src/modules/live/lib/webrtc.web.ts
 src/modules/live/types.ts
-src/modules/map/components/GoogleMapSurface.tsx
 src/modules/map/components/LeafletMapSurface.tsx
+src/modules/map/components/MapFallback.tsx
 src/modules/map/components/MapSurface.android.tsx
+src/modules/map/components/MapSurface.ios.tsx
 src/modules/map/components/MapSurface.tsx
 src/modules/map/components/MapSurface.web.tsx
+src/modules/map/components/NativeMapSurface.tsx
 src/modules/map/leaflet.generated.ts
 src/modules/map/lib/engine.ts
 src/modules/map/lib/mapData.ts
@@ -170,6 +173,7 @@ src/modules/push/hooks/usePushSetup.ts
 src/modules/push/lib/adapter.ts
 src/modules/push/lib/channels.ts
 src/modules/push/lib/describe.ts
+src/modules/push/lib/enabled.ts
 src/modules/push/lib/expoToken.ts
 src/modules/push/lib/foreground.ts
 src/modules/push/lib/installId.ts
@@ -273,6 +277,7 @@ tests/flags.test.ts
 tests/gasstatus.test.ts
 tests/groupsession.test.ts
 tests/harness.ts
+tests/ipad.test.ts
 tests/layout.test.ts
 tests/live.test.ts
 tests/map.test.ts

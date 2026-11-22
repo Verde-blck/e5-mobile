@@ -3,6 +3,8 @@
 export const SOS_CHANNEL = 'sos'
 export const ALARM_CHANNEL = 'alarm'
 export const SIREN_SOUND = 'sos.wav'
+// iPad alerts play this once, so it is long. It is a separate file, and the Android siren above is unchanged. Apple limits it to 30 seconds.
+export const IOS_SIREN_SOUND = 'sos-long.wav'
 
 export interface ChannelSpec {
   id: string

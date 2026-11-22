@@ -67,7 +67,8 @@ function EndPin({ letter, colour }: { letter: string; colour: string }) {
 const CursorPin = () => <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 4, borderColor: '#FFFFFF', backgroundColor: COLOURS.cursor, outlineColor: COLOURS.cursorRing }} />
 const DotPin = () => <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: COLOURS.route, backgroundColor: COLOURS.route }} />
 
-export function GoogleMapSurface(props: MapSurfaceProps) {
+// One map for both phones' native engines: Google on Android, Apple Maps on an iPad. Only the provider and the Google-only settings differ.
+function NativeMapSurface(props: MapSurfaceProps & { provider: 'google' | 'apple' }) {
   const { helmets, alarms, selectedId, fences, selectedFenceId, dimFences, draft, track, cursor, fitKey, fitTarget, fitInsetBottom } = props
   const mapRef = useRef<MapView>(null)
   const markers = useRef<Record<string, MarkerRef | null>>({})
@@ -164,9 +165,9 @@ export function GoogleMapSurface(props: MapSurfaceProps) {
     <View style={styles.fill} onLayout={onLayout}>
       <MapView
         ref={mapRef}
-        provider={PROVIDER_GOOGLE}
+        provider={props.provider === 'google' ? PROVIDER_GOOGLE : undefined}
         style={StyleSheet.absoluteFill}
-        {...(env.googleMapId ? { googleMapId: env.googleMapId, googleRenderer: 'LATEST' as const } : {})}
+        {...(props.provider === 'google' && env.googleMapId ? { googleMapId: env.googleMapId, googleRenderer: 'LATEST' as const } : {})}
         initialCamera={START}
         minZoomLevel={3}
         maxZoomLevel={19}
@@ -313,3 +314,6 @@ const styles = StyleSheet.create({
   centred30: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   handleText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
 })
+
+export const GoogleMapSurface = (props: MapSurfaceProps) => <NativeMapSurface {...props} provider="google" />
+export const AppleMapSurface = (props: MapSurfaceProps) => <NativeMapSurface {...props} provider="apple" />

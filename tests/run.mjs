@@ -19,6 +19,7 @@ const suites = [
   ['worker', {}],
   ['branding', {}],
   ['media', {}],
+  ['ipad', {}], // the iPad: map, push switch and registration, app settings, siren
   ['apiurl', {}], // the server address: tidied, and never guessed
   ['configproblem', { EXPO_PUBLIC_API_BASE_URL: '' }], // a build with no address sends nothing at all
   ['privacypolicy', {}], // the address the app links to

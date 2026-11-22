@@ -7,7 +7,7 @@ import { statusOf } from '@/shared/lib/errors'
 export interface PushRegistration {
   installId: string
   token: string
-  platform: 'android'
+  platform: 'android' | 'ios'
   appVersion: string
 }
 

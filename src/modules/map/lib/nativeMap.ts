@@ -31,12 +31,18 @@ export function withAlpha(hex: string, alpha: number): string {
   return `rgba(${parseInt(v.slice(0, 2), 16)}, ${parseInt(v.slice(2, 4), 16)}, ${parseInt(v.slice(4, 6), 16)}, ${alpha})`
 }
 
-export type MapEngine = 'google' | 'leaflet'
+export type MapEngine = 'google' | 'apple' | 'leaflet'
 
+/**
+ * Android with a Google key in the build gets Google Maps. An iPad gets Apple Maps, which needs no key. Everything else, and anything
+ * with the preference set to osm, gets the OpenStreetMap map, so there is never a blank map.
+ */
 export function chooseMapEngine(options: { platform: string; hasKey: boolean; preference?: string }): MapEngine {
-  if (options.platform !== 'android' || !options.hasKey) return 'leaflet'
   const preference = (options.preference ?? '').trim().toLowerCase()
-  return preference === 'osm' || preference === 'leaflet' ? 'leaflet' : 'google'
+  const forceOsm = preference === 'osm' || preference === 'leaflet'
+  if (options.platform === 'ios') return forceOsm ? 'leaflet' : 'apple'
+  if (options.platform !== 'android' || !options.hasKey) return 'leaflet'
+  return forceOsm ? 'leaflet' : 'google'
 }
 
 export interface FenceStyle {

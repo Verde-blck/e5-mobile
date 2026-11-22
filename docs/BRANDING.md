@@ -30,7 +30,7 @@ appears on the sign-in card and in More > About.
 
 The app is locked to **portrait** (`orientation` in `app.json`). Layouts that split into two panes (map and
 list, editor and map) still exist for screens at least 840 dp wide, which in portrait means only the largest
-tablets, and the browser preview.
+tablets, and the browser preview. An iPad is the exception: Apple requires iPad apps to rotate, so it also uses landscape.
 
 ## Start-up
 

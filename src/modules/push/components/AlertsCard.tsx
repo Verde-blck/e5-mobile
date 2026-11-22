@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View } from 'react-native'
+import { Platform, View } from 'react-native'
 import Feather from '@expo/vector-icons/Feather'
 import { Button } from '@/shared/components/Button'
 import { Card } from '@/shared/components/Card'
@@ -64,7 +64,7 @@ export function AlertsCard() {
         <View className="mt-3 gap-2 border-t border-slate-100 pt-3">
           <Button title="Send a test alert" variant="secondary" icon="volume-2" onPress={() => void sendTest()} />
           {note ? <Text className="text-xs leading-5 text-slate-600">{note}</Text> : null}
-          <Button title="Battery settings" variant="ghost" icon="battery" onPress={() => void notifications.openBatterySettings()} />
+          {Platform.OS !== 'ios' ? <Button title="Battery settings" variant="ghost" icon="battery" onPress={() => void notifications.openBatterySettings()} /> : null}
           <Text className="text-xs leading-5 text-slate-500">
             On some tablets, battery saving stops apps from waking a locked screen. Set this app to "Unrestricted" or "Don't optimise" so alarms get through.
           </Text>

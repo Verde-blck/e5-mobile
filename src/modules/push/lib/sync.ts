@@ -1,6 +1,7 @@
 import type { PushRegistration } from '../api/push.api'
 import type { PushAdapter } from './adapter'
 import type { PushStatus } from '../types'
+import type { PushPlatform } from './enabled'
 import { isExpoPushToken } from './expoToken'
 
 export interface SyncDeps {
@@ -8,10 +9,11 @@ export interface SyncDeps {
   register: (registration: PushRegistration) => Promise<void>
   installId: () => Promise<string>
   appVersion: string
+  platform: PushPlatform
   ask: boolean
 }
 
-export async function syncPush({ adapter, register, installId, appVersion, ask }: SyncDeps): Promise<PushStatus> {
+export async function syncPush({ adapter, register, installId, appVersion, platform, ask }: SyncDeps): Promise<PushStatus> {
   if (!adapter.isSupported()) return 'unavailable'
   await adapter.setup()
 
@@ -32,7 +34,7 @@ export async function syncPush({ adapter, register, installId, appVersion, ask }
   if (!isExpoPushToken(token)) return 'unavailable'
 
   try {
-    await register({ installId: await installId(), token, platform: 'android', appVersion })
+    await register({ installId: await installId(), token, platform, appVersion })
   } catch {
     return 'error'
   }

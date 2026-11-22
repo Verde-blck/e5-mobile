@@ -10,9 +10,9 @@ const helmet = (over: Partial<MapHelmet> = {}): MapHelmet => ({ id: 'h', name: '
 const span = (pts: { latitude: number; longitude: number }[]) => ({ lat: Math.max(...pts.map((p) => p.latitude)) - Math.min(...pts.map((p) => p.latitude)), lng: Math.max(...pts.map((p) => p.longitude)) - Math.min(...pts.map((p) => p.longitude)) })
 
 async function main() {
-  await t('the Google map is used only on an Android build with a Google key, and the OpenStreetMap map everywhere else, including when asked for', () => {
+  await t('the Google map is used only on an Android build with a Google key, Apple Maps on an iPad, and the OpenStreetMap map everywhere else, including when asked for', () => {
     assert.equal(chooseMapEngine({ platform: 'android', hasKey: true }), 'google')
-    assert.equal(chooseMapEngine({ platform: 'android', hasKey: false }), 'leaflet', 'no key: never a blank map'); assert.equal(chooseMapEngine({ platform: 'web', hasKey: true }), 'leaflet', 'the browser preview'); assert.equal(chooseMapEngine({ platform: 'ios', hasKey: true }), 'leaflet')
+    assert.equal(chooseMapEngine({ platform: 'android', hasKey: false }), 'leaflet', 'no key: never a blank map'); assert.equal(chooseMapEngine({ platform: 'web', hasKey: true }), 'leaflet', 'the browser preview'); assert.equal(chooseMapEngine({ platform: 'ios', hasKey: true }), 'apple', 'an iPad does not use the Google key')
     for (const back of ['osm', 'OSM', ' osm ', 'leaflet']) assert.equal(chooseMapEngine({ platform: 'android', hasKey: true, preference: back }), 'leaflet', `"${back}" is the way back`)
     for (const other of [undefined, '', 'google', 'nonsense']) assert.equal(chooseMapEngine({ platform: 'android', hasKey: true, preference: other }), 'google', `${other}`)
   })

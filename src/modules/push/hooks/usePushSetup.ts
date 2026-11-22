@@ -1,11 +1,12 @@
 import { useEffect } from 'react'
-import { AppState } from 'react-native'
+import { AppState, Platform } from 'react-native'
 import Constants from 'expo-constants'
 import { env } from '@/config/env'
 import { queryClient } from '@/shared/lib/query-client'
 import { openAlarm } from '@/modules/alarms/components/AlarmCard'
 import { ALARMS_KEY } from '@/modules/alarms/lib/alarm-cache'
 import { registerPush } from '../api/push.api'
+import { isPushEnabled, registrationPlatform } from '../lib/enabled'
 import { getInstallId } from '../lib/installId'
 import { notifications } from '../lib/notifications'
 import { parsePushData } from '../lib/payload'
@@ -20,7 +21,7 @@ let handledLaunchTap = false
 // so the system permission prompt never appears out of the blue.
 export async function runPushSetup(ask: boolean): Promise<void> {
   const { setStatus } = usePushStore.getState()
-  if (!env.pushEnabled) {
+  if (!isPushEnabled(Platform.OS, env)) {
     setStatus('off')
     return
   }
@@ -29,7 +30,7 @@ export async function runPushSetup(ask: boolean): Promise<void> {
   try {
     if (ask) setStatus('registering')
     setStatus(
-      await syncPush({ adapter: notifications, register: registerPush, installId: getInstallId, appVersion, ask })
+      await syncPush({ adapter: notifications, register: registerPush, installId: getInstallId, appVersion, platform: registrationPlatform(Platform.OS), ask })
     )
   } finally {
     running = false
@@ -60,11 +61,11 @@ export function usePushSetup(): void {
       if (state === 'active' && usePushStore.getState().status === 'blocked') void runPushSetup(false)
     })
 
-    if (!env.pushEnabled) return () => appState.remove()
+    if (!isPushEnabled(Platform.OS, env)) return () => appState.remove()
 
     const stopToken = notifications.onTokenChange(async (token) => {
       try {
-        await registerPush({ installId: await getInstallId(), token, platform: 'android', appVersion })
+        await registerPush({ installId: await getInstallId(), token, platform: registrationPlatform(Platform.OS), appVersion })
       } catch {
         usePushStore.getState().setStatus('error')
       }

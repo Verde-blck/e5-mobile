@@ -3,7 +3,7 @@ import Constants from 'expo-constants'
 import * as Notifications from 'expo-notifications'
 import { streamStatus } from '@/modules/alarms/lib/alarmStream'
 import type { PermissionState, PushAdapter } from './adapter'
-import { CHANNELS, SOS_CHANNEL } from './channels'
+import { CHANNELS, IOS_SIREN_SOUND, SOS_CHANNEL } from './channels'
 import { appCoversAlarm, shouldShowInForeground } from './foreground'
 import { parsePushData } from './payload'
 
@@ -28,7 +28,7 @@ async function fetchExpoToken(): Promise<string> {
 }
 
 export const notifications: PushAdapter = {
-  isSupported: () => Platform.OS === 'android',
+  isSupported: () => Platform.OS === 'android' || Platform.OS === 'ios',
 
   async setup() {
     if (configured) return
@@ -45,6 +45,8 @@ export const notifications: PushAdapter = {
       },
     })
 
+    // Channels are an Android idea. An Apple device takes the sound and level from each alert instead.
+    if (Platform.OS !== 'android') return
     for (const channel of CHANNELS) {
       await Notifications.setNotificationChannelAsync(channel.id, {
         name: channel.name,
@@ -74,7 +76,8 @@ export const notifications: PushAdapter = {
   },
 
   async requestPermission(): Promise<PermissionState> {
-    const result = await Notifications.requestPermissionsAsync()
+    // Alerts and sound only: no badge. Critical Alerts are not asked for until Apple has granted that permission.
+    const result = await Notifications.requestPermissionsAsync({ ios: { allowAlert: true, allowSound: true, allowBadge: false } })
     return result.granted ? 'granted' : 'denied'
   },
 
@@ -119,6 +122,7 @@ export const notifications: PushAdapter = {
         title: 'Test alert',
         body: 'If you heard the siren and can see this on the lock screen, alarms will reach this tablet.',
         data: { kind: 'test' },
+        ...(Platform.OS === 'ios' ? { sound: IOS_SIREN_SOUND, interruptionLevel: 'timeSensitive' as const } : {}),
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
@@ -133,6 +137,7 @@ export const notifications: PushAdapter = {
   },
 
   async openBatterySettings() {
+    if (Platform.OS !== 'android') return
     try {
       await Linking.sendIntent('android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS')
     } catch {

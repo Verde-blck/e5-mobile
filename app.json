@@ -8,10 +8,14 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.e5energy.smarthelmet",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "isTabletOnly": true,
+      "entitlements": {
+        "com.apple.developer.usernotifications.time-sensitive": true
       }
     },
     "android": {
@@ -51,7 +55,7 @@
       [
         "expo-audio",
         {
-          "microphonePermission": "The microphone is used to record fence warning clips.",
+          "microphonePermission": "The microphone is used for calls with the person wearing a helmet, for voice messages to helmets, and to record fence warning clips.",
           "recordAudioAndroid": true,
           "enableBackgroundPlayback": false
         }
@@ -81,7 +85,8 @@
           "color": "#0A6659",
           "defaultChannel": "alarm",
           "sounds": [
-            "./assets/sounds/sos.wav"
+            "./assets/sounds/sos.wav",
+            "./assets/sounds/sos-long.wav"
           ]
         }
       ],
@@ -89,7 +94,7 @@
         "@config-plugins/react-native-webrtc",
         {
           "cameraPermission": "The camera is used for video calls with the person wearing a helmet.",
-          "microphonePermission": "The microphone is used to talk with the person wearing a helmet."
+          "microphonePermission": "The microphone is used for calls with the person wearing a helmet, for voice messages to helmets, and to record fence warning clips."
         }
       ],
       "./plugins/withTabletScreens"

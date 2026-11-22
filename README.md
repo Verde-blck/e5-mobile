@@ -105,15 +105,15 @@ tests/              Logic tests (run with `npm test`)
 
 ## Tablet layout
 
-The app targets Android tablets of 8 inches and up, held in the hand, in both orientations.
-Layout follows the *window* width in dp (`shared/lib/layout.ts`), so turning the tablet or
-using split-screen changes it live:
+The app targets Android tablets of 8 inches and up. Android is **locked to portrait** (`orientation` in `app.json`); an iPad rotates, because Apple
+requires it (see `docs/IPAD.md`). Layout follows the *window* width in dp (`shared/lib/layout.ts`), so on a device that rotates or splits its
+screen it changes live:
 
 | Width | Typical device | Layout |
 | --- | --- | --- |
 | under 600 dp | a phone | one pane, bottom bar of five (Dashboard, Monitoring, Live Map, Alarms, More); Live wall, Track, Group call and Admins are in More |
 | 600-839 dp | 8-10" tablet, portrait | one pane, the side rail with every module, content capped at 720 dp |
-| 840 dp and up | 8-10" tablet, landscape | the side rail; list and detail side by side |
+| 840 dp and up | the largest tablets in portrait, an iPad in landscape, and the browser preview | the side rail; list and detail side by side |
 
 - **List and detail.** On a wide screen, Alarms and Monitoring show the list on the left and
   the chosen item on the right. The detail screens (`AlarmDetailView`, `HelmetDetailView`)
@@ -214,6 +214,12 @@ on the helmet's card in the list.
 disconnected helmet never shows "Yes"). The raw wear code is not read for a helmet: earlier builds treated `1` as worn, but in the
 helmet maker's protocol `1` is not worn and `2` is worn, so "Worn" was the wrong way round against the live backend. Telemetry
 history rows carry no `worn` field, so those are read by that protocol.
+
+## The iPad version
+
+The app also builds as an iPad-only app, with Apple Maps, a longer siren sound and its own alert switch (`EXPO_PUBLIC_PUSH_IOS_ENABLED`, off until
+the backend accepts iPads). Nothing has been run on an iPad yet. Everything about it, including what is built, what is not checked and how to
+turn on alerts, is in `docs/IPAD.md`.
 
 ## The server address
 

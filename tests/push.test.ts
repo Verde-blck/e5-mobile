@@ -36,7 +36,7 @@ function fakeAdapter(over: Partial<{ supported: boolean; permission: PermissionS
 }
 async function run(over: Parameters<typeof fakeAdapter>[0], ask: boolean, registerFails = false) {
   const { adapter, calls } = fakeAdapter(over); const sent: unknown[] = []
-  const status = await syncPush({ adapter, ask, appVersion: '1.2.3', installId: async () => ID, register: async (r) => { if (registerFails) throw new Error('down'); sent.push(r) } })
+  const status = await syncPush({ adapter, ask, appVersion: '1.2.3', platform: 'android', installId: async () => ID, register: async (r) => { if (registerFails) throw new Error('down'); sent.push(r) } })
   return { status, calls, sent }
 }
 
@@ -70,7 +70,7 @@ async function main() {
   await t('the siren file really is in the app, and the notifications plugin bundles it', () => {
     assert.ok(fs.existsSync(`assets/sounds/${SIREN_SOUND}`) && fs.statSync(`assets/sounds/${SIREN_SOUND}`).size > 10_000)
     const plugin = JSON.parse(fs.readFileSync('app.json', 'utf8')).expo.plugins.find((p: unknown) => Array.isArray(p) && p[0] === 'expo-notifications')
-    assert.ok(plugin, 'plugin present'); assert.deepEqual(plugin[1].sounds, [`./assets/sounds/${SIREN_SOUND}`]); assert.equal(plugin[1].defaultChannel, ALARM_CHANNEL)
+    assert.ok(plugin, 'plugin present'); assert.deepEqual(plugin[1].sounds, [`./assets/sounds/${SIREN_SOUND}`, './assets/sounds/sos-long.wav'], 'the Android siren, and the longer one for iPad alerts'); assert.equal(plugin[1].defaultChannel, ALARM_CHANNEL)
     assert.ok(fs.existsSync(plugin[1].icon), 'the status-bar icon exists')
   })
 

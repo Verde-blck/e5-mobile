@@ -74,6 +74,8 @@ export const env = {
   privacyPolicyUrl: cleanHttpsUrl(process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL) ?? DEFAULT_PRIVACY_POLICY_URL,
   // Needs Firebase and the backend's push; while off, or with no Firebase on the tablet, the app says plainly that alerts need the app to be open.
   pushEnabled: parseFlag(process.env.EXPO_PUBLIC_PUSH_ENABLED),
+  // Apple devices have their own switch, so Android alerts can stay on while iPad alerts wait for the backend to accept them.
+  pushIosEnabled: parseFlag(process.env.EXPO_PUBLIC_PUSH_IOS_ENABLED),
   // Live view, calls and group calls. Off unless a build turns it on: the production and live profiles do.
   liveEnabled: parseFlag(process.env.EXPO_PUBLIC_LIVE_ENABLED),
   // The backend has no push channel for the dashboard, so lists poll.
