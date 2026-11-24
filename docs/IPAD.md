@@ -57,19 +57,28 @@ An iPhone gets the compact layout (a bottom tab bar), portrait only. The phone b
 TestFlight testing, so **never submit it for App Store review**: the first build sent to Apple for review must come from the `production` profile, which is iPad only.
 It tests function (sign-in, calls with a real camera and microphone, the siren, permission prompts), not the iPad layout.
 
-## Found on the first iPhone run (24 November)
+## Found on the first iPhone run (24 and 25 November)
 
-On the two-step screen the **Verify and sign in button was not visible**, and an iPhone number keypad has no Go key, so there was no way to send the code.
-The cause was almost certainly the button's shadow: it combined an inner and an outer shadow in one `boxShadow` string, which left the background undrawn
-on iOS (white text on a white card). It was the only inner shadow in the app, and the card's ordinary shadow drew fine. Fixes:
+**1. The Verify and sign in button was invisible on the iPhone.** An iPhone number keypad has no Go key, so the code could not be sent. The first guess was
+the button's combined inner and outer `boxShadow`, which was replaced with iPhone-safe shadow settings (`src/modules/auth/lib/shadow.ts`). That was **not
+enough**: the button was still invisible in the next build. So `AuthButton` is now a `TouchableOpacity` with one static style and a border (so it shows
+even if a fill fails to draw), not a `Pressable` with a style function. **Not yet confirmed on an iPhone.** If it is still invisible, the cause is
+something else in how an iOS build draws that component, and the first sign-in screen's button needs checking too.
 
-- Apple devices now get the classic shadow settings for that button (`src/modules/auth/lib/shadow.ts`). The other platforms are unchanged.
-- The code box sends the code **by itself on the sixth digit**, which also suits autofill and paste (`src/modules/auth/lib/code.ts`). A wrong code is
-  refused and the box is cleared. The button still works by hand.
-- A plain line, "Checking the code..." or "Signing in...", shows while a request is running, so a button that fails to draw can never again leave the
-  screen looking frozen.
+**2. Every code was refused**, although the website accepted the same account. The request is identical to the website's (`POST /auth/login/verify-2fa`
+with `username`, `code` and, if the server issues one, `mfaToken`). The backend does not issue an `mfaToken` today, so it may keep a short-lived pending
+login for the username instead, and a code sent after that expired, or after a first attempt used it up, would be refused, as would every retry. The app
+used to treat 400 and 401 as the same plain "That code didn't work", so the real reason was hidden. Now:
 
-Confirmed in the browser and by tests only. It still has to be confirmed on the iPhone, in the next TestFlight build.
+- A refused code (400 or 401) shows the server's own reason, such as `(Reference: 401 no_pending_login)`, so it can be quoted (`errorReference` in `src/shared/lib/errors.ts`, `codeRefusal` in `src/modules/auth/lib/code.ts`).
+- After that refusal the app **signs in again by itself** to get a fresh challenge, so the next code is not sent on a spent one.
+- One request is sent at a time, however the keyboard fires its events (`inFlight` in `src/app/sign-in.tsx`).
+
+Tested in a browser against a pretend server that forgets the pending login before the first code, and one that spends it on a wrong code. **The true cause
+is still unknown**: it depends on what the real server answers, and the Reference now shows that.
+
+**3. The code box sends the code by itself on the sixth digit**, which also suits autofill and paste (`src/modules/auth/lib/code.ts`). A plain line,
+"Checking the code..." or "Signing in...", shows while a request runs, so a button that fails to draw can never again leave the screen looking frozen.
 
 ## No iPad to hand? Use Expo's remote iPad simulator
 

@@ -30,6 +30,16 @@ export class ConfigProblemError extends Error {
   }
 }
 
+/** The status and the server's own short reason, such as "401 invalid_code", so a refusal can be told apart when someone quotes it. Empty when there was no reply. */
+export function errorReference(error: unknown): string {
+  const status = statusOf(error)
+  if (status === undefined) return ''
+  const body = bodyOf(error)
+  const reason = [body?.error, body?.message, body?.code].find((v): v is string => typeof v === 'string' && v.trim().length > 0) ?? ''
+  const tidy = reason.replace(/[^A-Za-z0-9_ .:-]/g, '').trim().slice(0, 40)
+  return tidy ? `${status} ${tidy}` : String(status)
+}
+
 export function isConfigProblem(error: unknown): boolean {
   return error instanceof ConfigProblemError
 }

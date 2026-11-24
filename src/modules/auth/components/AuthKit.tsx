@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ActivityIndicator, Pressable, TextInput, View, type TextInputProps, Platform } from 'react-native'
+import { ActivityIndicator, Platform, Pressable, TextInput, TouchableOpacity, View, type TextInputProps } from 'react-native'
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import { buttonShadow } from '../lib/shadow'
 import { useBrandColours } from '@/modules/branding/hooks/useBranding'
@@ -155,32 +155,36 @@ function shade(hex: string, amount: number): string {
 export function AuthButton({ title, busyTitle, busy, disabled, onPress }: { title: string; busyTitle?: string; busy?: boolean; disabled?: boolean; onPress: () => void }) {
   const brand = useBrandColours()
   const inactive = !!busy || !!disabled
+  // A touchable with one static style, not a Pressable with a style function. The Pressable version drew no background on an iPhone, which left
+  // white text on a white card; the border keeps the button visible even if a fill ever fails to draw.
   return (
-    <Pressable
+    <TouchableOpacity
       accessibilityRole="button"
       accessibilityLabel={title}
       accessibilityState={{ disabled: inactive, busy: !!busy }}
+      activeOpacity={0.85}
       disabled={inactive}
       onPress={onPress}
-      style={({ pressed }) => ({
+      style={{
         height: 46.5,
         borderRadius: 8,
-        backgroundColor: pressed ? shade(brand.primary, 0.92) : brand.primary,
+        borderWidth: 1,
+        borderColor: brand.primary,
+        backgroundColor: brand.primary,
         opacity: busy ? 0.8 : disabled ? 0.5 : 1,
-        transform: [{ translateY: pressed ? 1 : 0 }],
         ...buttonShadow(Platform.OS, { solid: brand.primary, soft: rgba(brand.primary, 0.7) }),
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
         paddingHorizontal: 16,
-      })}
+      }}
     >
       {busy ? <ActivityIndicator size="small" color="#FFFFFF" /> : null}
       <Text className="font-sans-semibold" style={{ fontSize: 15, color: '#FFFFFF' }}>
         {busy ? (busyTitle ?? title) : title}
       </Text>
-    </Pressable>
+    </TouchableOpacity>
   )
 }
 

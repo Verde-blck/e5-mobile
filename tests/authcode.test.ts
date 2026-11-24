@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
-import { cleanCode, isCompleteCode } from '@/modules/auth/lib/code'
+import { cleanCode, codeRefusal, isCompleteCode } from '@/modules/auth/lib/code'
+import { errorReference } from '@/shared/lib/errors'
 import { buttonShadow } from '@/modules/auth/lib/shadow'
 import { createRunner } from './harness'
 
@@ -28,6 +29,25 @@ async function main() {
       const other = buttonShadow(os, colour) as { boxShadow?: string }
       assert.match(other.boxShadow ?? '', /^inset 0 1px 0 /, `${os} keeps the look it always had`); assert.ok(!('shadowColor' in other))
     }
+  })
+  const failure = (status?: number, data?: unknown) => (status === undefined ? new Error('Network Error') : { response: { status, data } })
+  await t('a refused code shows the server\'s own reason, so a wrong code can be told from an expired or spent challenge when someone quotes it', () => {
+    assert.equal(errorReference(failure(401, { error: 'invalid_code' })), '401 invalid_code')
+    assert.equal(errorReference(failure(400, { message: 'Token expired' })), '400 Token expired')
+    assert.equal(errorReference(failure(401)), '401', 'no body: just the status')
+    assert.equal(errorReference(failure()), '', 'no reply at all: nothing to quote')
+    assert.equal(errorReference(failure(401, { error: '<b>bad</b> & "odd" characters!' })), '401 bbadb  odd characters', 'only safe characters')
+    assert.ok(errorReference(failure(400, { message: 'x'.repeat(300) })).length <= 44, 'kept short')
+  })
+  await t('a 400 or 401 asks for a new login challenge before the next try, and other failures do not', () => {
+    for (const status of [400, 401]) {
+      const r = codeRefusal(failure(status, { error: 'invalid_code' }))
+      assert.equal(r.freshChallenge, true, String(status)); assert.match(r.message, /^That code didn't work\./); assert.match(r.message, /\(Reference: \d{3} invalid_code\)$/)
+    }
+    assert.match(codeRefusal(failure(401)).message, /\(Reference: 401\)$/)
+    assert.deepEqual(codeRefusal(failure(429)), { message: 'Too many attempts. Wait a minute and try again.', freshChallenge: false })
+    assert.deepEqual(codeRefusal(failure(503)), { message: 'The server had a problem. Try again shortly.', freshChallenge: false })
+    assert.deepEqual(codeRefusal(failure()), { message: "Can't reach the server. Check your connection and try again.", freshChallenge: false })
   })
 }
 main().then(report)

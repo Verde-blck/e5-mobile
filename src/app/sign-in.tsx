@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { View } from 'react-native'
 import { describeAuthError, login, verifyTwoFactorLogin, type TwoFactorChallenge } from '@/modules/auth/api/auth.api'
 import { AuthButton, AuthField, AuthLink } from '@/modules/auth/components/AuthKit'
 import { AuthFooterText, AuthHeading, AuthScreen, AuthSubheading } from '@/modules/auth/components/AuthScreen'
-import { cleanCode, isCompleteCode } from '@/modules/auth/lib/code'
+import { cleanCode, codeRefusal, isCompleteCode } from '@/modules/auth/lib/code'
 import { env } from '@/config/env'
 import { Text } from '@/shared/components/Text'
 import { useAuthStore } from '@/shared/store/authStore'
@@ -16,6 +16,8 @@ export default function SignInScreen() {
   const [code, setCode] = useState('')
   const [challenge, setChallenge] = useState<TwoFactorChallenge | null>(null)
   const [busy, setBusy] = useState(false)
+  // `busy` is state, so it can lag a moment behind: this stops two requests being sent at once.
+  const inFlight = useRef(false)
   const [error, setError] = useState<string | null>(null)
 
   const [usernameError, setUsernameError] = useState<string | null>(null)
@@ -24,12 +26,13 @@ export default function SignInScreen() {
   const canSubmitCredentials = username.trim().length > 0 && password.length > 0
 
   async function submitCredentials() {
-    if (busy) return
+    if (busy || inFlight.current) return
     if (!canSubmitCredentials) {
       setUsernameError(username.trim() ? null : 'Enter your username.')
       setPasswordError(password ? null : 'Enter your password.')
       return
     }
+    inFlight.current = true
     setBusy(true)
     setError(null)
     try {
@@ -43,6 +46,7 @@ export default function SignInScreen() {
     } catch (e) {
       setError(describeAuthError(e, 'Wrong username or password.'))
     } finally {
+      inFlight.current = false
       setBusy(false)
     }
   }
@@ -50,20 +54,36 @@ export default function SignInScreen() {
   // `entered` is the code when it is submitted the moment the sixth digit lands, before the state has caught up.
   async function submitCode(entered?: string) {
     const value = entered ?? code
-    if (!challenge || busy) return
+    if (!challenge || busy || inFlight.current) return
     if (!isCompleteCode(value)) {
       setError('Enter the 6-digit code.')
       return
     }
+    inFlight.current = true
     setBusy(true)
     setError(null)
     try {
       setUser(await verifyTwoFactorLogin(challenge, value))
     } catch (e) {
-      setError(describeAuthError(e, "That code didn't work. Check your authenticator app."))
+      const refusal = codeRefusal(e)
+      setError(refusal.message)
       setCode('')
+      if (refusal.freshChallenge) await refreshChallenge()
     } finally {
+      inFlight.current = false
       setBusy(false)
+    }
+  }
+
+  // The server may spend a login challenge on the first attempt, or let it expire, so after a refused code the next try gets a new one.
+  // If that fails too, the old one stays and the message already says what to do.
+  async function refreshChallenge() {
+    try {
+      const result = await login({ username: username.trim(), password })
+      if (result.status === 'needs-code') setChallenge(result.challenge)
+      else setUser(result.user)
+    } catch {
+      /* keep the old challenge */
     }
   }
 
