@@ -56,6 +56,12 @@
         "EXPO_PUBLIC_LIVE_ENABLED": "true"
       },
       "environment": "preview"
+    },
+    "ios-testflight-iphone": {
+      "extends": "production",
+      "env": {
+        "E5_IOS_TABLET_ONLY": "false"
+      }
     }
   },
   "submit": {
