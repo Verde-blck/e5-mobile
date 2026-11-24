@@ -3,6 +3,7 @@ import { View } from 'react-native'
 import { describeAuthError, login, verifyTwoFactorLogin, type TwoFactorChallenge } from '@/modules/auth/api/auth.api'
 import { AuthButton, AuthField, AuthLink } from '@/modules/auth/components/AuthKit'
 import { AuthFooterText, AuthHeading, AuthScreen, AuthSubheading } from '@/modules/auth/components/AuthScreen'
+import { cleanCode, isCompleteCode } from '@/modules/auth/lib/code'
 import { env } from '@/config/env'
 import { Text } from '@/shared/components/Text'
 import { useAuthStore } from '@/shared/store/authStore'
@@ -21,7 +22,6 @@ export default function SignInScreen() {
   const [passwordError, setPasswordError] = useState<string | null>(null)
 
   const canSubmitCredentials = username.trim().length > 0 && password.length > 0
-  const canSubmitCode = code.length === 6
 
   async function submitCredentials() {
     if (busy) return
@@ -47,16 +47,18 @@ export default function SignInScreen() {
     }
   }
 
-  async function submitCode() {
+  // `entered` is the code when it is submitted the moment the sixth digit lands, before the state has caught up.
+  async function submitCode(entered?: string) {
+    const value = entered ?? code
     if (!challenge || busy) return
-    if (!canSubmitCode) {
+    if (!isCompleteCode(value)) {
       setError('Enter the 6-digit code.')
       return
     }
     setBusy(true)
     setError(null)
     try {
-      setUser(await verifyTwoFactorLogin(challenge, code))
+      setUser(await verifyTwoFactorLogin(challenge, value))
     } catch (e) {
       setError(describeAuthError(e, "That code didn't work. Check your authenticator app."))
       setCode('')
@@ -82,17 +84,23 @@ export default function SignInScreen() {
           <AuthField
             label="Authentication code"
             value={code}
-            onChangeText={(v) => setCode(v.replace(/\D/g, '').slice(0, 6))}
+            onChangeText={(v) => {
+              // A number keypad has no Go key, so the sixth digit sends the code; an autofilled or pasted code does too.
+              const next = cleanCode(v)
+              setCode(next)
+              if (isCompleteCode(next)) void submitCode(next)
+            }}
             keyboardType="number-pad"
             maxLength={6}
             autoComplete="one-time-code"
             textContentType="oneTimeCode"
             placeholder="000000"
             code
-            onSubmitEditing={submitCode}
+            onSubmitEditing={() => void submitCode()}
             error={error}
           />
-          <AuthButton title="Verify and sign in" busy={busy} onPress={submitCode} />
+          <AuthButton title="Verify and sign in" busy={busy} onPress={() => void submitCode()} />
+          {busy ? <Text accessibilityLiveRegion="polite" style={{ marginTop: 10, textAlign: 'center', fontSize: 13, color: '#64748B' }}>Checking the code...</Text> : null}
           <View style={{ marginTop: 8 }}>
             <AuthLink title="Use a different account" onPress={backToCredentials} />
           </View>
@@ -134,6 +142,7 @@ export default function SignInScreen() {
             error={passwordError ?? error}
           />
           <AuthButton title="Sign in" busy={busy} onPress={submitCredentials} />
+          {busy ? <Text accessibilityLiveRegion="polite" style={{ marginTop: 10, textAlign: 'center', fontSize: 13, color: '#64748B' }}>Signing in...</Text> : null}
         </>
       )}
     </>

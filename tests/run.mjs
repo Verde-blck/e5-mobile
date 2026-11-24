@@ -19,6 +19,7 @@ const suites = [
   ['worker', {}],
   ['branding', {}],
   ['media', {}],
+  ['authcode', {}], // the two-step code box and the button's shadow
   ['ipad', {}], // the iPad: map, push switch and registration, app settings, siren
   ['apiurl', {}], // the server address: tidied, and never guessed
   ['configproblem', { EXPO_PUBLIC_API_BASE_URL: '' }], // a build with no address sends nothing at all

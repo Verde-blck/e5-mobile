@@ -57,6 +57,20 @@ An iPhone gets the compact layout (a bottom tab bar), portrait only. The phone b
 TestFlight testing, so **never submit it for App Store review**: the first build sent to Apple for review must come from the `production` profile, which is iPad only.
 It tests function (sign-in, calls with a real camera and microphone, the siren, permission prompts), not the iPad layout.
 
+## Found on the first iPhone run (24 November)
+
+On the two-step screen the **Verify and sign in button was not visible**, and an iPhone number keypad has no Go key, so there was no way to send the code.
+The cause was almost certainly the button's shadow: it combined an inner and an outer shadow in one `boxShadow` string, which left the background undrawn
+on iOS (white text on a white card). It was the only inner shadow in the app, and the card's ordinary shadow drew fine. Fixes:
+
+- Apple devices now get the classic shadow settings for that button (`src/modules/auth/lib/shadow.ts`). The other platforms are unchanged.
+- The code box sends the code **by itself on the sixth digit**, which also suits autofill and paste (`src/modules/auth/lib/code.ts`). A wrong code is
+  refused and the box is cleared. The button still works by hand.
+- A plain line, "Checking the code..." or "Signing in...", shows while a request is running, so a button that fails to draw can never again leave the
+  screen looking frozen.
+
+Confirmed in the browser and by tests only. It still has to be confirmed on the iPhone, in the next TestFlight build.
+
 ## No iPad to hand? Use Expo's remote iPad simulator
 
 Expo Simulators runs an iOS Simulator on an Expo-hosted Mac and shows it in a browser, so it works from Windows. It uses a **simulator build**, which is

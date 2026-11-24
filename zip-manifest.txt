@@ -58,7 +58,9 @@ src/modules/auth/api/auth.api.ts
 src/modules/auth/components/AuthKit.tsx
 src/modules/auth/components/AuthScreen.tsx
 src/modules/auth/components/SecurityScreen.tsx
+src/modules/auth/lib/code.ts
 src/modules/auth/lib/password.ts
+src/modules/auth/lib/shadow.ts
 src/modules/auth/mock-data.ts
 src/modules/branding/api/branding.api.ts
 src/modules/branding/components/BrandTheme.tsx
@@ -268,6 +270,7 @@ tests/alarmstate.test.ts
 tests/alarmtypes.test.ts
 tests/apiurl.test.ts
 tests/audio.test.ts
+tests/authcode.test.ts
 tests/branding.test.ts
 tests/build.test.ts
 tests/calls.test.ts

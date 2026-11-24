@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { ActivityIndicator, Pressable, TextInput, View, type TextInputProps } from 'react-native'
+import { ActivityIndicator, Pressable, TextInput, View, type TextInputProps, Platform } from 'react-native'
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
+import { buttonShadow } from '../lib/shadow'
 import { useBrandColours } from '@/modules/branding/hooks/useBranding'
 import { Text } from '@/shared/components/Text'
 
@@ -167,7 +168,7 @@ export function AuthButton({ title, busyTitle, busy, disabled, onPress }: { titl
         backgroundColor: pressed ? shade(brand.primary, 0.92) : brand.primary,
         opacity: busy ? 0.8 : disabled ? 0.5 : 1,
         transform: [{ translateY: pressed ? 1 : 0 }],
-        boxShadow: `inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 6px 16px -8px ${rgba(brand.primary, 0.7)}`,
+        ...buttonShadow(Platform.OS, { solid: brand.primary, soft: rgba(brand.primary, 0.7) }),
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
