@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 import { env } from '@/config/env'
 import { registerPush, unregisterPush } from '@/modules/push/api/push.api'
@@ -129,6 +130,32 @@ async function main() {
     const long = wavInfo('assets/sounds/sos-long.wav'); const short = wavInfo('assets/sounds/sos.wav')
     assert.equal(long.format, 1, 'linear PCM'); assert.ok(long.seconds >= 10 && long.seconds < 30, `plays for ${long.seconds} seconds`)
     assert.ok(short.seconds < 3, 'the Android siren is still the short one')
+  })
+  await t('the app stays iPad only unless a build explicitly turns that off, and a typo can never turn it off', () => {
+    const wrap = createRequire(resolve(process.cwd(), 'package.json'))(resolve(process.cwd(), 'app.config.js')) as (o: { config: Record<string, any> }) => Record<string, any>
+    const saved = process.env.E5_IOS_TABLET_ONLY
+    const tabletOnly = (value: string | undefined) => {
+      if (value === undefined) delete process.env.E5_IOS_TABLET_ONLY; else process.env.E5_IOS_TABLET_ONLY = value
+      const warn = console.warn; console.warn = () => {}
+      try { return wrap({ config: structuredClone(expo) }).ios.isTabletOnly } finally { console.warn = warn }
+    }
+    try {
+      assert.equal(tabletOnly(undefined), true, 'unset: iPad only')
+      for (const off of ['false', 'False', 'FALSE', ' false ', '0', 'no', 'off']) assert.equal(tabletOnly(off), false, `${JSON.stringify(off)} lets an iPhone install it`)
+      for (const keep of ['', 'true', '1', 'yes', 'on', 'flase', 'fasle', 'nope']) assert.equal(tabletOnly(keep), true, `${JSON.stringify(keep)} keeps it iPad only`)
+    } finally {
+      if (saved === undefined) delete process.env.E5_IOS_TABLET_ONLY; else process.env.E5_IOS_TABLET_ONLY = saved
+    }
+  })
+  await t('only the iPhone test profile turns the iPad-only rule off, and the store profile cannot', () => {
+    const eas = JSON.parse(read('eas.json')).build as Record<string, { extends?: string; env?: Record<string, string> }>
+    const effective = (name: string): Record<string, string> => ({ ...(eas[name].extends ? effective(eas[name].extends as string) : {}), ...(eas[name].env ?? {}) })
+    const off = Object.keys(eas).filter((name) => effective(name).E5_IOS_TABLET_ONLY !== undefined)
+    assert.deepEqual(off, ['ios-testflight-iphone'], 'no other profile sets it')
+    assert.equal(effective('ios-testflight-iphone').E5_IOS_TABLET_ONLY, 'false')
+    assert.equal(eas['ios-testflight-iphone'].extends, 'production', 'it is the production build plus that one switch')
+    assert.equal(effective('production').E5_IOS_TABLET_ONLY, undefined)
+    assert.equal(expo.ios.isTabletOnly, true, 'and app.json itself says iPad only')
   })
   await t('the settings template mentions the iPad switch', () => {
     assert.match(read('.env.example'), /EXPO_PUBLIC_PUSH_IOS_ENABLED/)

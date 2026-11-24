@@ -78,6 +78,10 @@ module.exports = ({ config }) => {
     projectIdFrom(config.extra?.eas?.projectId, 'app.json (extra.eas.projectId)') ?? local.projectId ?? projectIdFrom(process.env.EAS_PROJECT_ID, 'the EAS_PROJECT_ID environment variable')
   const owner = ownerFrom(config.owner) ?? local.owner
   const mapsKey = googleMapsKey()
+  // The app installs on iPad only. A build can turn that off for TestFlight testing on an iPhone by setting E5_IOS_TABLET_ONLY to false (only
+  // the ios-testflight-iphone profile does). Anything else, including a typo, keeps it iPad only, so a mistake can never open the app to iPhones.
+  const iphoneTest = /^\s*(false|0|no|off)\s*$/i.test(process.env.E5_IOS_TABLET_ONLY ?? '')
+  if (iphoneTest) warn('E5_IOS_TABLET_ONLY is off, so this build also installs on iPhone. It is for TestFlight testing only: never submit it for App Store review.')
 
   // The project ID in the result is the one chosen above, or none:
   // a bad one in app.json must not be left in to reach EAS.
@@ -91,6 +95,7 @@ module.exports = ({ config }) => {
     ...config,
     ...(owner ? { owner } : {}),
     ...(extra ? { extra } : {}),
+    ios: { ...config.ios, ...(iphoneTest ? { isTabletOnly: false } : {}) },
     android: {
       ...config.android,
       ...(googleServicesFile ? { googleServicesFile } : {}),

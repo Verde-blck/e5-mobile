@@ -38,8 +38,40 @@ npx eas-cli build --platform ios --profile production
 npx eas-cli submit --platform ios
 ```
 
-EAS asks for the Apple account sign-in (or an App Store Connect API key), creates the certificates and provisioning itself, and synchronises the
+The first upload creates the app in App Store Connect, and Apple needs a company name for that, so `submit.production.ios` in `eas.json` sets `companyName`, `appName`, `sku` and `language`. Without `companyName` the first upload fails with "You must provide a value for the attribute 'companyName'". EAS asks for the Apple account sign-in (or an App Store Connect API key), creates the certificates and provisioning itself, and synchronises the
 capabilities. Test through TestFlight on a real iPad before submitting for review. `eas.json` already sets the server address for every profile.
+
+## A test build that also installs on iPhone
+
+TestFlight refuses an iPad-only build on an iPhone ("can only be tested on an iPad"). To try the app on an iPhone before an iPad is available, there is a
+separate profile, `ios-testflight-iphone`. It is the `production` profile plus one setting, `E5_IOS_TABLET_ONLY=false`, which `app.config.js` turns into
+`isTabletOnly: false`. Anything other than an explicit false (a typo, an empty value) keeps the app iPad only, and a test checks that only this one
+profile sets it.
+
+```
+npx eas-cli build --platform ios --profile ios-testflight-iphone
+npx eas-cli submit --platform ios --latest
+```
+
+An iPhone gets the compact layout (a bottom tab bar), portrait only. The phone block on the first screen applies to Android only. This build is for
+TestFlight testing, so **never submit it for App Store review**: the first build sent to Apple for review must come from the `production` profile, which is iPad only.
+It tests function (sign-in, calls with a real camera and microphone, the siren, permission prompts), not the iPad layout.
+
+## No iPad to hand? Use Expo's remote iPad simulator
+
+Expo Simulators runs an iOS Simulator on an Expo-hosted Mac and shows it in a browser, so it works from Windows. It uses a **simulator build**, which is
+unsigned and needs no Apple account. Two profiles in `eas.json`:
+
+- `ios-simulator-sample`: sample data, no sign-in. Good for layout, rotation, Apple Maps and the alarm box (More has buttons that fire sample alarms).
+- `ios-simulator`: the real backend. Sign in with a real account.
+
+```
+npx eas-cli build --platform ios --profile ios-simulator-sample
+```
+
+Then on expo.dev open the project's **Simulator sessions**, choose **New simulator**, platform iOS, controller Agent Device, build source **Latest app build**,
+and an iPad device. Stop the session when finished. A simulator has no camera or microphone, so calls cannot be tried, it cannot receive push alerts, and it
+is slower than a real iPad. It does not replace a test on a real iPad through TestFlight.
 
 ## Not checked
 

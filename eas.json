@@ -36,6 +36,26 @@
         "EXPO_PUBLIC_LIVE_ENABLED": "true"
       },
       "environment": "preview"
+    },
+    "ios-simulator": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://e5energy-production.up.railway.app/api",
+        "EXPO_PUBLIC_USE_MOCKS": "false",
+        "EXPO_PUBLIC_LIVE_ENABLED": "true"
+      },
+      "environment": "preview"
+    },
+    "ios-simulator-sample": {
+      "extends": "ios-simulator",
+      "env": {
+        "EXPO_PUBLIC_USE_MOCKS": "true",
+        "EXPO_PUBLIC_LIVE_ENABLED": "true"
+      },
+      "environment": "preview"
     }
   },
   "submit": {
@@ -43,6 +63,12 @@
       "android": {
         "track": "internal",
         "releaseStatus": "draft"
+      },
+      "ios": {
+        "companyName": "E5 Energy Services Limited",
+        "appName": "E5 Smart Helmet",
+        "sku": "e5-smart-helmet-ipad",
+        "language": "en-GB"
       }
     }
   }
