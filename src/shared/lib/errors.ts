@@ -30,6 +30,12 @@ export class ConfigProblemError extends Error {
   }
 }
 
+/** The server's own short reason for a refusal, such as "challenge_expired", or undefined when it gave none. */
+export function errorReason(error: unknown): string | undefined {
+  const reason = bodyOf(error)?.error
+  return typeof reason === 'string' && reason.trim() ? reason.trim() : undefined
+}
+
 /** The status and the server's own short reason, such as "401 invalid_code", so a refusal can be told apart when someone quotes it. Empty when there was no reply. */
 export function errorReference(error: unknown): string {
   const status = statusOf(error)

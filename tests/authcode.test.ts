@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict'
 import { cleanCode, codeRefusal, isCompleteCode } from '@/modules/auth/lib/code'
-import { errorReference } from '@/shared/lib/errors'
+import { errorReason, errorReference } from '@/shared/lib/errors'
 import { buttonShadow } from '@/modules/auth/lib/shadow'
 import { createRunner } from './harness'
 
 const { t, report } = createRunner()
+
+const failure = (status?: number, data?: unknown) => (status === undefined ? new Error('Network Error') : { response: { status, data } })
 
 async function main() {
   await t('the code box keeps only digits, at most six, whatever was typed, pasted or autofilled', () => {
@@ -30,7 +32,6 @@ async function main() {
       assert.match(other.boxShadow ?? '', /^inset 0 1px 0 /, `${os} keeps the look it always had`); assert.ok(!('shadowColor' in other))
     }
   })
-  const failure = (status?: number, data?: unknown) => (status === undefined ? new Error('Network Error') : { response: { status, data } })
   await t('a refused code shows the server\'s own reason, so a wrong code can be told from an expired or spent challenge when someone quotes it', () => {
     assert.equal(errorReference(failure(401, { error: 'invalid_code' })), '401 invalid_code')
     assert.equal(errorReference(failure(400, { message: 'Token expired' })), '400 Token expired')
@@ -39,15 +40,25 @@ async function main() {
     assert.equal(errorReference(failure(401, { error: '<b>bad</b> & "odd" characters!' })), '401 bbadb  odd characters', 'only safe characters')
     assert.ok(errorReference(failure(400, { message: 'x'.repeat(300) })).length <= 44, 'kept short')
   })
-  await t('a 400 or 401 asks for a new login challenge before the next try, and other failures do not', () => {
-    for (const status of [400, 401]) {
-      const r = codeRefusal(failure(status, { error: 'invalid_code' }))
-      assert.equal(r.freshChallenge, true, String(status)); assert.match(r.message, /^That code didn't work\./); assert.match(r.message, /\(Reference: \d{3} invalid_code\)$/)
-    }
-    assert.match(codeRefusal(failure(401)).message, /\(Reference: 401\)$/)
-    assert.deepEqual(codeRefusal(failure(429)), { message: 'Too many attempts. Wait a minute and try again.', freshChallenge: false })
-    assert.deepEqual(codeRefusal(failure(503)), { message: 'The server had a problem. Try again shortly.', freshChallenge: false })
-    assert.deepEqual(codeRefusal(failure()), { message: "Can't reach the server. Check your connection and try again.", freshChallenge: false })
+  await t('the server\'s own short reason is read from the reply', () => {
+    assert.equal(errorReason(failure(401, { error: 'challenge_expired' })), 'challenge_expired')
+    assert.equal(errorReason(failure(401, { error: '  Invalid or expired code ' })), 'Invalid or expired code')
+    for (const none of [failure(401), failure(401, { error: '' }), failure(401, { error: 5 }), failure()]) assert.equal(errorReason(none), undefined)
+  })
+  await t('each error the backend document lists gets its own plain message, and only a lost sign-in restarts it', () => {
+    const expired = codeRefusal(failure(401, { error: 'challenge_expired' }))
+    assert.equal(expired.restart, true); assert.match(expired.message, /timed out, so a new one was started\. Enter your code again\./)
+    const wrong = codeRefusal(failure(401, { error: 'Invalid or expired code' }))
+    assert.equal(wrong.restart, false, 'the same challenge still works after a wrong code'); assert.match(wrong.message, /^That code didn't work\..*date and time/)
+    const used = codeRefusal(failure(401, { error: 'code_already_used' }))
+    assert.equal(used.restart, false); assert.match(used.message, /already used\. Wait for the next one, which comes every 30 seconds/)
+    for (const lock of [failure(429, { error: 'too_many_attempts' }), failure(401, { error: 'too_many_attempts' })]) assert.deepEqual(codeRefusal(lock), { message: 'Too many wrong codes. Wait 15 minutes and try again.', restart: false })
+  })
+  await t('a refusal the document does not list still shows its reference, and server or network trouble says so', () => {
+    const unknown = codeRefusal(failure(401, { error: 'something_new' })); assert.equal(unknown.restart, false); assert.match(unknown.message, /\(Reference: 401 something_new\)$/)
+    assert.match(codeRefusal(failure(400)).message, /\(Reference: 400\)$/)
+    assert.deepEqual(codeRefusal(failure(503)), { message: 'The server had a problem. Try again shortly.', restart: false })
+    assert.deepEqual(codeRefusal(failure()), { message: "Can't reach the server. Check your connection and try again.", restart: false })
   })
 }
 main().then(report)

@@ -6,6 +6,7 @@ docs/IPAD.md
 docs/PUSH_SETUP.md
 docs/STORE_RELEASE.md
 docs/TABLETS_ONLY.md
+docs/backend/E5_2FA_Sign-in_API.pdf
 src/app/(tabs)/_layout.tsx
 src/app/(tabs)/admins.tsx
 src/app/(tabs)/alarms.tsx

@@ -59,26 +59,28 @@ It tests function (sign-in, calls with a real camera and microphone, the siren, 
 
 ## Found on the first iPhone run (24 and 25 November)
 
-**1. The Verify and sign in button was invisible on the iPhone.** An iPhone number keypad has no Go key, so the code could not be sent. The first guess was
-the button's combined inner and outer `boxShadow`, which was replaced with iPhone-safe shadow settings (`src/modules/auth/lib/shadow.ts`). That was **not
-enough**: the button was still invisible in the next build. So `AuthButton` is now a `TouchableOpacity` with one static style and a border (so it shows
-even if a fill fails to draw), not a `Pressable` with a style function. **Not yet confirmed on an iPhone.** If it is still invisible, the cause is
-something else in how an iOS build draws that component, and the first sign-in screen's button needs checking too.
+**1. The Verify and sign in button was invisible on the iPhone** (an iPhone number keypad has no Go key, so a code could not be sent). The first guess, the
+combined inner and outer `boxShadow`, was not the cause. `AuthButton` is now a `TouchableOpacity` with one static style and a border, not a `Pressable` with a
+style function, and it **drew correctly on the iPhone** in the next test. The iPhone-safe shadow (`src/modules/auth/lib/shadow.ts`) stays.
 
-**2. Every code was refused**, although the website accepted the same account. The request is identical to the website's (`POST /auth/login/verify-2fa`
-with `username`, `code` and, if the server issues one, `mfaToken`). The backend does not issue an `mfaToken` today, so it may keep a short-lived pending
-login for the username instead, and a code sent after that expired, or after a first attempt used it up, would be refused, as would every retry. The app
-used to treat 400 and 401 as the same plain "That code didn't work", so the real reason was hidden. Now:
+**2. Every code was refused**, although the website accepted the same account, with `401 challenge_expired`. **The cause: the app never sent the
+challenge.** When 2FA is on, `POST /auth/login` replies `{ requires2fa, username, challenge }` (the `challenge` is a signed value, good for five minutes and one
+successful sign-in), and the code step must send `{ challenge, code }`. The app looked for fields called `mfaToken` and `challengeToken`, which the backend never
+used, so it sent only the username and the code, and the server answered "no challenge" with `challenge_expired`. The old field names had come from an early
+guess before the backend existed, and the first tests were written to match the guess. The contract is in `docs/backend/E5_2FA_Sign-in_API.pdf` (from Cypher).
+Now:
 
-- A refused code (400 or 401) shows the server's own reason, such as `(Reference: 401 no_pending_login)`, so it can be quoted (`errorReference` in `src/shared/lib/errors.ts`, `codeRefusal` in `src/modules/auth/lib/code.ts`).
-- After that refusal the app **signs in again by itself** to get a fresh challenge, so the next code is not sent on a spent one.
-- One request is sent at a time, however the keyboard fires its events (`inFlight` in `src/app/sign-in.tsx`).
+- the login reply's `challenge` is kept and sent back as `{ challenge, code }`, with no username (`src/modules/auth/api/auth.api.ts`);
+- each error in the backend's list gets its own message (`codeRefusal`, `src/modules/auth/lib/code.ts`): `challenge_expired` (starts a new sign-in silently, because the password is still held), `Invalid or expired code` (the same challenge still works, so just retry, and check the phone's date and time), `code_already_used` (wait for the next code), and `too_many_attempts` (wait 15 minutes, for codes and for passwords);
+- an unlisted refusal still shows its status and reason as a reference for support;
+- one request is sent at a time, and the code is sent by itself on the sixth digit.
 
-Tested in a browser against a pretend server that forgets the pending login before the first code, and one that spends it on a wrong code. **The true cause
-is still unknown**: it depends on what the real server answers, and the Reference now shows that.
+Earlier guesses were removed once the document arrived: a silent sign-in before every code, and asking for cookies. The backend uses neither (no cookies, no extra headers).
+Tested in a browser against a pretend server that follows the document, including every listed error. **Not yet confirmed against the real server from an iPhone.**
 
-**3. The code box sends the code by itself on the sixth digit**, which also suits autofill and paste (`src/modules/auth/lib/code.ts`). A plain line,
-"Checking the code..." or "Signing in...", shows while a request runs, so a button that fails to draw can never again leave the screen looking frozen.
+**3. Testing without a build.** The fastest way to try JavaScript changes on the iPhone is Expo Go (`npx expo start`, then scan the code). It cannot run
+`react-native-webrtc`, so live view and calls fail there with "tried to access a native module that doesn't exist": that red error is expected in Expo Go and means
+nothing for the real build. Calls, push alerts and the config plugins need the TestFlight build.
 
 ## No iPad to hand? Use Expo's remote iPad simulator
 

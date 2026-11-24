@@ -113,22 +113,22 @@ async function main() {
     const bare = auth.userFromProfile({ username: 'b' }, 'b')
     assert.equal(bare.role, 'No role'); assert.deepEqual(bare.permissions, []); assert.deepEqual(bare.deviceIds, [])
   })
-  await t('login with 2FA: returns a challenge, stores NO token; verify then loads the profile', async () => {
+  await t('login with 2FA: returns the challenge, stores NO token; verify sends { challenge, code } and then loads the profile', async () => {
     await tokenStore.clear(); http.calls.length = 0
     http.routes = {
-      'POST /auth/login': () => ({ status: 200, data: { requires2fa: true, mfaToken: 'm-123' } }),
+      'POST /auth/login': () => ({ status: 200, data: { requires2fa: true, username: 'admin', challenge: 'c-123' } }),
       'POST /auth/login/verify-2fa': () => ({ status: 200, data: { token: adminToken } }),
       'GET /auth/me': () => ({ status: 200, data: SUPER_ME }),
     }
     const r = await auth.login({ username: 'admin', password: 'pw' })
     assert.equal(r.status, 'needs-code'); assert.equal(tokenStore.get(), null)
     if (r.status !== 'needs-code') return
-    assert.deepEqual(r.challenge, { username: 'admin', mfaToken: 'm-123' })
+    assert.deepEqual(r.challenge, { username: 'admin', challenge: 'c-123' })
     const u = await auth.verifyTwoFactorLogin(r.challenge, '654321')
-    assert.deepEqual(http.calls[1].data, { username: 'admin', code: '654321', mfaToken: 'm-123' })
+    assert.deepEqual(http.calls[1].data, { challenge: 'c-123', code: '654321' }, 'exactly what the backend document asks for: no username, no other field')
     assert.equal(u.username, 'admin'); assert.equal(tokenStore.get(), adminToken)
   })
-  await t('verify omits mfaToken when the backend never issued one', async () => {
+  await t('without a challenge (an older backend) the code step sends the username and the code', async () => {
     http.calls.length = 0
     await auth.verifyTwoFactorLogin({ username: 'admin' }, '111111')
     assert.deepEqual(http.calls[0].data, { username: 'admin', code: '111111' })

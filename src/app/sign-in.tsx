@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { View } from 'react-native'
 import { describeAuthError, login, verifyTwoFactorLogin, type TwoFactorChallenge } from '@/modules/auth/api/auth.api'
+import { statusOf } from '@/shared/lib/errors'
 import { AuthButton, AuthField, AuthLink } from '@/modules/auth/components/AuthKit'
 import { AuthFooterText, AuthHeading, AuthScreen, AuthSubheading } from '@/modules/auth/components/AuthScreen'
 import { cleanCode, codeRefusal, isCompleteCode } from '@/modules/auth/lib/code'
@@ -44,7 +45,7 @@ export default function SignInScreen() {
         setUser(result.user)
       }
     } catch (e) {
-      setError(describeAuthError(e, 'Wrong username or password.'))
+      setError(statusOf(e) === 429 ? 'Too many wrong passwords. Wait 15 minutes and try again.' : describeAuthError(e, 'Wrong username or password.'))
     } finally {
       inFlight.current = false
       setBusy(false)
@@ -68,22 +69,24 @@ export default function SignInScreen() {
       const refusal = codeRefusal(e)
       setError(refusal.message)
       setCode('')
-      if (refusal.freshChallenge) await refreshChallenge()
+      if (refusal.restart) await restartSignIn()
     } finally {
       inFlight.current = false
       setBusy(false)
     }
   }
 
-  // The server may spend a login challenge on the first attempt, or let it expire, so after a refused code the next try gets a new one.
-  // If that fails too, the old one stays and the message already says what to do.
-  async function refreshChallenge() {
+  // A pending sign-in lasts five minutes and one successful code. When the server says it is gone, the password step is repeated for the person,
+  // silently, since the password is still here. If that fails too, they are taken back to the password screen.
+  async function restartSignIn() {
     try {
       const result = await login({ username: username.trim(), password })
       if (result.status === 'needs-code') setChallenge(result.challenge)
       else setUser(result.user)
     } catch {
-      /* keep the old challenge */
+      setChallenge(null)
+      setCode('')
+      setError('That sign-in timed out. Please sign in again.')
     }
   }
 

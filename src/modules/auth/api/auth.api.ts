@@ -96,9 +96,9 @@ export async function refreshProfile(username: string): Promise<AuthUser> {
 
 export interface TwoFactorChallenge {
   username: string
-  // The backend doesn't issue one yet; it is passed through whenever
-  // it's present, so nothing here changes when it arrives.
-  mfaToken?: string
+  // What the password step returns when 2FA is on: a signed value, good for five minutes and for one successful sign-in. The code step sends it
+  // back, and the server reads the username from it. See docs/backend/E5_2FA_Sign-in_API.pdf.
+  challenge?: string
 }
 
 export type LoginResult =
@@ -108,8 +108,8 @@ export type LoginResult =
 interface LoginResponse {
   token?: string
   requires2fa?: boolean
-  mfaToken?: string
-  challengeToken?: string
+  username?: string
+  challenge?: string
 }
 
 const MOCK_CODE = '123456'
@@ -120,7 +120,7 @@ export async function login(credentials: Credentials): Promise<LoginResult> {
     if (mockTwoFactorOn(credentials.username)) {
       return {
         status: 'needs-code',
-        challenge: { username: credentials.username.trim().toUpperCase() },
+        challenge: { username: credentials.username.trim().toUpperCase(), challenge: 'mock-challenge' },
       }
     }
     return { status: 'signed-in', user: mockUserFor(credentials.username) }
@@ -133,7 +133,7 @@ export async function login(credentials: Credentials): Promise<LoginResult> {
       status: 'needs-code',
       challenge: {
         username: credentials.username,
-        mfaToken: data.mfaToken ?? data.challengeToken,
+        challenge: data.challenge,
       },
     }
   }
@@ -152,11 +152,9 @@ export async function verifyTwoFactorLogin(
     return mockUserFor(challenge.username)
   }
 
-  const { data } = await apiClient.post<{ token: string }>('/auth/login/verify-2fa', {
-    username: challenge.username,
-    code,
-    ...(challenge.mfaToken ? { mfaToken: challenge.mfaToken } : {}),
-  })
+  // The challenge identifies the person, so it is all the server needs besides the code. Without one (an older backend), the username goes instead.
+  const body = challenge.challenge ? { challenge: challenge.challenge, code } : { username: challenge.username, code }
+  const { data } = await apiClient.post<{ token: string }>('/auth/login/verify-2fa', body)
   return startSession(data.token, challenge.username)
 }
 
